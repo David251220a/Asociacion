@@ -23,6 +23,7 @@ return new class extends Migration
             $table->foreignId('estado_civil_id')->constrained();
             $table->foreignId('tipo_vivienda_id')->constrained();
             $table->string('documento', 20);
+            $table->string('ruc')->nullable();
             $table->string('nombre', 200);
             $table->string('apellido', 200);
             $table->date('fecha_nacimiento')->nullable();

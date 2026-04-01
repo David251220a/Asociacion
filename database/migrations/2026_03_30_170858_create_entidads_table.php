@@ -35,6 +35,11 @@ return new class extends Migration
             $table->string('codigo_cliente_set', 250);
             $table->string('firma', 250);
             $table->string('pass_firma', 250);
+            $table->decimal('monto_aporte_general', 12, 0)->default(0);
+            $table->decimal('monto_aporte_inicial', 12, 0)->default(0);
+            $table->integer('meses_inicial')->default(0);
+            $table->text('mision');
+            $table->text('vision');
             $table->timestamps();
         });
     }
