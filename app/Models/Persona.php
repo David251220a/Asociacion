@@ -10,4 +10,14 @@ class Persona extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function familiares()
+    {
+        return $this->hasMany(Familiar::class);
+    }
+
+    public function asociado()
+    {
+        return $this->hasOne(Asociado::class);
+    }
 }

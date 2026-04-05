@@ -13,14 +13,17 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('familiars', function (Blueprint $table) {
+        Schema::create('planillas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('persona_id')->constrained();
-            $table->foreignId('tipo_familiar_id')->constrained();
-            $table->string('documento', 20);
-            $table->string('nombre', 200);
-            $table->string('apellido', 200);
-            $table->string('celular', 20);
+            $table->foreignId('tipo_asociado_id')->constrained();
+            $table->tinyInteger('mes');
+            $table->integer('anio');
+            $table->date('fecha');
+            $table->integer('cantidad');
+            $table->decimal('total', 12, 0);
+            $table->tinyInteger('pagado')->default(0);
+            $table->decimal('monto_pagado', 12, 0)->default(0);
+            $table->date('fecha_pagado')->nullable();
             $table->foreignId('estado_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('usuario_modificacion');
@@ -35,6 +38,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('familiars');
+        Schema::dropIfExists('planillas');
     }
 };

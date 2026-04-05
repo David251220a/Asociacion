@@ -78,39 +78,8 @@ $(document).ready(function () {
     });
 
     $('#departamento_id').trigger('change');
-});
 
-let enviado = false;
-document.querySelector('form').addEventListener('submit', function (e) {
-
-    if (enviado) {
-        e.preventDefault();
-        return false;
-    }
-
-    enviado = true;
-
-    let btn = document.getElementById('btnEnviar');
-    btn.disabled = true;
-    btn.innerText = 'Enviando...';
 
 });
 
-// document.addEventListener('DOMContentLoaded', function () {
-//     const tipo = document.getElementById('tipo_vivienda_id');
-//     const otro = document.getElementById('otro');
 
-//     tipo.addEventListener('change', function () {
-
-//         if (this.value == 3) {
-//             // activar
-//             otro.removeAttribute('readonly');
-//             otro.focus();
-//         } else {
-//             // limpiar y desactivar
-//             otro.value = '';
-//             otro.setAttribute('readonly', true);
-//         }
-
-//     });
-// });

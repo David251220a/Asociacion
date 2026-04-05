@@ -18,7 +18,14 @@
                     </div>
                 </div>
                 @include('varios.mensaje')
-                <form action="{{route('asociado.store')}}" method="post" enctype="multipart/form-data">
+                <form id="form_general" action="{{route('asociado.store')}}" method="post" enctype="multipart/form-data" 
+                        onsubmit="
+                        if (this.dataset.enviando === '1') return false;
+                        this.dataset.enviando = '1';
+                        document.getElementById('btnEnviar').disabled = true;
+                        document.getElementById('btnEnviar').innerText = 'Enviando...';
+                    ">
+                
                     @csrf
                     <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">
@@ -141,7 +148,7 @@
                                     </select>
                                 </div>
 
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-12">
                                     <label for="vivienda">Descripcion Vivienda</label>
                                     <input name="vivienda" id="vivienda" type="text" class="form-control" value="{{old('vivienda')}}">
                                 </div>
@@ -223,7 +230,17 @@
                             </div>
 
                             <div class="form-row">
-                                <button id="btnEnviar" type="submit" class="btn btn-success">Grabar</button>
+                                <button id="btnEnviar" type="submit" class="btn btn-success"
+                                    onclick="
+                                        if (this.dataset.clicked === '1') return false;
+                                        this.dataset.clicked = '1';
+                                        this.disabled = true;
+                                        this.innerText = 'Enviando...';
+                                        this.form.requestSubmit();
+                                        return false;
+                                    ">
+                                    Grabar
+                                </button>
                             </div>
 
                         </div>

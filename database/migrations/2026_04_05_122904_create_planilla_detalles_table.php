@@ -13,14 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('familiars', function (Blueprint $table) {
+        Schema::create('planilla_detalles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('persona_id')->constrained();
-            $table->foreignId('tipo_familiar_id')->constrained();
-            $table->string('documento', 20);
-            $table->string('nombre', 200);
-            $table->string('apellido', 200);
-            $table->string('celular', 20);
+            $table->foreignId('planilla_id')->constrained();
+            $table->foreignId('asociado_id')->constrained();
+            $table->foreignId('tipo_asociado_id')->constrained();
+            $table->decimal('monto_esperado', 12, 0);
+            $table->decimal('pagado', 12, 0);
+            $table->decimal('saldo', 12, 0);
             $table->foreignId('estado_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('usuario_modificacion');
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('familiars');
+        Schema::dropIfExists('planilla_detalles');
     }
 };

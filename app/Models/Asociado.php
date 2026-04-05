@@ -20,4 +20,9 @@ class Asociado extends Model
     {
         return $this->hasOne(FichaMedica::class);
     }
+
+    public function tipo_asociado()
+    {
+        return $this->belongsTo(TipoAsociado::class);
+    }
 }
