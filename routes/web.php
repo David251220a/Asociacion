@@ -48,6 +48,8 @@ Route::group([
 
     Route::get('/planilla', [PlanillaController::class, 'index'])->name('planilla.index');
     Route::get('/planilla/create', [PlanillaController::class, 'create'])->name('planilla.create');
+    Route::get('/planilla/{planilla}/exportar-detalle', [PlanillaController::class, 'exportarDetalle'])->name('planilla.exportarDetalle');
+    Route::post('/planilla/{planilla}/anular', [PlanillaController::class, 'anular'])->name('planilla.anular');
 
     
 });

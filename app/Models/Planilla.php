@@ -10,4 +10,14 @@ class Planilla extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function planillaDetalle()
+    {
+        return $this->hasMany(PlanillaDetalle::class);
+    }
+
+    public function tipoAsociado()
+    {
+        return $this->belongsTo(TipoAsociado::class);
+    }
 }

@@ -113,17 +113,78 @@
                                                 {{ $item->anio }}/{{$item->mes}}
                                             </td>
                                             <td>
-                                                {{$item->tipo_asociado_id}}
+                                                {{ $item->tipoAsociado->descripcion ?? '' }}
                                             </td>
-                                            <td>
+                                            <td class="text-right">
                                                 {{$item->cantidad}}
                                             </td>
-                                            <td>{{number_format($item->total, 0, ',', '.')}}</td>
-                                            <td>{{$item->pagado}}</td>
-                                            <td>
+                                            <td class="text-right">{{number_format($item->total, 0, ',', '.')}}</td>
+                                            <td class="text-right">{{$item->pagado}}</td>
+                                            <td class="text-right">
                                                 {{number_format($item->monto_pagado, 0, ',', '.')}}
                                             </td>
                                             <td class="text-center">
+                                                <a href="{{route('planilla.exportarDetalle', $item)}}" class="mr-3">
+                                                    <svg 
+                                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                        stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                        <polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+                                                    </svg>
+                                                </a>
+
+                                                @php
+                                                    $puedeAnular = isset($ultimasPlanillas[$item->tipo_asociado_id]) && $ultimasPlanillas[$item->tipo_asociado_id] == $item->id;
+                                                @endphp
+                                                
+                                                @if($puedeAnular)
+                                                    <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
+                                                        <svg 
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline>
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17">
+                                                            </line><line x1="14" y1="11" x2="14" y2="17"></line>
+                                                        </svg>
+                                                    </button>
+
+                                                    <div class="modal fade" 
+                                                        id="exampleModalCenter_{{ $item->id }}" 
+                                                        tabindex="-1" 
+                                                        role="dialog"
+                                                        data-backdrop="static"
+                                                        data-keyboard="false"
+                                                        aria-labelledby="modalTitle_{{ $item->id }}" 
+                                                        aria-hidden="true">
+
+                                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                                            <div class="modal-content">
+
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
+                                                                        Eliminar Planilla
+                                                                    </h5>
+                                                                </div>
+
+                                                                <div class="modal-body">
+                                                                    ¿Está seguro que desea eliminar esta planilla?
+                                                                </div>
+
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-primary" data-dismiss="modal">
+                                                                        Cancelar
+                                                                    </button>
+                                                                    <form action="{{route('planilla.anular', $item)}}" method="POST">
+                                                                        @csrf
+                                                                        <button type="submit"  class="btn btn-danger">
+                                                                            Eliminar
+                                                                        </button>
+                                                                    </form>
+                                                                    
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
