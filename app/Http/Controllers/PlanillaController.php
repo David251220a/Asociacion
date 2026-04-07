@@ -90,4 +90,9 @@ class PlanillaController extends Controller
 
         return redirect()->route('planilla.index')->with('message', 'Planilla anulada con exito.');
     }
+
+    public function cobrar(Planilla $planilla)
+    {
+        return view('cobro.planilla', compact('planilla'));
+    }
 }

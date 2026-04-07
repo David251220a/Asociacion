@@ -119,8 +119,16 @@ class PlanillaAporteService
                 throw new \Exception('No existen asociados pendientes para generar la planilla.');
             }
 
+            $ultimoNumero = Planilla::where('planilla_anio', $anio)
+            ->lockForUpdate()
+            ->max('planilla_numero');
+
+            $siguienteNumero = $ultimoNumero ? $ultimoNumero + 1 : 1;
+
             $planilla = Planilla::create([
                 'tipo_asociado_id'     => $tipoAsociadoId,
+                'planilla_numero'      => $siguienteNumero,
+                'planilla_anio'        => $anio,
                 'mes'                  => $mes,
                 'anio'                 => $anio,
                 'fecha'                => now()->toDateString(),

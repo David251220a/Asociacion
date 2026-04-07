@@ -15,6 +15,10 @@ return new class extends Migration
     {
         Schema::create('factura_cobros', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('factura_id')->constrained();
+            $table->foreignId('forma_cobro_id')->constrained();
+            $table->foreignId('banco_id')->constrained();
+            $table->decimal('monto', 12 ,0)->default(0);
             $table->timestamps();
         });
     }

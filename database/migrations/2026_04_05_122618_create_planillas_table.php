@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('planillas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tipo_asociado_id')->constrained();
+            $table->integer('planilla_numero');
+            $table->integer('planilla_anio');
             $table->tinyInteger('mes');
             $table->integer('anio');
             $table->date('fecha');

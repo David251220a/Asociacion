@@ -97,6 +97,7 @@
                             <table class="table table-bordered table-hover table-striped table-checkable table-highlight-head mb-4">
                                 <thead>
                                     <tr>
+                                        <th class="">IdPLanilla</th>
                                         <th class="">Periodo</th>
                                         <th class="">Tipo Asociado</th>
                                         <th class="">Cantidad</th>
@@ -109,6 +110,9 @@
                                 <tbody>
                                     @foreach ($data as $item)
                                         <tr>
+                                            <td class="">
+                                                {{ $item->planilla_anio }}/{{ str_pad($item->planilla_numero, 5, '0', STR_PAD_LEFT) }}
+                                            </td>
                                             <td class="">
                                                 {{ $item->anio }}/{{$item->mes}}
                                             </td>
@@ -131,7 +135,17 @@
                                                         <polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
                                                     </svg>
                                                 </a>
-
+                                                
+                                                @if ($item->pagado == 0)
+                                                    <a href="{{route('planilla.cobrar', $item)}}" class="mr-3">
+                                                        <svg 
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+                                                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line>
+                                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                                        </svg>
+                                                    </a>
+                                                @endif
+                                            
                                                 @php
                                                     $puedeAnular = isset($ultimasPlanillas[$item->tipo_asociado_id]) && $ultimasPlanillas[$item->tipo_asociado_id] == $item->id;
                                                 @endphp
