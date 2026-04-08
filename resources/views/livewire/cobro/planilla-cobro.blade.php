@@ -29,6 +29,21 @@
                         <input type="text" value="{{ number_format($planilla->total, 0, ',', '.') }}" class="form-control text-right" readonly>
                     </div>
 
+                    <div class="form-group col-md-2">
+                        <label>Documento</label>
+                        <input type="text" wire:model.defer="documento" wire:blur="buscarPersona" id="documento" onkeyup="punto_decimal(this)" class="form-control text-right">
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>RUC</label>
+                        <input type="text" value="{{ $persona['ruc'] ?? '' }}" class="form-control text-right" readonly>
+                    </div>
+
+                    <div class="form-group col-md-5">
+                        <label>Persona</label>
+                        <input type="text" value="{{ $persona['nombre'] ?? '' }}" class="form-control" readonly>
+                    </div>
+
                     <div class="form-group col-md-3">
                         <label>Archivo Excel</label>
                         <input type="file" wire:model="archivo" class="form-control" accept=".xlsx,.xls" @if($verificado) disabled @endif>
@@ -213,9 +228,12 @@
                             <button 
                                 type="button" 
                                 wire:click="grabar" 
+                                wire:loading.attr="disabled"
+                                wire:target="grabar"
                                 class="btn btn-success"
                             >
-                                Grabar
+                                <span wire:loading.remove wire:target="grabar">Grabar</span>
+                                <span wire:loading wire:target="grabar">Procesando...</span>
                             </button>
                         </div>
                     </div>

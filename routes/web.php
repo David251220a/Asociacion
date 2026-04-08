@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AsociadoController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\FacturaCobroController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\PlanillaController;
@@ -51,6 +52,9 @@ Route::group([
     Route::get('/planilla/{planilla}/exportar-detalle', [PlanillaController::class, 'exportarDetalle'])->name('planilla.exportarDetalle');
     Route::post('/planilla/{planilla}/anular', [PlanillaController::class, 'anular'])->name('planilla.anular');
     Route::get('/planilla/{planilla}/cobrar', [PlanillaController::class, 'cobrar'])->name('planilla.cobrar');
+
+
+    Route::get('/factura/{factura}/ver', [FacturaCobroController::class, 'show'])->name('factura.show');
 
     
 });

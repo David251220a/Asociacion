@@ -79,7 +79,8 @@ class DatabaseSeeder extends Seeder
             PersonaSeeder::class,
             ObligacionesSeeder::class,
             TipoFamiliarSeeder::class,
-            TipoSeguroSeeder::class
+            TipoSeguroSeeder::class,
+            TipoFacturaSeeder::class
         ]);
     }
 }

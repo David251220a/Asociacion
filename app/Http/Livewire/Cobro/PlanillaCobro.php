@@ -2,10 +2,21 @@
 
 namespace App\Http\Livewire\Cobro;
 
+use App\Models\Aporte;
 use App\Models\Banco;
+use App\Models\Entidad;
+use App\Models\Establecimiento;
+use App\Models\Factura;
+use App\Models\FacturaAporte;
+use App\Models\FacturaCobro;
 use App\Models\FormaCobro;
+use App\Models\Numeracion;
+use App\Models\Persona;
 use App\Models\Planilla;
 use App\Models\PlanillaDetalle;
+use App\Models\Timbrado;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Facades\Excel;
@@ -26,6 +37,11 @@ class PlanillaCobro extends Component
     public $bancos = [];
     public $cobros = [];
     public $total_abonado = 0;
+    public $documento;
+    public $persona = null;
+    public $entidad = null;
+    public $establecimiento = null;
+    public $timbrado = null;
 
     public function mount(Planilla $planilla)
     {
@@ -49,6 +65,7 @@ class PlanillaCobro extends Component
         ->orderBy('descripcion')
         ->get();
         $this->bancos = Banco::where('estado_id', 1)
+        ->whereNotIn('id', 0)
         ->orderBy('descripcion')
         ->get();
         $this->cobros = [
@@ -59,6 +76,10 @@ class PlanillaCobro extends Component
                 'monto' => 0,
             ]
         ];
+
+        $this->entidad = Entidad::find(1);
+        $this->establecimiento = Establecimiento::find(1);
+        $this->timbrado = Timbrado::find(1);
     }
 
     public function verificar()
@@ -253,4 +274,236 @@ class PlanillaCobro extends Component
 
         return true;
     }
+
+    public function grabar()
+    {
+        if (!$this->archivo) {
+            $this->emit('mensaje_error', 'Debe seleccionar un archivo Excel.');
+            return false;
+        }
+
+        if (!$this->verificado) {
+            $this->emit('mensaje_error', 'Primero debe verificar el archivo.');
+            return false;
+        }
+
+        if ((int) $this->monto_excel <= 0) {
+            $this->emit('mensaje_error', 'El monto total del archivo debe ser mayor a cero.');
+            return false;
+        }
+
+        if (!$this->validarCobros()) {
+            $this->emit('mensaje_error', 'Debe corregir las formas de cobro antes de grabar.');
+            return false;
+        }
+
+        if (!$this->persona || empty($this->persona['id'])) {
+            $this->emit('mensaje_error', 'Debe seleccionar una persona válida.');
+            return;
+        }
+
+        $factura = null;
+        DB::beginTransaction();
+
+        try {
+
+            $numeracion = Numeracion::where('timbrado_id', $this->timbrado->id)
+            ->where('establecimiento_id', $this->establecimiento->id)
+            ->where('tipo_documento_id', 1)
+            ->lockForUpdate()
+            ->first();
+            
+            $numeroActual = $numeracion->numero_siguiente;
+            $tipo = strtoupper($this->planilla->tipoAsociado->descripcion);
+            $concepto = 'COBRO PLANILLA ' . $tipo . ' ' . $this->planilla->planilla_numero . '/' . $this->planilla->planilla_anio;
+
+            $factura = Factura::create([
+                'persona_id' => $this->persona['id'],
+                'timbrado_id' => $this->timbrado->id,
+                'establecimiento_id' => $this->establecimiento->id,
+                'tipo_factura_id' => 1,
+                'registro_id' => 0,
+                'factura_sucursal' => $this->establecimiento->sucursal,
+                'factura_general' => $this->establecimiento->general,
+                'factura_numero' => $numeroActual,
+                'fecha_factura' => now(),
+                'tipo_documento_id' => 1,
+                'tipo_transaccion_id' => $this->entidad->tipo_transaccion_id,
+                'condicion_pago' => 1,
+                'concepto' => $concepto,
+                'monto_total'         => $this->monto_excel,
+                'monto_abonado'       => $this->total_abonado,
+                'monto_devuelto'      => 0,
+                'estado_id'           => 1,
+                'anulado'             => 0,
+                'generado_sifen'      => 0,
+                'user_id'             => auth()->id(),
+            ]);
+
+            $rows = Excel::toArray([], $this->archivo);
+
+            if (empty($rows) || empty($rows[0])) {
+                throw new \Exception('El archivo no contiene datos.');
+            }
+
+            $filas = collect($rows[0])->slice(1)->values();
+            $datosExcel = $filas->map(function ($fila, $index) {
+                return [
+                    'fila'      => $index + 2,
+                    'documento' => $this->limpiarDocumento($fila[0] ?? null),
+                    'nombre'    => trim((string) ($fila[1] ?? '')),
+                    'monto'     => $this->limpiarMonto($fila[2] ?? 0),
+                ];
+            })->filter(function ($item) {
+                return !empty($item['documento']) && (int) $item['monto'] > 0;
+            })->values();
+
+            if ($datosExcel->isEmpty()) {
+                throw new \Exception('El archivo no tiene registros válidos para grabar.');
+            }
+
+            // Traer asociados de la planilla
+            $detallesPlanilla = PlanillaDetalle::query()
+            ->join('asociados', 'asociados.id', '=', 'planilla_detalles.asociado_id')
+            ->join('personas', 'personas.id', '=', 'asociados.persona_id')
+            ->where('planilla_detalles.planilla_id', $this->planilla->id)
+            ->where('planilla_detalles.estado_id', 1)
+            ->select(
+                'planilla_detalles.asociado_id',
+                'personas.documento'
+            )
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'asociado_id' => $item->asociado_id,
+                    'documento'   => $this->limpiarDocumento($item->documento),
+                ];
+            });
+
+            $mapaPlanilla = collect($detallesPlanilla)->keyBy('documento');
+
+            $ahora = now();
+            $fechaHoy = now()->toDateString();
+            $fechaAporte = $fechaAporte = Carbon::createFromDate($this->planilla->anio, $this->planilla->mes, 1)->endOfMonth()->toDateString();;
+            $userId = auth()->id();
+
+            $insertFacturaAportes = [];
+            $insertAportes = [];
+
+            foreach ($datosExcel as $item) {
+                if (!isset($mapaPlanilla[$item['documento']])) {
+                    continue;
+                }
+
+                $asociadoId = $mapaPlanilla[$item['documento']]['asociado_id'];
+                $monto = (int) $item['monto'];
+
+                $insertFacturaAportes[] = [
+                    'asociado_id'          => $asociadoId,
+                    'planilla'             => 0,
+                    'planilla_numero'      => $this->planilla->planilla_numero,
+                    'planilla_anio'        => $this->planilla->planilla_anio,
+                    'fecha_aporte'         => $fechaAporte,
+                    'mes'                  => $this->planilla->mes,
+                    'anio'                 => $this->planilla->anio,
+                    'aporte'               => $monto,
+                    'estado_id'            => 1,
+                    'user_id'              => $userId,
+                    'usuario_modificacion' => $userId,
+                    'created_at'           => $ahora,
+                    'updated_at'           => $ahora,
+                ];
+
+                $insertAportes[] = [
+                    'asociado_id'          => $asociadoId,
+                    'tipo_asociado_id'     => $this->planilla->tipo_asociado_id,
+                    'mes'                  => $this->planilla->mes,
+                    'anio'                 => $this->planilla->anio,
+                    'fecha_aporte'         => $fechaAporte,
+                    'aporte'               => $monto,
+                    'fecha_ingreso'        => $fechaHoy,
+                    'factura_id'           => $factura->id,
+                    'estado_id'            => 1,
+                    'user_id'              => $userId,
+                    'usuario_modificacion' => $userId,
+                    'created_at'           => $ahora,
+                    'updated_at'           => $ahora,
+                ];
+            }
+
+            if (!empty($insertFacturaAportes)) {
+                FacturaAporte::insert($insertFacturaAportes);
+            }
+
+            if (!empty($insertAportes)) {
+                Aporte::insert($insertAportes);
+            }
+
+            $insertCobros = [];
+
+            foreach ($this->cobros as $cobro) {
+                $formaCobroId = $cobro['forma_cobro_id'] ?? null;
+                $bancoVer = (int) ($cobro['banco_ver'] ?? 0);
+                $bancoDefaultId = 1;
+                $bancoId = $bancoVer === 1 ? $cobro['banco_id'] : $bancoDefaultId;
+                $monto = $this->limpiarMonto($cobro['monto'] ?? 0);
+                if($bancoId == ''){
+                    $bancoId = 0;
+                }
+                if (!$formaCobroId || $monto <= 0) {
+                    continue;
+                }
+
+                $insertCobros[] = [
+                    'factura_id'     => $factura->id,
+                    'forma_cobro_id' => $formaCobroId,
+                    'banco_id'       => $bancoId,
+                    'monto'          => $monto,
+                    'created_at'     => $ahora,
+                    'updated_at'     => $ahora,
+                ];
+            }
+
+            if (!empty($insertCobros)) {
+                FacturaCobro::insert($insertCobros);
+            }
+
+            $numeracion->numero_siguiente = $numeroActual + 1;
+            $numeracion->save();
+
+            DB::commit();
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->emit('mensaje_error', $e->getMessage());
+            return;
+        }
+
+        return redirect()->route('factura.show', $factura->id)->with('message', 'Ingreso realizado correctamente.');
+    }
+
+    public function buscarPersona()
+    {
+        $this->persona = null;
+
+        if (empty($this->documento)) {
+            return;
+        }
+
+        $documentoLimpio = $this->limpiarDocumento($this->documento);
+
+        $persona = Persona::where('documento', $documentoLimpio)->first();
+
+        if (!$persona) {
+            $this->emit('mensaje_error', 'No se encontró la persona.');
+            return;
+        }
+
+        $this->persona = [
+            'id' => $persona->id,
+            'ruc' => $persona->ruc,
+            'nombre' => $persona->nombre . ' ' . $persona->apellido,
+        ];
+    }
+
 }
