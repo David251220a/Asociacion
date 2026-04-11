@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('factura_aportes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('factura_id')->constrained();
             $table->foreignId('asociado_id')->constrained();
             $table->tinyInteger('planilla')->default(0)->comment('0-INDIVIDUAL;1-PLANILLA');
             $table->integer('planilla_numero')->default(0);

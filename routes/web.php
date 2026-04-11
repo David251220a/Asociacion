@@ -2,10 +2,11 @@
 
 use App\Http\Controllers\AsociadoController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\FacturaCobroController;
+use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\PlanillaController;
+use App\Http\Controllers\SifenController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -53,8 +54,10 @@ Route::group([
     Route::post('/planilla/{planilla}/anular', [PlanillaController::class, 'anular'])->name('planilla.anular');
     Route::get('/planilla/{planilla}/cobrar', [PlanillaController::class, 'cobrar'])->name('planilla.cobrar');
 
+    Route::get('/factura', [FacturaController::class, 'index'])->name('factura.index');
+    Route::get('/factura/{factura}/ver', [FacturaController::class, 'show'])->name('factura.show');
 
-    Route::get('/factura/{factura}/ver', [FacturaCobroController::class, 'show'])->name('factura.show');
+    Route::post('/sifen/{factura}/enviar', [SifenController::class, 'enviar'])->name('sifen.enviar');
 
     
 });

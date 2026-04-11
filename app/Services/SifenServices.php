@@ -607,6 +607,7 @@ class SifenServices
 
             // 3) cURL
             $url = config('facturacion.link_api_directo')[($this->entidad->ambiente == 1) ? 'produccion' : 'test']; // siRecepDE
+            
             //$url = 'https://sifen-test.set.gov.py/de/ws/sync/recibe.wsdl';
             $ruta_cert = storage_path('app/public/' . $this->entidad->firma);
             //$password = 'LqO#9j0E';
@@ -680,22 +681,27 @@ class SifenServices
             ]);
 
             // 7) Retorno amigable
-            $ok = ($enviado === 'Y');
-            $texto = "Estado: ".($estado ?: 'RECHAZADO')." | Código: ".($cod ?: '—')." | Mensaje: ".($mensaje ?: '—');
+            // $ok = ($enviado === 'Y');
+            // $texto = "Estado: ".($estado ?: 'RECHAZADO')." | Código: ".($cod ?: '—')." | Mensaje: ".($mensaje ?: '—');
 
             return [
-                $ok,
-                $texto,
-                'estado'  => $estado ?: 'RECHAZADO',
-                'codigo'  => $cod,
-                'mensaje' => $mensaje,
-                'cdc'     => $cdcResp ?: $sifen->cdc,
-                'fecha'   => $fecha_fmt,
+                'success' => true,
+                'message' => "Estado: ".($estado ?: 'RECHAZADO')." | Código: ".($cod ?: '—')." | Mensaje: ".($mensaje ?: '—'),
+                'data' => [
+                    'estado'  => $estado ?: 'RECHAZADO',
+                    'codigo'  => $cod,
+                    'mensaje' => $mensaje,
+                    'cdc'     => $cdcResp ?: $sifen->cdc,
+                    'fecha'   => $fecha_fmt,
+                ],
             ];
 
         } catch (\Exception $e) {
-            // Error general
-            return [false, 'Excepción: ' . $e->getMessage()];
+           return [
+                'success' => false,
+                'message' => 'Excepción: ' . $e->getMessage(),
+                'data' => null,
+            ];
         }
     }
 

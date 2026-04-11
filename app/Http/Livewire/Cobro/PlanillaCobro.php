@@ -399,6 +399,7 @@ class PlanillaCobro extends Component
                 $monto = (int) $item['monto'];
 
                 $insertFacturaAportes[] = [
+                    'factura_id' => $factura->id,
                     'asociado_id'          => $asociadoId,
                     'planilla'             => 0,
                     'planilla_numero'      => $this->planilla->planilla_numero,

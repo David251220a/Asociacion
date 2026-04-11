@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Entidad;
 use App\Models\Establecimiento;
 use App\Models\Factura;
+use App\Models\FacturaAporte;
 use App\Models\Timbrado;
 use Carbon\Carbon;
 
@@ -24,9 +25,20 @@ class FacturaJsonBuilder
 
     public function jsonContado()
     {
+        if (!$this->factura) {
+            throw new \Exception('No se encontró la factura.');
+        }
+
+        if (!$this->factura->persona) {
+            throw new \Exception('La factura no tiene cliente asociado.');
+        }
+
+        if ($this->facturaPago->isEmpty()) {
+            throw new \Exception('La factura no tiene formas de pago.');
+        }
+
         $codigoSeguridadAleatorio = random_int(100000000, 999999999);
-        // $fecha = $this->factura->created_at . ' ' . now()->format('H:i:s');
-       $fecha = $this->factura->fecha_factura;
+        $fecha = $this->factura->created_at;
 
         $json = [
             'fecha' => $fecha,
@@ -56,18 +68,6 @@ class FacturaJsonBuilder
             'diplomatico' => false,
             'dncp' => 0
         ];
-
-        // $json['documentoAsociado'] = [
-        //     'remision' => false,
-        //     'tipoDocumentoAsoc' => 1,
-        //     'cdcAsociado' => '',
-        //     'establecimientoAsoc' => '',
-        //     'puntoAsoc' => '',
-        //     'numeroAsoc' => '',
-        //     'tipoDocuemntoIm' => '1',
-        //     'fechaDocIm' => '',
-        //     'timbradoAsoc' => ''
-        // ];
 
         $items = [];
         $item_id = 0;
@@ -113,6 +113,103 @@ class FacturaJsonBuilder
         $json['totalRedondeo'] = 0;
 
         return $json;
+    }
+
+    public function jsonContadoAporte()
+    {
+        try {
+            if (!$this->factura) {
+                throw new \Exception('No se encontró la factura.');
+            }
+
+            if (!$this->factura->persona) {
+                throw new \Exception('La factura no tiene cliente asociado.');
+            }
+
+            if ($this->facturaPago->isEmpty()) {
+                throw new \Exception('La factura no tiene formas de pago.');
+            }
+
+            $detalle = FacturaAporte::where('factura_id', $this->factura->id)->first();
+            $codigoSeguridadAleatorio = random_int(100000000, 999999999);
+            $fecha = $this->factura->created_at;
+            $planillaId = str_pad($detalle->planilla_numero, 5, '0', STR_PAD_LEFT) . '/' . $detalle->planilla_anio;
+
+            $descripcion = "APORTE {$this->factura->mes}/{$this->factura->anio} PLANILLA N° {$planillaId}";
+
+            $json = [
+                'fecha' => $fecha,
+                'establecimiento' => $this->factura->factura_sucursal,
+                'punto' => $this->factura->factura_general,
+                'numero' => str_pad($this->factura->factura_numero, 7, '0', STR_PAD_LEFT),
+                'descripcion' => $this->factura->concepto,
+                'tipoDocumento' => $this->factura->tipo_documento_id, // 1 = Factura
+                'tipoEmision' => 1,
+                'tipoTransaccion' => $this->factura->tipo_transaccion_id,
+                'receiptid' => $this->factura->id,
+                'condicionPago' => $this->factura->condicion_pago,
+                'moneda' => 'PYG',
+                'cambio' => 0,
+                'codigoSeguridadAleatorio' => strval($codigoSeguridadAleatorio),
+            ];
+
+            $persona = $this->factura->persona;
+
+            $json['cliente'] = [
+                'ruc' => $persona->ruc ?: $persona->documento,
+                'nombre' => $persona->nombre . ' ' . $persona->apellido,
+                'direccion' => $persona->direccion ?? 'N/A',
+                'cpais' => 'PRY',
+                'correo' => $persona->email ?? 'no-reply@email.com',
+                'numCasa' => 0,
+                'diplomatico' => false,
+                'dncp' => 0
+            ];
+
+            $items = [];
+            $items[] = [
+                'descripcion'    => $descripcion,
+                'codigo'         => '0000',
+                'unidadMedida'   => 77.0,
+                'ivaTasa'        => 0,
+                'ivaAfecta'      => 3,
+                'cantidad'       => 1,
+                'precioUnitario' => floatval($this->factura->monto_total),
+                'precioTotal'    => floatval($this->factura->monto_total),
+                'baseGravItem'   => floatval($this->factura->monto_total),
+                'liqIvaItem'     => 0,
+            ];
+
+            $json['items'] = $items;
+
+            $pagos = [];
+            $totalPago = 0;
+
+            foreach ($this->facturaPago as $pago) {
+                $pagos[] = [
+                    'tipoPago' => (string) $pago->forma_cobro_id,
+                    'descripcion_pago' => $pago->banco->descripcion,
+                    'monto' => floatval($pago->monto)
+                ];
+                $totalPago += $pago->monto;
+            }
+
+            $json['pagos'] = $pagos;
+            $json['totalPago'] = $totalPago;
+            $json['totalRedondeo'] = 0;
+
+            return [
+                'success' => true,
+                'message' => 'JSON generado correctamente.',
+                'data' => $json,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
+        }
     }
 
     // Función: genera un código de seguridad aleatorio de 8 dígitos

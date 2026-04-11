@@ -10,4 +10,9 @@ class FacturaAporte extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function planillas()
+    {
+        return $this->belongsTo(Planilla::class, 'planilla_id');
+    }
 }
