@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
+use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\SifenController;
 use Illuminate\Support\Facades\Auth;
@@ -56,8 +57,10 @@ Route::group([
 
     Route::get('/factura', [FacturaController::class, 'index'])->name('factura.index');
     Route::get('/factura/{factura}/ver', [FacturaController::class, 'show'])->name('factura.show');
+    Route::post('/factura/{factura}/anular', [FacturaController::class, 'anular'])->name('factura.anular');
 
     Route::post('/sifen/{factura}/enviar', [SifenController::class, 'enviar'])->name('sifen.enviar');
 
+    Route::get('/pdf/{factura}/factura', [PdfController::class, 'factura'])->name('pdf.factura');
     
 });

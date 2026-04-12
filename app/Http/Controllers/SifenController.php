@@ -13,13 +13,14 @@ class SifenController extends Controller
 {
     public $sifen;
 
-    public function __construct()
+    public function __construct(SifenServices $sifen)
     {
-        $this->sifen = new SifenServices();
+        $this->sifen = $sifen;
     }
 
-    public function enviar(Factura $factura): array
+    public function enviar(Factura $factura)
     {
+        
         try {
             $sifen = Sifen::where('factura_id', $factura->id)->first();
 
@@ -58,11 +59,12 @@ class SifenController extends Controller
                $respuestaJson = $builder->jsonContadoAporte();
 
                 if (!$respuestaJson['success']) {
-                    return [
-                        'success' => false,
-                        'message' => $respuestaJson['message'],
-                        'data' => null,
-                    ];
+                    // return [
+                    //     'success' => false,
+                    //     'message' => $respuestaJson['message'],
+                    //     'data' => null,
+                    // ];
+                    throw new \Exception($respuestaJson['message']);
                 }
 
                 $json = $respuestaJson['data'];
@@ -73,11 +75,12 @@ class SifenController extends Controller
             $documento = $xml->generate($json, $factura->timbrado_id);
             $data = $documento['data'];
             if (!$documento['success']) {
-                return [
-                    'success' => false,
-                    'message' => $documento['message'],
-                    'data' => null,
-                ];
+                throw new \Exception($documento['message']);
+                // return [
+                //     'success' => false,
+                //     'message' => $documento['message'],
+                //     'data' => null,
+                // ];
             }
             $sifen->update([
                 'cdc' => $data['cdc'],
@@ -95,14 +98,16 @@ class SifenController extends Controller
             ]);
             
             $res = $this->sifen->enviar_directo($sifen);
-            return $res;
+            return redirect()->route('factura.show', $factura)->with('message', $res['message']);
 
         } catch (\Throwable $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ];
+            return redirect()->route('factura.show')->with('message',  $e->getMessage());
+            // return [
+            //     'success' => false,
+            //     'message' => $e->getMessage(),
+            //     'data' => null,
+            // ];
         }
+
     }
 }

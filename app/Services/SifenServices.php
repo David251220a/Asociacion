@@ -96,31 +96,40 @@ class SifenServices
                 3 => 'INUTILIZACION',
                 default => 'DESCONOCIDO',
             };
+            
+            $dEstRes = strtoupper($dEstRes);
 
-            $sifen->update([
+            $updateData = [
                 'evento' => $eventoNombre,
                 'sifen_evento_codrespuesta' => $dCodRes,
-                'sifen_evento_msjrespuesta' => $dMsgRes,   // <-- creá/usa este campo
+                'sifen_evento_msjrespuesta' => $dMsgRes,
                 'sifen_evento_estado' => $dEstRes,
-                'sifen_cod' => $dProtAut
-            ]);
+            ];
+
+            if (!is_null($dProtAut)) {
+                $updateData['sifen_cod'] = $dProtAut;
+            }
+
+            $sifen->update($updateData);
 
             return [
-                'status'  => $dEstRes,      // texto
-                'ok'      => $dEstRes !== 'Rechazado', // boolean
-                'code'    => $dCodRes,
-                'mensaje' => $dMsgRes,
-                'fecha'   => $dFecProc,
-                'raw'     => $response, // opcional: guardar/debug
+                'success' => true,
+                'message' => $dMsgRes,
+                'data' => [
+                    'status' => $dEstRes,
+                    'code' => $dCodRes,
+                    'mensaje' => $dMsgRes,
+                    'fecha' => $dFecProc,
+                    'idprod' => $dProtAut,
+                    'raw' => $response,
+                ],
             ];
 
         } catch (\Exception $e) {
             return [
-                'status'  => 'Rechazado',
-                'ok'      => false,
-                'code'    => 0,
-                'mensaje' => $e->getMessage(),
-                'fecha'   => '',
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -299,11 +308,27 @@ class SifenServices
                 'secuencia_evento' => $codSecuencia1
             ]);
 
-            return $xmlFirmado;
+            // return $xmlFirmado;
+
+            return [
+                'success' => true,
+                'message' => 'XML de cancelación generado correctamente.',
+                'data' => [
+                    'xml_firmado' => $xmlFirmado,
+                    'ruta_xml' => $relativePath,
+                    'secuencia_evento' => $codSecuencia1,
+                    'cdc' => $cdc,
+                    'fecha_firma' => $fechaFirma,
+                ]
+            ];
 
         } catch (\Exception $e) {
             Log::error('Fallo al generar XML Evento: ' . $e->getMessage());
-            throw new \Exception($e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
         }
     }
 

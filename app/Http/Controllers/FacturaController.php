@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Aporte;
 use App\Models\Entidad;
 use App\Models\Factura;
 use App\Models\FacturaAporte;
+use App\Models\Planilla;
+use App\Models\Sifen;
+use App\Services\SifenServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FacturaController extends Controller
 {
+    public $sifen;
+
 
     public function index(Request $request)
     {
@@ -56,7 +63,84 @@ class FacturaController extends Controller
                 ]
             ]);
         }
-        
+
         return view('factura.show', compact('factura', 'entidad', 'data'));
+    }
+
+    public function anular(Factura $factura, SifenServices $sifen)
+    {
+       if (!$factura->sifen || $factura->sifen->sifen_estado !== 'APROBADO') {
+            return redirect()->route('factura.index')->with('message', 'No puede anular la factura si no fue aprobada por SIFEN');
+        }
+
+        if ($factura->estado_id == 2) {
+            return redirect()->route('factura.index')->with('message', 'La factura ya está anulada');
+        }
+        
+        try {
+            $data = $factura->sifen;
+            $xml_formacion = $sifen->cancelacion($data, 'Facturacion incorrecta.');
+            if (!$xml_formacion['success']) {
+                throw new \Exception($xml_formacion['message']);
+            }
+            $xml = $xml_formacion['data']['xml_firmado'];
+            $secuencia = $xml_formacion['data']['secuencia_evento'];
+            $respuesta = $sifen->envioEvento($data, $xml, $secuencia, 2);
+            if (!$respuesta['success']) {
+                throw new \Exception($respuesta['message']);
+            }
+
+            if (strtoupper($respuesta['data']['status']) !== 'APROBADO') {
+                throw new \Exception('SIFEN no aprobó la cancelación: ' . $respuesta['message']);
+            }
+
+            DB::transaction(function () use ($factura) {
+                $detalle = FacturaAporte::where('factura_id', $factura->id)->first();
+
+                if ($detalle && $detalle->planilla_id) {
+                    $planilla = Planilla::find($detalle->planilla_id);
+
+                    if ($planilla) {
+                        $planilla->update([
+                            'pagado' => 0,
+                            'monto_pagado' => 0,
+                            'fecha_pagado' => null,
+                            'usuario_modificacion' => auth()->id(),
+                        ]);
+                    }
+                }
+                $fecha_anulado = now()->toDateString();
+                $factura->update([
+                    'estado_id' => 2,
+                    'usuario_anulacion' => auth()->id(),
+                    'fecha_anulado' => $fecha_anulado,
+                    'motivo_anulacion' => 'Facturacion incorrecta',
+                ]);
+
+                FacturaAporte::where('factura_id', $factura->id)->update([
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+
+                $factura->forma_pagos()->update([
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+
+                Aporte::where('factura_id', $factura->id)->update([
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+            });
+
+
+        } catch (\Throwable $e) {
+            return redirect()->route('factura.index')->with('message',  $e->getMessage());
+        }
+
+        return redirect()->route('factura.index')->with('message', 'Factura anulada');
     }
 }

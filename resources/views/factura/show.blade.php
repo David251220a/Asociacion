@@ -193,12 +193,12 @@
                                                 @csrf
                                                 <button type="submit" class="btn btn-success w-100 mb-4">Enviar</button>
                                             </form>
-                                            
+                                             
                                         </div>
                                     @endif
                                     
                                     <div class="col-xl-12 col-md-3 col-sm-6">
-                                        <a href="#" class="btn btn-secondary btn-print  action-print">Imprimir</a>
+                                        <a href="{{route('pdf.factura', $factura)}}" target="__blank" class="btn btn-secondary btn-print  action-print">Imprimir</a>
                                     </div>
                                     <div class="col-xl-12 col-md-3 col-sm-6">
                                         <a href="{{route('factura.index')}}" class="btn btn-info btn-download">Regresar a Factura</a>

@@ -148,6 +148,9 @@
                                             
                                                 @php
                                                     $puedeAnular = isset($ultimasPlanillas[$item->tipo_asociado_id]) && $ultimasPlanillas[$item->tipo_asociado_id] == $item->id;
+                                                    if($item->pagado == 1){
+                                                        $puedeAnular = false;
+                                                    }
                                                 @endphp
                                                 
                                                 @if($puedeAnular)
