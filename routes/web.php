@@ -58,6 +58,7 @@ Route::group([
     Route::get('/factura', [FacturaController::class, 'index'])->name('factura.index');
     Route::get('/factura/{factura}/ver', [FacturaController::class, 'show'])->name('factura.show');
     Route::post('/factura/{factura}/anular', [FacturaController::class, 'anular'])->name('factura.anular');
+    Route::get('/factura/cobro-aporte/individual', [FacturaController::class, 'aporte'])->name('factura.aporte');
 
     Route::post('/sifen/{factura}/enviar', [SifenController::class, 'enviar'])->name('sifen.enviar');
 

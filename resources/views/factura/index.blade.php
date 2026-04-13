@@ -65,8 +65,10 @@
                                         <th class="">Beneficiario</th>
                                         <th class="">Concepto</th>
                                         <th>Total</th>
+                                        <th class="">Estado</th>
                                         <th class="">Estado Sifen</th>
                                         <th class="">Link Sifen</th>
+                                        <th class="">Sifen Evento</th>
                                         <th class="text-center">Accion</th>
                                     </tr>
                                 </thead>
@@ -91,7 +93,13 @@
                                             <td class="text-right">
                                                 {{number_format($item->monto_total, 0, ',', '.')}}
                                             </td>
-                                            
+                                            <td class="text-center">
+                                                @if($item->estado_id == 1)
+                                                    <span class="badge badge-success">APROBADO</span>
+                                                @else
+                                                    <span class="badge badge-warning">ANULADO</span>
+                                                @endif
+                                            </td>
                                             <td class="text-center">
                                                 @if($item->sifen?->sifen_estado == 'APROBADO')
                                                     <span class="badge badge-success">APROBADO</span>
@@ -101,12 +109,17 @@
                                                     <span class="badge badge-warning">PENDIENTE</span>
                                                 @endif
                                             </td>
+                                
                                             <td class="text-center">
                                                 @if($item->sifen?->link_qr)
                                                     <a href="{{ $item->sifen->link_qr }}" class="btn btn-info" target="_blank">
                                                         Sifen
                                                     </a>
                                                 @endif
+                                            </td>
+
+                                            <td>
+                                                {{$item->sifen?->sifen_evento_estado}}
                                             </td>
                                             
                                             <td class="text-center">
@@ -169,78 +182,14 @@
                                                         </div>
                                                     @endif
                                                 @endif
-                                                
-                                                
-                                                {{-- @if ($item->pagado == 0)
-                                                    <a href="{{route('planilla.cobrar', $item)}}" class="mr-3">
-                                                        <svg 
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
-                                                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line>
-                                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                                                        </svg>
-                                                    </a>
-                                                @endif
                                             
-                                                @php
-                                                    $puedeAnular = isset($ultimasPlanillas[$item->tipo_asociado_id]) && $ultimasPlanillas[$item->tipo_asociado_id] == $item->id;
-                                                @endphp
-                                                
-                                                @if($puedeAnular)
-                                                    <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
-                                                        <svg 
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-                                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline>
-                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17">
-                                                            </line><line x1="14" y1="11" x2="14" y2="17"></line>
-                                                        </svg>
-                                                    </button>
-
-                                                    <div class="modal fade" 
-                                                        id="exampleModalCenter_{{ $item->id }}" 
-                                                        tabindex="-1" 
-                                                        role="dialog"
-                                                        data-backdrop="static"
-                                                        data-keyboard="false"
-                                                        aria-labelledby="modalTitle_{{ $item->id }}" 
-                                                        aria-hidden="true">
-
-                                                        <div class="modal-dialog modal-dialog-centered" role="document">
-                                                            <div class="modal-content">
-
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
-                                                                        Eliminar Planilla
-                                                                    </h5>
-                                                                </div>
-
-                                                                <div class="modal-body">
-                                                                    ¿Está seguro que desea eliminar esta planilla?
-                                                                </div>
-
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-primary" data-dismiss="modal">
-                                                                        Cancelar
-                                                                    </button>
-                                                                    <form action="{{route('planilla.anular', $item)}}" method="POST">
-                                                                        @csrf
-                                                                        <button type="submit"  class="btn btn-danger">
-                                                                            Eliminar
-                                                                        </button>
-                                                                    </form>
-                                                                    
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endif --}}
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot>
                                     <th>
-                                        <td colspan="8"></td>
+                                        <td colspan="11"></td>
                                     </th>
                                 </tfoot>
                             </table>

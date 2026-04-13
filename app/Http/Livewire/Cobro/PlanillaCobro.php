@@ -65,7 +65,7 @@ class PlanillaCobro extends Component
         ->orderBy('descripcion')
         ->get();
         $this->bancos = Banco::where('estado_id', 1)
-        ->whereNotIn('id', 0)
+        ->where('id','<>',0)
         ->orderBy('descripcion')
         ->get();
         $this->cobros = [
