@@ -50,4 +50,10 @@ class Factura extends Model
     {
         return $query->whereRelation('sifen', 'sifen_estado', 'RECHAZADO');
     }
+
+    public function timbrado()
+    {
+        return $this->belongsTo(Timbrado::class);
+    }
+
 }

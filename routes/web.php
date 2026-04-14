@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AsociadoController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\EntidadController;
+use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
@@ -63,5 +65,19 @@ Route::group([
     Route::post('/sifen/{factura}/enviar', [SifenController::class, 'enviar'])->name('sifen.enviar');
 
     Route::get('/pdf/{factura}/factura', [PdfController::class, 'factura'])->name('pdf.factura');
+
+    Route::get('/entidad', [EntidadController::class, 'index'])->name('entidad.index');
+    Route::get('/entidad/firma', [EntidadController::class, 'firma'])->name('entidad.firma');
+    Route::post('/entidad/firma', [EntidadController::class, 'firma_post'])->name('entidad.firma_post');
+    Route::get('/entidad/obligaciones/agregar', [EntidadController::class, 'obligaciones'])->name('entidad.obligaciones');
+    Route::post('/entidad/obligaciones/agregar', [EntidadController::class, 'obligaciones_post'])->name('entidad.obligaciones_post');
+    Route::get('/entidad/obligaciones/{obligaciones}/editar', [EntidadController::class, 'obligacion_editar'])->name('entidad.obligacion_editar');
+    Route::post('/entidad/obligaciones/{obligaciones}/editar', [EntidadController::class, 'obligacion_editar_post'])->name('entidad.obligacion_editar_post');
+
+    Route::get('/establecimiento', [EstablecimientoController::class, 'index'])->name('establecimiento.index');
+    Route::get('/establecimiento/crear', [EstablecimientoController::class, 'create'])->name('establecimiento.create');
+    Route::post('/establecimiento/crear', [EstablecimientoController::class, 'store'])->name('establecimiento.store');
+    Route::get('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'edit'])->name('establecimiento.edit');
+    Route::post('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'update'])->name('establecimiento.update');
     
 });

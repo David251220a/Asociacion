@@ -10,4 +10,15 @@ class Establecimiento extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function entidad()
+    {
+        return $this->belongsTo(Entidad::class);
+    }
+
+
+    public function ciudad()
+    {
+        return $this->belongsTo(Ciudad::class);
+    }
 }

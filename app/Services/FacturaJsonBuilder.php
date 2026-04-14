@@ -169,7 +169,7 @@ class FacturaJsonBuilder
             $items = [];
             $items[] = [
                 'descripcion'    => $descripcion,
-                'codigo'         => '0000',
+                'codigo'         => '0001',
                 'unidadMedida'   => 77.0,
                 'ivaTasa'        => 0,
                 'ivaAfecta'      => 3,
