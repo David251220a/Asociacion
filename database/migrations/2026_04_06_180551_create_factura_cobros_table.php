@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('forma_cobro_id')->constrained();
             $table->foreignId('banco_id')->constrained();
             $table->decimal('monto', 12 ,0)->default(0);
+            $table->foreignId('estado_id')->constrained();
             $table->timestamps();
         });
     }

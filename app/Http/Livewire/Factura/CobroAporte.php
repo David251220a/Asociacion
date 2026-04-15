@@ -12,6 +12,8 @@ use App\Models\FacturaAporte;
 use App\Models\FacturaCobro;
 use App\Models\FormaCobro;
 use App\Models\Numeracion;
+use App\Models\ResumenAnual;
+use App\Models\ResumenMensual;
 use App\Models\Timbrado;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -281,6 +283,7 @@ class CobroAporte extends Component
                 'tipo_documento_id' => 1,
                 'tipo_transaccion_id' => $this->entidad->tipo_transaccion_id,
                 'condicion_pago' => 1,
+                'cuota' => 0,
                 'concepto' => $concepto,
                 'monto_total'         => $total_seleccionado,
                 'monto_abonado'       => $total,
@@ -365,6 +368,7 @@ class CobroAporte extends Component
                     'forma_cobro_id' => $formaCobroId,
                     'banco_id'       => $bancoId,
                     'monto'          => $monto,
+                    'factura_id'     => 1,
                     'created_at'     => $ahora,
                     'updated_at'     => $ahora,
                 ];
@@ -376,6 +380,89 @@ class CobroAporte extends Component
 
             $numeracion->numero_siguiente = $numeroActual + 1;
             $numeracion->save();
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESUMEN MENSUAL
+            |--------------------------------------------------------------------------
+            */
+            $fechaResumen = Carbon::parse($factura->fecha_factura);
+            $anioResumen = (int) $fechaResumen->year;
+            $mesResumen  = (int) $fechaResumen->month;
+            $montoIngreso = (float) $factura->monto_total;
+
+            $resumenMensual = ResumenMensual::where('anio', $anioResumen)
+            ->where('mes', $mesResumen)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$resumenMensual) {
+                $saldoAnterior = 0;
+
+                $mesAnterior = $mesResumen - 1;
+                $anioAnterior = $anioResumen;
+
+                if ($mesAnterior <= 0) {
+                    $mesAnterior = 12;
+                    $anioAnterior = $anioResumen - 1;
+                }
+
+                $resumenMesAnterior = ResumenMensual::where('anio', $anioAnterior)
+                ->where('mes', $mesAnterior)
+                ->first();
+
+                if ($resumenMesAnterior) {
+                    $saldoAnterior = (float) $resumenMesAnterior->saldo_final;
+                }
+
+                $resumenMensual = ResumenMensual::create([
+                    'anio'            => $anioResumen,
+                    'mes'             => $mesResumen,
+                    'total_ingreso'   => 0,
+                    'total_egreso'    => 0,
+                    'saldo_final'     => $saldoAnterior,
+                    'fecha_calculo'   => null,
+                    'usuario_calculo' => null,
+                    'observacion'     => 'Creado automáticamente desde cobro de planilla',
+                ]);
+            }
+
+            $resumenMensual->total_ingreso = (float) $resumenMensual->total_ingreso + $montoIngreso;
+            $resumenMensual->saldo_final   = (float) $resumenMensual->saldo_final + $montoIngreso;
+            $resumenMensual->save();
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESUMEN ANUAL
+            |--------------------------------------------------------------------------
+            */
+            $resumenAnual = ResumenAnual::where('anio', $anioResumen)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$resumenAnual) {
+                $saldoInicialAnual = 0;
+
+                $anualAnterior = ResumenAnual::where('anio', $anioResumen - 1)->first();
+                if ($anualAnterior) {
+                    $saldoInicialAnual = (float) $anualAnterior->saldo_final;
+                }
+
+                $resumenAnual = ResumenAnual::create([
+                    'anio'            => $anioResumen,
+                    'saldo_inicial'   => $saldoInicialAnual,
+                    'total_ingreso'   => 0,
+                    'total_egreso'    => 0,
+                    'saldo_final'     => $saldoInicialAnual,
+                    'fecha_calculo'   => null,
+                    'usuario_calculo' => null,
+                    'observacion'     => 'Creado automáticamente desde cobro de planilla',
+                ]);
+            }
+
+            $resumenAnual->total_ingreso = (float) $resumenAnual->total_ingreso + $montoIngreso;
+            $resumenAnual->saldo_final   = ((float) $resumenAnual->saldo_inicial + (float) $resumenAnual->total_ingreso) - (float) $resumenAnual->total_egreso;
+            $resumenAnual->save();
 
             DB::commit();
 

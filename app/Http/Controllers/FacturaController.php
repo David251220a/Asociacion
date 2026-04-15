@@ -7,6 +7,8 @@ use App\Models\Entidad;
 use App\Models\Factura;
 use App\Models\FacturaAporte;
 use App\Models\Planilla;
+use App\Models\ResumenAnual;
+use App\Models\ResumenMensual;
 use App\Models\Sifen;
 use App\Services\SifenServices;
 use Carbon\Carbon;
@@ -140,15 +142,54 @@ class FacturaController extends Controller
 
                 $factura->forma_pagos()->update([
                     'estado_id' => 2,
-                    'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
                 ]);
 
-                Aporte::where('factura_id', $factura->id)->update([
+                 $afectadosAporte = Aporte::where('factura_id', $factura->id)->update([
                     'estado_id' => 2,
                     'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
                 ]);
+
+                // Si querés detectar si no encontró nada:
+                if ($afectadosAporte == 0) {
+                    throw new \Exception('No se encontraron aportes relacionados a la factura para anular.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | ACTUALIZAR RESUMENES
+                |--------------------------------------------------------------------------
+                */
+                $fechaResumen = Carbon::parse($factura->fecha_factura);
+                $anioResumen = (int) $fechaResumen->year;
+                $mesResumen  = (int) $fechaResumen->month;
+                $montoIngreso = (float) $factura->monto_total;
+
+                $resumenMensual = ResumenMensual::where('anio', $anioResumen)
+                ->where('mes', $mesResumen)
+                ->lockForUpdate()
+                ->first();
+
+                if ($resumenMensual) {
+                    $resumenMensual->total_ingreso = (float) $resumenMensual->total_ingreso - $montoIngreso;
+                    $resumenMensual->saldo_final   = (float) $resumenMensual->saldo_final - $montoIngreso;
+                    $resumenMensual->save();
+                }
+
+                $resumenAnual = ResumenAnual::where('anio', $anioResumen)
+                ->lockForUpdate()
+                ->first();
+
+                if ($resumenAnual) {
+                    $resumenAnual->total_ingreso = (float) $resumenAnual->total_ingreso - $montoIngreso;
+                    $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial
+                        + (float) $resumenAnual->total_ingreso
+                        - (float) $resumenAnual->total_egreso;
+                    $resumenAnual->save();
+                }
+
+
             });
 
 

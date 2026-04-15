@@ -12,6 +12,7 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\SifenController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\WebController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -26,9 +27,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [WebController::class, 'index'])->name('inicio');
+Route::get('/mision-vision', [WebController::class, 'mision'])->name('mision');
+Route::get('/beneficios', [WebController::class, 'beneficios'])->name('beneficios');
+Route::get('/contactos', [WebController::class, 'contacto'])->name('contacto');
+Route::get('/noticias', [WebController::class, 'noticias'])->name('noticias');
+Route::get('/noticias/{noticias}/ver', [WebController::class, 'noticias_show'])->name('noticias.show');
 
 Route::get('/logout', [LoginController::class, 'logout']);
 
