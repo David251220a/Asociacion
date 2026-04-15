@@ -7,9 +7,11 @@ use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
+use App\Http\Controllers\GrupoUsuarioController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\SifenController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +40,8 @@ Route::group([
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
     Route::resource('/asociados', AsociadoController::class)->names('asociado');
+    Route::resource('/users', UsuarioController::class)->names('user');
+    Route::resource('/roles', GrupoUsuarioController::class)->names('role');
 
     Route::get('/distritos/{departamento}', [AsociadoController::class, 'getDistritos']);
     Route::get('/ciudades/{id}', [AsociadoController::class, 'getCiudades']);

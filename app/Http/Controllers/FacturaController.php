@@ -17,6 +17,13 @@ class FacturaController extends Controller
 {
     public $sifen;
 
+    public function __construct()
+    {
+        $this->middleware('permission:factura.index')->only('index');
+        $this->middleware('permission:factura.show')->only('show');
+        $this->middleware('permission:factura.anular')->only('anular');
+        $this->middleware('permission:factura.aporte')->only('aporte');
+    }
 
     public function index(Request $request)
     {

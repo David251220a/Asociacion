@@ -12,6 +12,13 @@ use Illuminate\Http\Request;
 class FamiliarController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('permission:familiar.create')->only(['create', 'store']);
+        $this->middleware('permission:familiar.edit')->only(['edit', 'update']);
+        $this->middleware('permission:familiar.delete')->only('delete');
+    }
+
     public function create(Persona $persona)
     {
         $tipo = TipoFamiliar::all();

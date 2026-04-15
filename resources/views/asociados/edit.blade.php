@@ -227,7 +227,10 @@
                 <br>
                 <div class="d-flex align-items-center gap-2">
                     <h4 class="mb-0">Familiares</h4>
-                    <a href="{{route('familiar.create', $persona)}}" class="btn btn-info">Agregar</a>
+                    @can('familiar.create')
+                        <a href="{{route('familiar.create', $persona)}}" class="btn btn-info">Agregar</a>
+                    @endcan
+                    
                 </div>
 
                 <div class="row mt-2">
@@ -255,58 +258,64 @@
                                             </td>
                                             <td>{{$item->celular}}</td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
-                                                    <svg 
-                                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
-                                                        stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line>
-                                                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                                                    </svg>
-                                                </button>
-                                                <div class="modal fade" 
-                                                    id="exampleModalCenter_{{ $item->id }}" 
-                                                    tabindex="-1" 
-                                                    role="dialog"
-                                                    data-backdrop="static"
-                                                    data-keyboard="false"
-                                                    aria-labelledby="modalTitle_{{ $item->id }}" 
-                                                    aria-hidden="true">
+                                                @can('familiar.delete')
+                                                    <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
+                                                        <svg 
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                            stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line>
+                                                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                                                        </svg>
+                                                    </button>
+                                                    <div class="modal fade" 
+                                                        id="exampleModalCenter_{{ $item->id }}" 
+                                                        tabindex="-1" 
+                                                        role="dialog"
+                                                        data-backdrop="static"
+                                                        data-keyboard="false"
+                                                        aria-labelledby="modalTitle_{{ $item->id }}" 
+                                                        aria-hidden="true">
 
-                                                    <div class="modal-dialog modal-dialog-centered" role="document">
-                                                        <div class="modal-content">
+                                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                                            <div class="modal-content">
 
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
-                                                                    Eliminar Familiar
-                                                                </h5>
-                                                            </div>
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
+                                                                        Eliminar Familiar
+                                                                    </h5>
+                                                                </div>
 
-                                                            <div class="modal-body">
-                                                                ¿Está seguro que desea eliminar este familiar?
-                                                            </div>
+                                                                <div class="modal-body">
+                                                                    ¿Está seguro que desea eliminar este familiar?
+                                                                </div>
 
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-primary" data-dismiss="modal">
-                                                                    Cancelar
-                                                                </button>
-                                                                <form action="{{route('familiar.delete', $item)}}" method="POST">
-                                                                    @csrf
-                                                                    <button type="submit"  class="btn btn-danger">
-                                                                        Eliminar
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-primary" data-dismiss="modal">
+                                                                        Cancelar
                                                                     </button>
-                                                                </form>
-                                                                
-                                                            </div>
+                                                                    <form action="{{route('familiar.delete', $item)}}" method="POST">
+                                                                        @csrf
+                                                                        <button type="submit"  class="btn btn-danger">
+                                                                            Eliminar
+                                                                        </button>
+                                                                    </form>
+                                                                    
+                                                                </div>
 
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <a href="{{route('familiar.edit', $item)}}" class="mr-3">
-                                                    <svg 
-                                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
-                                                        stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                                                    </svg>
-                                                </a>
+                                                @endcan
+                                                
+                                                @can('familiar.edit')
+                                                    <a href="{{route('familiar.edit', $item)}}" class="mr-3">
+                                                        <svg 
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                            stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                                        </svg>
+                                                    </a>
+                                                @endcan
+                                                
                                             </td>
                                         </tr>
                                     @endforeach

@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 
 class FichaMedicaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:ficha_medica.create')->only(['create', 'store']);
+    }
     public function create(Asociado $asociado)
     {
         $data = $asociado;

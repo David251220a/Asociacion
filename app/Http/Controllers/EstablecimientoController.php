@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class EstablecimientoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:establecimiento.index')->only('index');
+        $this->middleware('permission:establecimiento.create')->only(['create', 'store']);
+        $this->middleware('permission:establecimiento.edit')->only(['edit', 'update']);
+    }
+
     public function index()
     {
         $data = Establecimiento::where('entidad_id', 1)->get();

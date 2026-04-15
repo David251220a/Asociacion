@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class EntidadController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:entidad.index')->only('index');
+        $this->middleware('permission:entidad.firma')->only(['firma', 'firma_post']);
+        $this->middleware('permission:entidad.obligaciones')->only(['obligaciones', 'obligaciones_post']);
+        $this->middleware('permission:entidad.obligacion_editar')->only(['obligacion_editar', 'obligacion_editar_post']);
+    }
+
     public function index()
     {
         return view('entidad.index');

@@ -16,6 +16,7 @@ class SifenController extends Controller
     public function __construct(SifenServices $sifen)
     {
         $this->sifen = $sifen;
+        $this->middleware('permission:sifen.enviar')->only('enviar');
     }
 
     public function enviar(Factura $factura)

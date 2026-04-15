@@ -28,6 +28,7 @@ return new class extends Migration
             $table->foreignId('tipo_transaccion_id')->constrained()->default(2);
             $table->integer('condicion_pago')->default(1)->comment('1-CONTADO 2-CREDITO');
             $table->string('concepto');
+            $table->integer('cuota')->default(0);
             $table->decimal('monto_total', 12, 0)->default(0);
             $table->decimal('monto_abonado', 12, 0)->default(0);
             $table->decimal('monto_devuelto', 12, 0)->default(0);

@@ -21,6 +21,13 @@ use Illuminate\Validation\Rule;
 
 class AsociadoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:asociado.index')->only('index');
+        $this->middleware('permission:asociado.create')->only(['create', 'store']);
+        $this->middleware('permission:asociado.edit')->only(['edit', 'update']);
+    }
+
     public function index(Request $request)
     {
         $search = str_replace('.', '', $request->search);

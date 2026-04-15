@@ -10,6 +10,14 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class PlanillaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:planilla.index')->only('index');
+        $this->middleware('permission:planilla.create')->only('create');
+        $this->middleware('permission:planilla.exportarDetalle')->only('exportarDetalle');
+        $this->middleware('permission:planilla.cobrar')->only('cobrar');
+    }
+
     public function index(Request $request)
     {
 

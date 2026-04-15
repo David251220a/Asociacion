@@ -123,65 +123,70 @@
                                             </td>
                                             
                                             <td class="text-center">
-                                                <a href="{{route('factura.show', $item)}}" class="mr-3">
-                                                    <svg 
-                                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
-                                                        stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
-                                                    </svg>
-                                                </a>
+                                                @can('factura.show')
+                                                    <a href="{{route('factura.show', $item)}}" class="mr-3">
+                                                        <svg 
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+                                                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+                                                        </svg>
+                                                    </a>
+                                                @endcan
+                                                
+                                                @can('factura.anular')
+                                                    @if ($item->sifen)
+                                                        @if ($item->sifen->sifen_estado <> 'RECHAZADO')
+                                                            <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
+                                                                <svg 
+                                                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline>
+                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17">
+                                                                    </line><line x1="14" y1="11" x2="14" y2="17"></line>
+                                                                </svg>
+                                                            </button>
 
-                                                @if ($item->sifen)
-                                                    @if ($item->sifen->sifen_estado <> 'RECHAZADO')
-                                                        <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
-                                                            <svg 
-                                                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-                                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline>
-                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17">
-                                                                </line><line x1="14" y1="11" x2="14" y2="17"></line>
-                                                            </svg>
-                                                        </button>
+                                                            <div class="modal fade" 
+                                                                id="exampleModalCenter_{{ $item->id }}" 
+                                                                tabindex="-1" 
+                                                                role="dialog"
+                                                                data-backdrop="static"
+                                                                data-keyboard="false"
+                                                                aria-labelledby="modalTitle_{{ $item->id }}" 
+                                                                aria-hidden="true">
 
-                                                        <div class="modal fade" 
-                                                            id="exampleModalCenter_{{ $item->id }}" 
-                                                            tabindex="-1" 
-                                                            role="dialog"
-                                                            data-backdrop="static"
-                                                            data-keyboard="false"
-                                                            aria-labelledby="modalTitle_{{ $item->id }}" 
-                                                            aria-hidden="true">
+                                                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                                                    <div class="modal-content">
 
-                                                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                                                <div class="modal-content">
+                                                                        <div class="modal-header">
+                                                                            <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
+                                                                                Eliminar Cobro de Planilla
+                                                                            </h5>
+                                                                        </div>
 
-                                                                    <div class="modal-header">
-                                                                        <h5 class="modal-title" id="modalTitle_{{ $item->id }}">
-                                                                            Eliminar Cobro de Planilla
-                                                                        </h5>
-                                                                    </div>
+                                                                        <div class="modal-body">
+                                                                            ¿Está seguro que desea eliminar este cobro de planilla?
+                                                                        </div>
 
-                                                                    <div class="modal-body">
-                                                                        ¿Está seguro que desea eliminar este cobro de planilla?
-                                                                    </div>
-
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-primary" data-dismiss="modal">
-                                                                            Cancelar
-                                                                        </button>
-                                                                        <form action="{{route('factura.anular', $item)}}" method="POST">
-                                                                            @csrf
-                                                                            <button type="submit"  class="btn btn-danger">
-                                                                                Eliminar
+                                                                        <div class="modal-footer">
+                                                                            <button type="button" class="btn btn-primary" data-dismiss="modal">
+                                                                                Cancelar
                                                                             </button>
-                                                                        </form>
-                                                                        
-                                                                    </div>
+                                                                            <form action="{{route('factura.anular', $item)}}" method="POST">
+                                                                                @csrf
+                                                                                <button type="submit"  class="btn btn-danger">
+                                                                                    Eliminar
+                                                                                </button>
+                                                                            </form>
+                                                                            
+                                                                        </div>
 
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        @endif
                                                     @endif
-                                                @endif
+                                                @endcan
+                                                
                                             
                                             </td>
                                         </tr>

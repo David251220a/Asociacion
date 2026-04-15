@@ -23,8 +23,8 @@
                         if (this.dataset.enviando === '1') return false;
                         this.dataset.enviando = '1';
                         document.getElementById('btnEnviar').disabled = true;
-                        document.getElementById('btnEnviar').innerText = 'Enviando...';
-                    ">
+                        document.getElementById('btnEnviar').innerText = 'Enviando...';"
+                >
                 
                     @csrf
                     <div class="row">
@@ -237,8 +237,8 @@
                                         this.disabled = true;
                                         this.innerText = 'Enviando...';
                                         this.form.requestSubmit();
-                                        return false;
-                                    ">
+                                        return false;"
+                                >
                                     Grabar
                                 </button>
                             </div>

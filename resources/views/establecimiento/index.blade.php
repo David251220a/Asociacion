@@ -24,11 +24,14 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12">
-                        <a href="{{route('establecimiento.create')}}" class="btn btn-info">Agregar</a>
+                @can('establecimiento.create')
+                    <div class="row">
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            <a href="{{route('establecimiento.create')}}" class="btn btn-info">Agregar</a>
+                        </div>
                     </div>
-                </div>
+                @endcan
+                
                 <div class="row mt-3">
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="table-responsive">
@@ -70,10 +73,13 @@
                                                 {{$item->general}}
                                             </td>
                                             <td>
-                                                <a class="ml-2" href="{{route('establecimiento.edit', $item)}}" data-toggle="tooltip" data-placement="top" title="Editar">
-                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
-                                                    stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                                </a>
+                                                @can('establecimiento.edit')
+                                                    <a class="ml-2" href="{{route('establecimiento.edit', $item)}}" data-toggle="tooltip" data-placement="top" title="Editar">
+                                                        <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                        stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                                    </a>
+                                                @endcan
+                                                
                                             </td>
                                         </tr>
                                     @endforeach
