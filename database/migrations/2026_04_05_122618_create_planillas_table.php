@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('planillas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tipo_asociado_id')->constrained();
+            $table->foreignId('institucion_id')->constrained();
             $table->integer('planilla_numero');
             $table->integer('planilla_anio');
             $table->tinyInteger('mes');
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->tinyInteger('pagado')->default(0);
             $table->decimal('monto_pagado', 12, 0)->default(0);
             $table->date('fecha_pagado')->nullable();
+            $table->string('lote_generacion')->nullable()->index();
             $table->foreignId('estado_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('usuario_modificacion');

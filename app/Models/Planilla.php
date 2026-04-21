@@ -20,4 +20,9 @@ class Planilla extends Model
     {
         return $this->belongsTo(TipoAsociado::class);
     }
+
+    public function institucion()
+    {
+        return $this->belongsTo(Institucion::class);
+    }
 }

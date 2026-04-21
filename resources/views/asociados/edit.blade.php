@@ -70,7 +70,7 @@
                                     <label for="nombre">Apellido</label>
                                     <input name="apellido" id="apellido" type="text" class="form-control" value="{{old('apellido', $persona->apellido)}}" required>
                                 </div>
-                                
+
                                 <div class="form-group col-md-3">
                                     <label for="fecha_nacimiento">Fecha Nacimiento</label>
                                     <input name="fecha_nacimiento" id="fecha_nacimiento" type="date" value="{{old('fecha_nacimiento', $persona->fecha_nacimiento)}}" class="form-control">
@@ -90,6 +90,16 @@
                                     <select name="estado_civil_id" id="estado_civil_id" class="form-control">
                                         @foreach ($estado_civil as $item)
                                             <option {{ (old('estado_civil_id', $persona->estado_civil_id) == $item->id ? 'selected' : '' ) }} value="{{$item->id}}">{{$item->descripcion}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="institucion_id">Institucion</label>
+                                    <select name="institucion_id" id="institucion_id" class="form-control basic">
+                                        @foreach ($instituciones as $item)
+                                            <option {{ (old('institucion_id', $data->institucion_id) == $item->id ? 'selected' : '' ) }}  value="{{$item->id}}">
+                                                {{str_pad($item->departamento_id, 2, '0', STR_PAD_LEFT)}}{{str_pad($item->municipio_id, 2, '0', STR_PAD_LEFT)}} - {{$item->descripcion}}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -150,7 +160,7 @@
                                     </select>
                                 </div>
 
-                                <div class="form-group col-md-12">
+                                <div class="form-group col-md-9">
                                     <label for="vivienda">Descripcion Vivienda</label>
                                     <input name="vivienda" id="vivienda" type="text" class="form-control" value="{{old('vivienda', $persona->vivienda)}}">
                                 </div>
@@ -159,9 +169,9 @@
                                     <label for="documento_frente">Documento Frente</label>
                                     <input name="documento_frente" id="documento_frente" type="file" class="form-control" accept=".jpg,.jpeg" value="{{old('documento_frente')}}">
                                     <div class="card">
-                                        <img src="{{ ($persona->documento_frente && Storage::exists($persona->documento_frente)) 
-                                        ? Storage::url($persona->documento_frente) 
-                                        : Storage::url('iconos/user.jpg') }}" 
+                                        <img src="{{ ($persona->documento_frente && Storage::exists($persona->documento_frente))
+                                        ? Storage::url($persona->documento_frente)
+                                        : Storage::url('iconos/user.jpg') }}"
                                         class="card-img-top img-doc" alt="widget-card-2">
                                     </div>
                                 </div>
@@ -170,9 +180,9 @@
                                     <label for="documento_reverso">Documento Reverso</label>
                                     <input name="documento_reverso" id="documento_reverso" type="file" class="form-control" accept=".jpg,.jpeg" value="{{old('documento_reverso')}}">
                                     <div class="card">
-                                        <img src="{{ ($persona->documento_reverso && Storage::exists($persona->documento_reverso)) 
-                                        ? Storage::url($persona->documento_reverso) 
-                                        : Storage::url('iconos/user.jpg') }}" 
+                                        <img src="{{ ($persona->documento_reverso && Storage::exists($persona->documento_reverso))
+                                        ? Storage::url($persona->documento_reverso)
+                                        : Storage::url('iconos/user.jpg') }}"
                                         class="card-img-top img-doc" alt="widget-card-2">
                                     </div>
                                 </div>
@@ -181,9 +191,9 @@
                                     <label for="selfi">Selfi</label>
                                     <input name="selfi" id="selfi" type="file" class="form-control" accept=".jpg,.jpeg" value="{{old('selfi')}}">
                                     <div class="card">
-                                        <img src="{{ ($persona->selfi && Storage::exists($persona->selfi)) 
-                                        ? Storage::url($persona->selfi) 
-                                        : Storage::url('iconos/user.jpg') }}" 
+                                        <img src="{{ ($persona->selfi && Storage::exists($persona->selfi))
+                                        ? Storage::url($persona->selfi)
+                                        : Storage::url('iconos/user.jpg') }}"
                                         class="card-img-top img-doc" alt="widget-card-2">
                                     </div>
                                 </div>
@@ -230,7 +240,7 @@
                     @can('familiar.create')
                         <a href="{{route('familiar.create', $persona)}}" class="btn btn-info">Agregar</a>
                     @endcan
-                    
+
                 </div>
 
                 <div class="row mt-2">
@@ -260,19 +270,19 @@
                                             <td class="text-center">
                                                 @can('familiar.delete')
                                                     <button type="button" class="btn btn-danger mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
-                                                        <svg 
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                             stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line>
                                                             <line x1="9" y1="9" x2="15" y2="15"></line>
                                                         </svg>
                                                     </button>
-                                                    <div class="modal fade" 
-                                                        id="exampleModalCenter_{{ $item->id }}" 
-                                                        tabindex="-1" 
+                                                    <div class="modal fade"
+                                                        id="exampleModalCenter_{{ $item->id }}"
+                                                        tabindex="-1"
                                                         role="dialog"
                                                         data-backdrop="static"
                                                         data-keyboard="false"
-                                                        aria-labelledby="modalTitle_{{ $item->id }}" 
+                                                        aria-labelledby="modalTitle_{{ $item->id }}"
                                                         aria-hidden="true">
 
                                                         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -298,7 +308,7 @@
                                                                             Eliminar
                                                                         </button>
                                                                     </form>
-                                                                    
+
                                                                 </div>
 
                                                             </div>
@@ -306,16 +316,16 @@
                                                     </div>
 
                                                 @endcan
-                                                
+
                                                 @can('familiar.edit')
                                                     <a href="{{route('familiar.edit', $item)}}" class="mr-3">
-                                                        <svg 
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                             stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                                                         </svg>
                                                     </a>
                                                 @endcan
-                                                
+
                                             </td>
                                         </tr>
                                     @endforeach

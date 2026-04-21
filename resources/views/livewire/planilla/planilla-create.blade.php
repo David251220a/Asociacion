@@ -6,20 +6,20 @@
                     <h3 class="mb-0">Crear Planilla</h3>
                 </div>
             </div>
-            
+
             <div class="col-lg-12 col-md-12 col-sm-12">
                 <div class="form-row mb-2">
                     <div class="form-group col-md-3">
                         <label for="tipo_asociado">Tipo Asociado</label>
-                        <select wire:model.defer="tipo_asociado_id" class="form-control">
+                        <select wire:model="tipo_asociado_id" class="form-control">
                             <option value="3"> APORTANTES </option>
                             <option value="1"> JUBILADOS/AS </option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group col-md-3">
                         <label for="mes">Mes</label>
-                        <select wire:model.defer="mes" class="form-control">
+                        <select wire:model="mes" class="form-control">
                             @foreach ($meses as $key => $nombre)
                                 <option value="{{ $key }}">{{ $nombre }}</option>
                             @endforeach
@@ -65,6 +65,7 @@
                         wire:click="save"
                         :disabled="$wire.procesando"
                         class="btn btn-success"
+                        style="display: {{ $ver_boton }}"
                     >
                         <span wire:loading.remove wire:target="save">Grabar</span>
                         <span wire:loading wire:target="save">Procesando...</span>

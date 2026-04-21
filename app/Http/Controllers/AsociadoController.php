@@ -9,6 +9,7 @@ use App\Models\Distrito;
 use App\Models\Estado;
 use App\Models\EstadoCivil;
 use App\Models\Familiar;
+use App\Models\Institucion;
 use App\Models\Persona;
 use App\Models\Sexo;
 use App\Models\TipoAsociado;
@@ -58,7 +59,11 @@ class AsociadoController extends Controller
         $distrito = Distrito::where('departamento_id', $departamento[0]->id)->get();
         $ciudad = Ciudad::where('distrito_id', $distrito[0]->id)->get();
         $tipo_asociado = TipoAsociado::all();
-        return view('asociados.create', compact('sexo', 'estado_civil', 'tipo_familiar', 'tipo_vivienda', 'departamento', 'distrito', 'ciudad', 'tipo_asociado'));
+        $instituciones = Institucion::where('departamento_id', '<>', 100)
+        ->orderBy('departamento_id')
+        ->get();
+
+        return view('asociados.create', compact('sexo', 'estado_civil', 'tipo_familiar', 'tipo_vivienda', 'departamento', 'distrito', 'ciudad', 'tipo_asociado','instituciones'));
     }
 
     public function store(Request $request)
@@ -113,7 +118,7 @@ class AsociadoController extends Controller
             'apellido_hijo2.required_with' => 'Debe completar el apellido del hijo/a si carga documento o nombre.',
         ]);
 
-        
+
 
         try {
             $asociado = DB::transaction(function () use ($request, $documento, $numero_socio) {
@@ -167,6 +172,7 @@ class AsociadoController extends Controller
                 $asociado = Asociado::create([
                     'persona_id' => $persona->id,
                     'tipo_asociado_id' => $request->tipo_asociado_id,
+                    'institucion_id' => $request->institucion_id,
                     'fecha_admision' => $request->fecha_admision,
                     'solicitud_id' => 0,
                     'anio_aporte' => $anio,
@@ -180,8 +186,8 @@ class AsociadoController extends Controller
                     'usuario_modificacion' => auth()->id(),
                 ]);
 
-                if ($request->filled('documento_conyuge') && 
-                    $request->filled('nombre_conyuge') && 
+                if ($request->filled('documento_conyuge') &&
+                    $request->filled('nombre_conyuge') &&
                     $request->filled('apellido_conyuge')) {
 
                     // guardar hijo
@@ -198,8 +204,8 @@ class AsociadoController extends Controller
                     ]);
                 }
 
-                if ($request->filled('documento_hijo1') && 
-                    $request->filled('nombre_hijo1') && 
+                if ($request->filled('documento_hijo1') &&
+                    $request->filled('nombre_hijo1') &&
                     $request->filled('apellido_hijo1')) {
 
                     // guardar hijo
@@ -216,8 +222,8 @@ class AsociadoController extends Controller
                     ]);
                 }
 
-                if ($request->filled('documento_hijo2') && 
-                    $request->filled('nombre_hijo2') && 
+                if ($request->filled('documento_hijo2') &&
+                    $request->filled('nombre_hijo2') &&
                     $request->filled('apellido_hijo2')) {
 
                     // guardar hijo
@@ -250,7 +256,7 @@ class AsociadoController extends Controller
         }
 
         return redirect()->route('asociado.index')->with('message', 'Asociado registrado correctamente.');
-        
+
     }
 
     public function edit(Asociado $asociado)
@@ -266,7 +272,10 @@ class AsociadoController extends Controller
         $data = $asociado;
         $persona = $asociado->persona;
         $estado = Estado::all();
-        return view('asociados.edit', compact('sexo', 'estado_civil', 'tipo_familiar', 'tipo_vivienda', 'departamento', 'distrito', 'ciudad', 'tipo_asociado', 'data', 'persona', 'estado'));
+        $instituciones = Institucion::where('departamento_id', '<>', 100)
+        ->orderBy('departamento_id')
+        ->get();
+        return view('asociados.edit', compact('sexo', 'estado_civil', 'tipo_familiar', 'tipo_vivienda', 'departamento', 'distrito', 'ciudad', 'tipo_asociado', 'data', 'persona', 'estado','instituciones'));
     }
 
     public function update(Asociado $asociado, Request $request)

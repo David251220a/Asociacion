@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('planilla_id')->constrained();
             $table->foreignId('asociado_id')->constrained();
             $table->foreignId('tipo_asociado_id')->constrained();
+            $table->foreignId('institucion_id')->constrained();
             $table->decimal('monto_esperado', 12, 0);
             $table->decimal('pagado', 12, 0);
             $table->decimal('saldo', 12, 0);

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('asociado_id')->constrained();
             $table->foreignId('tipo_asociado_id')->constrained();
+            $table->foreignId('institucion_id')->constrained();
             $table->tinyInteger('mes')->default(0);
             $table->integer('anio')->default(0);
             $table->date('fecha_aporte');

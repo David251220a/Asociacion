@@ -36,6 +36,29 @@ class PlanillaCreate extends Component
         $this->procesando = false;
     }
 
+    public function updatedTipoAsociadoId()
+    {
+        $this->resetBusqueda();
+    }
+
+    public function updatedMes()
+    {
+        $this->resetBusqueda();
+    }
+
+    public function updatedAnio()
+    {
+        $this->resetBusqueda();
+    }
+
+    private function resetBusqueda()
+    {
+        $this->ver_boton = 'none';
+        $this->data = [];
+        $this->cantidad = 0;
+        $this->total = 0;
+    }
+
     public function render()
     {
         return view('livewire.planilla.planilla-create');
@@ -54,7 +77,12 @@ class PlanillaCreate extends Component
 
             $this->cantidad = count($this->data);
             $this->total = collect($this->data)->sum('saldo'); // o 'monto_esperado'
-            $this->ver_boton = 'block';
+            if ($this->total == 0) {
+                $this->ver_boton = 'none';
+            }else {
+                $this->ver_boton = 'block';
+            }
+
             $this->emit('mensaje_exitoso', 'Planilla generada correctamente.');
 
 

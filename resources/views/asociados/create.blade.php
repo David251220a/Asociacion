@@ -18,14 +18,14 @@
                     </div>
                 </div>
                 @include('varios.mensaje')
-                <form id="form_general" action="{{route('asociado.store')}}" method="post" enctype="multipart/form-data" 
+                <form id="form_general" action="{{route('asociado.store')}}" method="post" enctype="multipart/form-data"
                         onsubmit="
                         if (this.dataset.enviando === '1') return false;
                         this.dataset.enviando = '1';
                         document.getElementById('btnEnviar').disabled = true;
                         document.getElementById('btnEnviar').innerText = 'Enviando...';"
                 >
-                
+
                     @csrf
                     <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">
@@ -68,7 +68,7 @@
                                     <label for="nombre">Apellido</label>
                                     <input name="apellido" id="apellido" type="text" class="form-control" value="{{old('apellido')}}" required>
                                 </div>
-                                
+
                                 <div class="form-group col-md-3">
                                     <label for="fecha_nacimiento">Fecha Nacimiento</label>
                                     <input name="fecha_nacimiento" id="fecha_nacimiento" type="date" value="{{old('fecha_nacimiento')}}" class="form-control">
@@ -88,6 +88,17 @@
                                     <select name="estado_civil_id" id="estado_civil_id" class="form-control">
                                         @foreach ($estado_civil as $item)
                                             <option {{ (old('estado_civil_id') == $item->id ? 'selected' : '' ) }} value="{{$item->id}}">{{$item->descripcion}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label for="institucion_id">Institucion</label>
+                                    <select name="institucion_id" id="institucion_id" class="form-control basic">
+                                        @foreach ($instituciones as $item)
+                                            <option {{ (old('institucion_id') == $item->id ? 'selected' : '' ) }}  value="{{$item->id}}">
+                                                {{str_pad($item->departamento_id, 2, '0', STR_PAD_LEFT)}}{{str_pad($item->municipio_id, 2, '0', STR_PAD_LEFT)}} - {{$item->descripcion}}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -148,7 +159,7 @@
                                     </select>
                                 </div>
 
-                                <div class="form-group col-md-12">
+                                <div class="form-group col-md-9">
                                     <label for="vivienda">Descripcion Vivienda</label>
                                     <input name="vivienda" id="vivienda" type="text" class="form-control" value="{{old('vivienda')}}">
                                 </div>

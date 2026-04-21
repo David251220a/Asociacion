@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\PlanillaDetalleExport;
 use App\Models\Planilla;
+use App\Models\PlanillaDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -74,25 +75,43 @@ class PlanillaController extends Controller
     {
         DB::transaction(function () use ($planilla) {
 
-            if ($planilla->estado_id != 1) {
-                throw new \Exception('La planilla ya está anulada.');
+            if ($planilla->pagado == 1) {
+                throw new \Exception('No se puede anular una planilla pagada.');
             }
 
-            $userId = auth()->id();
-            $ahora = now();
+            // si tiene lote, anula todo el lote
+            if ($planilla->lote_generacion) {
 
-            // Cabecera
+                $planillas = Planilla::where('lote_generacion', $planilla->lote_generacion)
+                ->where('estado_id', 1)
+                ->get();
+
+                foreach ($planillas as $item) {
+                    if ($item->pagado == 1) {
+                        throw new \Exception('Existe una planilla pagada en el lote.');
+                    }
+                }
+
+                foreach ($planillas as $item) {
+                    $item->update([
+                        'estado_id' => 2,
+                        'usuario_modificacion' => auth()->id(),
+                    ]);
+
+                    PlanillaDetalle::where('planilla_id', $item->id)
+                    ->update([
+                        'estado_id' => 2,
+                        'usuario_modificacion' => auth()->id(),
+                    ]);
+                }
+
+                return;
+            }
+
+            // fallback (planillas viejas sin lote)
             $planilla->update([
                 'estado_id' => 2,
-                'usuario_modificacion' => $userId,
-                'updated_at' => $ahora,
-            ]);
-
-            // Detalle
-            $planilla->planillaDetalle()->update([
-                'estado_id' => 2,
-                'usuario_modificacion' => $userId,
-                'updated_at' => $ahora,
+                'usuario_modificacion' => auth()->id(),
             ]);
         });
 

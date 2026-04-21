@@ -35,7 +35,7 @@ class PlanillaCobro extends Component
     public $monto_excel = 0;
     public $erroresDocumentos = [];
     public $verificado = false;
-    public $formasCobro = [];
+    public $formasCobro;
     public $bancos = [];
     public $cobros = [];
     public $total_abonado = 0;
@@ -47,7 +47,7 @@ class PlanillaCobro extends Component
 
     public function mount(Planilla $planilla)
     {
-        $this->planilla;       
+        $this->planilla;
         $this->meses = [
             1 => 'Enero',
             2 => 'Febrero',
@@ -62,7 +62,7 @@ class PlanillaCobro extends Component
             11 => 'Noviembre',
             12 => 'Diciembre',
         ];
-        $this->mes = $this->meses[$this->planilla->mes]; 
+        $this->mes = $this->meses[$this->planilla->mes];
         $this->formasCobro = FormaCobro::where('estado_id', 1)
         ->orderBy('descripcion')
         ->get();
@@ -314,10 +314,29 @@ class PlanillaCobro extends Component
             ->where('tipo_documento_id', 1)
             ->lockForUpdate()
             ->first();
-            
+
+            $this->planilla->update([
+                'pagado' => 1,
+                'fecha_pagado' => now(),
+                'monto_pagado' => $this->monto_excel,
+                'usuario_modificacion' => auth()->id(),
+            ]);
+
             $numeroActual = $numeracion->numero_siguiente;
             $tipo = strtoupper($this->planilla->tipoAsociado->descripcion);
-            $concepto = 'COBRO PLANILLA ' . $tipo . ' ' . $this->planilla->planilla_numero . '/' . $this->planilla->planilla_anio;
+            $descripcionTipo = '';
+
+            if ($this->planilla->tipo_asociado_id == 3) {
+                $descripcionTipo = $this->planilla->institucion->descripcion ?? 'SIN INSTITUCIÓN';
+            } else {
+                $descripcionTipo = 'JUBILADOS';
+            }
+
+            $concepto = 'COBRO PLANILLA '
+            . $tipo . ' '
+            . $descripcionTipo . ' '
+            . $this->planilla->planilla_numero . '/'
+            . $this->planilla->planilla_anio;
 
             $factura = Factura::create([
                 'persona_id' => $this->persona['id'],
@@ -373,13 +392,15 @@ class PlanillaCobro extends Component
             ->where('planilla_detalles.estado_id', 1)
             ->select(
                 'planilla_detalles.asociado_id',
-                'personas.documento'
+                'personas.documento',
+                'planilla_detalles.institucion_id'
             )
             ->get()
             ->map(function ($item) {
                 return [
                     'asociado_id' => $item->asociado_id,
                     'documento'   => $this->limpiarDocumento($item->documento),
+                    'institucion_id'=> $item->institucion_id,
                 ];
             });
 
@@ -399,6 +420,7 @@ class PlanillaCobro extends Component
                 }
 
                 $asociadoId = $mapaPlanilla[$item['documento']]['asociado_id'];
+                $institucionId = $mapaPlanilla[$item['documento']]['institucion_id'];
                 $monto = (int) $item['monto'];
 
                 $insertFacturaAportes[] = [
@@ -407,6 +429,8 @@ class PlanillaCobro extends Component
                     'planilla'             => 0,
                     'planilla_numero'      => $this->planilla->planilla_numero,
                     'planilla_anio'        => $this->planilla->planilla_anio,
+                    'planilla_id' => $this->planilla->id,
+                    'institucion_id' => $institucionId,
                     'fecha_aporte'         => $fechaAporte,
                     'mes'                  => $this->planilla->mes,
                     'anio'                 => $this->planilla->anio,
@@ -421,6 +445,7 @@ class PlanillaCobro extends Component
                 $insertAportes[] = [
                     'asociado_id'          => $asociadoId,
                     'tipo_asociado_id'     => $this->planilla->tipo_asociado_id,
+                    'institucion_id' => $institucionId,
                     'mes'                  => $this->planilla->mes,
                     'anio'                 => $this->planilla->anio,
                     'fecha_aporte'         => $fechaAporte,

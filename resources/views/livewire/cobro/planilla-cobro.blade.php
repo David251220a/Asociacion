@@ -9,25 +9,6 @@
 
             <div class="col-lg-12 col-md-12 col-sm-12">
                 <div class="form-row mb-2">
-                    <div class="form-group col-md-3">
-                        <label>Tipo Asociado</label>
-                        <input type="text" value="{{ $planilla->tipoAsociado->descripcion }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Mes</label>
-                        <input type="text" wire:model.defer="mes" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Año</label>
-                        <input type="text" value="{{ $planilla->anio }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Monto Generado Planilla</label>
-                        <input type="text" value="{{ number_format($planilla->total, 0, ',', '.') }}" class="form-control text-right" readonly>
-                    </div>
 
                     <div class="form-group col-md-2">
                         <label>Documento</label>
@@ -61,6 +42,32 @@
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Tipo Asociado</label>
+                        <input type="text" value="{{ $planilla->tipoAsociado->descripcion }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label>Institucion</label>
+                        <input type="text" value="{{ ($planilla->tipo_asociado_id == 3 ? $planilla->institucion->descripcion : 'JUBILADOS') }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Mes</label>
+                        <input type="text" wire:model.defer="mes" class="form-control" readonly>
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Año</label>
+                        <input type="text" value="{{ $planilla->anio }}" class="form-control" readonly>
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Monto Generado Planilla</label>
+                        <input type="text" value="{{ number_format($planilla->total, 0, ',', '.') }}" class="form-control text-right" readonly>
+                    </div>
+
                 </div>
             </div>
 
@@ -217,17 +224,17 @@
                     <div class="form-row mb-3">
 
                         <div class="form-group col-md-4 d-flex align-items-end">
-                            <button 
-                                type="button" 
-                                wire:click="cancelar" 
+                            <button
+                                type="button"
+                                wire:click="cancelar"
                                 class="btn btn-danger mr-2"
                             >
                                 Cancelar
                             </button>
 
-                            <button 
-                                type="button" 
-                                wire:click="grabar" 
+                            <button
+                                type="button"
+                                wire:click="grabar"
                                 wire:loading.attr="disabled"
                                 wire:target="grabar"
                                 class="btn btn-success"
