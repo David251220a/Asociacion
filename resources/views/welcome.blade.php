@@ -14,8 +14,8 @@
                     </p>
 
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="noticias.html" class="btn btn-principal">Ver noticias</a>
-                        <a href="contacto.html" class="btn btn-secundario">Contactar</a>
+                        <a href="{{ route('noticias') }}" class="btn btn-principal">Ver noticias</a>
+                        <a href="{{ route('asociarse') }}" class="btn btn-secundario">Asociarse</a>
                     </div>
                 </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Entidad;
 
+use App\Models\ActividadEconomica;
 use App\Models\Ciudad;
 use App\Models\Departamento;
 use App\Models\Distrito;
@@ -13,7 +14,7 @@ use Livewire\Component;
 
 class EntidadIndex extends Component
 {
-    
+
     public $razon , $nombre, $ruc, $ruc_sin_digito, $digito, $email, $tipo_transaccion_id, $ambiente, $direccion,
     $numero_casa, $telefono, $districto_id, $ciudad_id, $codigo_set_id, $codigo_cliente_set,
     $tipo_contribuyente, $tipo_regimen, $departamento_id, $num_timbrado, $fecha_timbrado;
@@ -22,7 +23,7 @@ class EntidadIndex extends Component
     public function mount()
     {
         $entidad = Entidad::findOrFail(1);
-        
+
         if ($entidad) {
             $this->razon = $entidad->razon_social;
             $this->nombre = $entidad->nombra_fantasia;
@@ -57,7 +58,7 @@ class EntidadIndex extends Component
             $this->num_timbrado = '';
             $this->fecha_timbrado = null;
         }
-        
+
         $this->distrito = Distrito::where('departamento_id', $this->departamento_id)->get();
         $this->ciudad = Ciudad::where('distrito_id', $this->districto_id)->get();
         $this->procesando = false;
@@ -69,7 +70,8 @@ class EntidadIndex extends Component
         $depar = Departamento::all();
         $entidad = Entidad::all();
         $obligaciones = Obligaciones::where('estado_id', 1)->get();
-        return view('livewire.entidad.entidad-index', compact('transaccion', 'depar', 'entidad', 'obligaciones'));
+        $actividades = ActividadEconomica::where('estado_id', 1)->get();
+        return view('livewire.entidad.entidad-index', compact('transaccion', 'depar', 'entidad', 'obligaciones', 'actividades'));
     }
 
     public function grabar()
@@ -182,5 +184,5 @@ class EntidadIndex extends Component
         return true;
     }
 
-    
+
 }

@@ -13,7 +13,7 @@
 
                 @include('varios.mensaje')
 
-                <form action="{{route('entidad.obligaciones_post')}}" method="POST"
+                <form action="{{route('entidad.actividades_post')}}" method="POST"
                     onsubmit="
                     if (this.dataset.enviando === '1') return false;
                     this.dataset.enviando = '1';
@@ -23,7 +23,7 @@
                     @csrf
                     <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">
-                            <h4>Obligaciones</h4>
+                            <h4>Actividad Economica</h4>
                             <div class="form-row mb-2">
                                 <div class="form-group col-md-3">
                                     <label for="codigo">Codigo</label>
@@ -55,4 +55,5 @@
 
 
 @section('js')
+
 @endsection

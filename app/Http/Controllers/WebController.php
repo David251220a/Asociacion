@@ -39,4 +39,9 @@ class WebController extends Controller
     {
         return view('www.noticias_show');
     }
+
+    public function asociarse()
+    {
+        return view('www.asociarse');
+    }
 }

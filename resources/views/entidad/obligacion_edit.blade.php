@@ -10,10 +10,16 @@
     <div class="col-lg-12 layout-spacing">
         <div class="statbox widget box box-shadow">
             <div class="widget-content widget-content-area">
-                
+
                 @include('varios.mensaje')
 
-                <form action="{{route('entidad.obligacion_editar_post', $data)}}" method="POST">
+                <form action="{{route('entidad.obligacion_editar_post', $data)}}" method="POST"
+                    onsubmit="
+                    if (this.dataset.enviando === '1') return false;
+                    this.dataset.enviando = '1';
+                    document.getElementById('btnEnviar').disabled = true;
+                    document.getElementById('btnEnviar').innerText = 'Enviando...';"
+                >
                     @csrf
                     <div class="row">
                         <div class="col-lg-12 col-md-12 col-sm-12">
@@ -47,7 +53,7 @@
 
                         </div>
                     </div>
-                </form> 
+                </form>
 
             </div>
         </div>
@@ -57,21 +63,5 @@
 
 
 @section('js')
-    <script>
-        let enviado = false;
-        document.querySelector('form').addEventListener('submit', function (e) {
 
-            if (enviado) {
-                e.preventDefault();
-                return false;
-            }
-
-            enviado = true;
-
-            let btn = document.getElementById('btnEnviar');
-            btn.disabled = true;
-            btn.innerText = 'Enviando...';
-
-        });
-    </script>
 @endsection

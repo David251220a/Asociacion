@@ -33,6 +33,7 @@ Route::get('/beneficios', [WebController::class, 'beneficios'])->name('beneficio
 Route::get('/contactos', [WebController::class, 'contacto'])->name('contacto');
 Route::get('/noticias', [WebController::class, 'noticias'])->name('noticias');
 Route::get('/noticias/{noticias}/ver', [WebController::class, 'noticias_show'])->name('noticias.show');
+Route::get('/asociarse', [WebController::class, 'asociarse'])->name('asociarse');
 
 Route::get('/logout', [LoginController::class, 'logout']);
 
@@ -81,11 +82,16 @@ Route::group([
     Route::post('/entidad/obligaciones/agregar', [EntidadController::class, 'obligaciones_post'])->name('entidad.obligaciones_post');
     Route::get('/entidad/obligaciones/{obligaciones}/editar', [EntidadController::class, 'obligacion_editar'])->name('entidad.obligacion_editar');
     Route::post('/entidad/obligaciones/{obligaciones}/editar', [EntidadController::class, 'obligacion_editar_post'])->name('entidad.obligacion_editar_post');
+    Route::get('/entidad/actividades/agregar', [EntidadController::class, 'actividades'])->name('entidad.actividades');
+    Route::post('/entidad/actividades/agregar', [EntidadController::class, 'actividades_post'])->name('entidad.actividades_post');
+     Route::get('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar'])->name('entidad.actividades_editar');
+    Route::post('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar_post'])->name('entidad.actividades_editar_post');
+
 
     Route::get('/establecimiento', [EstablecimientoController::class, 'index'])->name('establecimiento.index');
     Route::get('/establecimiento/crear', [EstablecimientoController::class, 'create'])->name('establecimiento.create');
     Route::post('/establecimiento/crear', [EstablecimientoController::class, 'store'])->name('establecimiento.store');
     Route::get('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'edit'])->name('establecimiento.edit');
     Route::post('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'update'])->name('establecimiento.update');
-    
+
 });

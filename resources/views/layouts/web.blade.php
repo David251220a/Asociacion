@@ -6,6 +6,7 @@
     <title>Asociación - Inicio</title>
     <link rel="stylesheet" href="{{ asset('inicio/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('/inicio/css/inicio.css') }}">
+    @yield('styles')
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-principal sticky-top py-3">
@@ -22,6 +23,7 @@
                     <li class="nav-item"><a class="nav-link" href="{{route('mision')}}">Misión y Visión</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{route('beneficios')}}">Beneficios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{route('noticias')}}">Noticias</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{route('asociarse')}}">Asociarse</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{route('contacto')}}">Contacto</a></li>
                 </ul>
 

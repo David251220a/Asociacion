@@ -44,19 +44,19 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        Departamento::create([
-            'descripcion' => 'CAPITAL'
-        ]);
+        // Departamento::create([
+        //     'descripcion' => 'CAPITAL'
+        // ]);
 
-        Distrito::create([
-            'departamento_id' => 1,
-            'descripcion' => 'ASUNCION (DISTRITO)'
-        ]);
+        // Distrito::create([
+        //     'departamento_id' => 1,
+        //     'descripcion' => 'ASUNCION (DISTRITO)'
+        // ]);
 
-        Ciudad::create([
-            'distrito_id' => 1,
-            'descripcion' => 'ASUNCION (DISTRITO)'
-        ]);
+        // Ciudad::create([
+        //     'distrito_id' => 1,
+        //     'descripcion' => 'ASUNCION (DISTRITO)'
+        // ]);
 
         Secuencia::create([
             'secuencia' => 0

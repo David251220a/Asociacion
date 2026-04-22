@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActividadEconomica;
 use App\Models\Entidad;
 use App\Models\Obligaciones;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ class EntidadController extends Controller
         $this->middleware('permission:entidad.firma')->only(['firma', 'firma_post']);
         $this->middleware('permission:entidad.obligaciones')->only(['obligaciones', 'obligaciones_post']);
         $this->middleware('permission:entidad.obligacion_editar')->only(['obligacion_editar', 'obligacion_editar_post']);
+        $this->middleware('permission:entidad.actividades')->only(['actividades', 'actividades_post']);
+        $this->middleware('permission:entidad.actividades_editar')->only(['actividades_editar', 'actividades_editar_post']);
     }
 
     public function index()
@@ -102,6 +105,55 @@ class EntidadController extends Controller
         ]);
 
         return redirect()->route('entidad.index')->with('message', 'Obligacion actualizado con exito.');
+    }
+
+    public function actividades()
+    {
+        return view('entidad.actividad_crear');
+    }
+
+    public function actividades_post(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required',
+            'descripcion' => 'required'
+        ]);
+
+        $entidad = Entidad::find(1);
+
+        ActividadEconomica::create([
+            'entidad_id' => $entidad->id,
+            'codigo' => $request->codigo,
+            'descripcion' => $request->descripcion,
+            'estado_id' => 1,
+        ]);
+
+        return redirect()->route('entidad.index')->with('message', 'Actividad Economica creada correctamente.');
+    }
+
+    public function actividades_editar(ActividadEconomica $actividadEconomica)
+    {
+        $data = $actividadEconomica;
+        return view('entidad.actividad_editar', compact('data'));
+    }
+
+    public function actividades_editar_post(ActividadEconomica $actividadEconomica, Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required',
+            'descripcion' => 'required'
+        ]);
+
+        $entidad = Entidad::find(1);
+
+        $actividadEconomica->update([
+            'entidad_id' => $entidad->id,
+            'codigo' => $request->codigo,
+            'descripcion' => $request->descripcion,
+            'estado_id' => $request->estado_id,
+        ]);
+
+        return redirect()->route('entidad.index')->with('message', 'Actividad Economica editado correctamente.');
     }
 
 }

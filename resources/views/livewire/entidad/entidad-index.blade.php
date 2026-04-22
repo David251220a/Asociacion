@@ -68,7 +68,7 @@
                             <label for="direccion">Direccion</label>
                             <input wire:model.defer="direccion" type="text" class="form-control">
                         </div>
-                        
+
                         <div class="form-group col-md-3">
                             <label for="tipo_transaccion_id">Tipo Transaccion</label>
                             <select wire:model.defer="tipo_transaccion_id" class="form-control">
@@ -138,8 +138,8 @@
                         <div class="form-group col-md-3">
                             <label for="ambiente">Ambiente</label>
                             <select wire:model.defer="ambiente" class="form-control">
-                                <option value="0">TEST</option>  
-                                <option value="1">PRODUCCION</option>   
+                                <option value="0">TEST</option>
+                                <option value="1">PRODUCCION</option>
                             </select>
                         </div>
 
@@ -184,11 +184,11 @@
                                         <td>
                                             @can('entidad.firma')
                                                 <a class="ml-2" href="{{route('entidad.firma')}}" data-toggle="tooltip" data-placement="top" title="Editar">
-                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                     stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                                 </a>
                                             @endcan
-                                            
+
                                         </td>
                                     </tr>
                                 @endforeach
@@ -203,7 +203,53 @@
                 </div>
 
                 <div class="col-lg-6 col-md-6 col-sm-12">
-                    <h4>Obligaciones - 
+                    <h4>
+                        Actividad Economica -
+                        @can('entidad.actividades')
+                            <a href="{{route('entidad.actividades')}}" class="btn btn-info btn-sm">Agregar</a>
+                        @endcan
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-striped table-checkable table-highlight-head mb-4">
+                            <thead>
+                                <tr>
+                                    <th class="">Codigo</th>
+                                    <th class="">Actividad</th>
+                                    <th class=""></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($actividades as $item)
+                                    <tr>
+                                        <td class="">
+                                            {{$item->codigo}}
+                                        </td>
+                                        <td>
+                                            {{$item->descripcion}}
+                                        </td>
+                                        <td>
+                                            @can('entidad.actividades_editar')
+                                                <a class="ml-2" href="{{route('entidad.actividades_editar', $item)}}" data-toggle="tooltip" data-placement="top" title="Editar">
+                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                                </a>
+                                            @endcan
+
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <h4>Obligaciones -
                         @can('entidad.obligaciones')
                             <a href="{{route('entidad.obligaciones')}}" class="btn btn-info btn-sm">Agregar</a>
                         @endcan
@@ -229,11 +275,11 @@
                                         <td>
                                             @can('entidad.obligacion_editar')
                                                 <a class="ml-2" href="{{route('entidad.obligacion_editar', $item)}}" data-toggle="tooltip" data-placement="top" title="Editar">
-                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" 
+                                                    <svg xmlns="#" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                     stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                                 </a>
                                             @endcan
-                                            
+
                                         </td>
                                     </tr>
                                 @endforeach
