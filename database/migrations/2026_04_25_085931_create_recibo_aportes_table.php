@@ -13,17 +13,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('aportes', function (Blueprint $table) {
+        Schema::create('recibo_aportes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('recibo_id')->constrained();
             $table->foreignId('asociado_id')->constrained();
-            $table->foreignId('tipo_asociado_id')->constrained();
             $table->foreignId('institucion_id')->constrained();
-            $table->tinyInteger('mes')->default(0);
-            $table->integer('anio')->default(0);
+            $table->tinyInteger('planilla')->default(0)->comment('0-INDIVIDUAL;1-PLANILLA');
+            $table->integer('planilla_numero')->default(0);
+            $table->integer('planilla_anio')->default(0);
+            $table->foreignId('planilla_id')->nullable()->constrained();
             $table->date('fecha_aporte');
-            $table->decimal('aporte', 12, 0)->default(0);
-            $table->date('fecha_ingreso');
-            $table->unsignedBigInteger('recibo_id')->default(0);
+            $table->tinyInteger('mes');
+            $table->integer('anio');
+            $table->decimal('aporte', 12, 0);
             $table->foreignId('estado_id')->constrained();
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('usuario_modificacion');
@@ -38,6 +40,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('aportes');
+        Schema::dropIfExists('recibo_aportes');
     }
 };

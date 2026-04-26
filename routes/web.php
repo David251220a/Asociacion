@@ -10,6 +10,7 @@ use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\GrupoUsuarioController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
+use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\SifenController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\WebController;
@@ -69,11 +70,11 @@ Route::group([
     Route::get('/factura', [FacturaController::class, 'index'])->name('factura.index');
     Route::get('/factura/{factura}/ver', [FacturaController::class, 'show'])->name('factura.show');
     Route::post('/factura/{factura}/anular', [FacturaController::class, 'anular'])->name('factura.anular');
-    Route::get('/factura/cobro-aporte/individual', [FacturaController::class, 'aporte'])->name('factura.aporte');
 
     Route::post('/sifen/{factura}/enviar', [SifenController::class, 'enviar'])->name('sifen.enviar');
 
     Route::get('/pdf/{factura}/factura', [PdfController::class, 'factura'])->name('pdf.factura');
+    Route::get('/pdf/{recibo}/recibo', [PdfController::class, 'recibo'])->name('pdf.recibo');
 
     Route::get('/entidad', [EntidadController::class, 'index'])->name('entidad.index');
     Route::get('/entidad/firma', [EntidadController::class, 'firma'])->name('entidad.firma');
@@ -93,5 +94,10 @@ Route::group([
     Route::post('/establecimiento/crear', [EstablecimientoController::class, 'store'])->name('establecimiento.store');
     Route::get('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'edit'])->name('establecimiento.edit');
     Route::post('/establecimiento/{establecimiento}/editar', [EstablecimientoController::class, 'update'])->name('establecimiento.update');
+
+    Route::get('/recibo', [ReciboController::class, 'index'])->name('recibo.index');
+    Route::get('/recibo/{recibo}/ver', [ReciboController::class, 'show'])->name('recibo.show');
+    Route::post('/recibo/{recibo}/anular', [ReciboController::class, 'anular'])->name('recibo.anular');
+    Route::get('/recibo/cobro-aporte/individual', [ReciboController::class, 'aporte'])->name('recibo.aporte');
 
 });

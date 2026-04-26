@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\TipoFactura;
+use App\Models\TipoIngreso;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class TipoFacturaSeeder extends Seeder
+class TipoIngresoSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -21,11 +21,17 @@ class TipoFacturaSeeder extends Seeder
             'PRESTAMO-SIN ESPECIFICAR',
             'PRESTAMO-SIN ESPECIFICAR',
             'PRESTAMO-SIN ESPECIFICAR',
+            'APORTE PLANILLA',
+            'APORTE INDIVIDUAL',
+            'DONACIONES',
+            'INTERESES',
+            'MULTA',
         ];
 
         foreach ($valores as $item) {
-            TipoFactura::firstOrCreate([
+            TipoIngreso::firstOrCreate([
                 'descripcion' => $item,
+                'estado_id' => 1
             ]);
         }
     }

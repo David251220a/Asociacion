@@ -42,6 +42,7 @@
     </footer>
 
     <script src="{{ asset('inicio/js/bootstrap.bundle.min.js') }}"></script>
+    @livewireScripts
 </body>
 
 </html>

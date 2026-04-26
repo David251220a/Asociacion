@@ -15,17 +15,33 @@ return new class extends Migration
     {
         Schema::create('resumen_mensuals', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('tipo_ingreso_id')->nullable()->constrained();
+            $table->foreignId('tipo_egreso_id')->nullable()->constrained();
+
+            $table->string('tipo_movimiento', 1); // I / E
+
+            $table->decimal('total_egreso', 18, 0)->default(0);
+            $table->decimal('total_ingreso', 18, 0)->default(0);
+
             $table->integer('anio');
             $table->tinyInteger('mes');
-            $table->decimal('total_ingreso', 18, 0)->default(0);
-            $table->decimal('total_egreso', 18, 0)->default(0);
-            $table->decimal('saldo_final', 18, 0)->default(0);
+
             $table->dateTime('fecha_calculo')->nullable();
             $table->string('usuario_calculo', 100)->nullable();
             $table->string('observacion', 300)->nullable();
+
             $table->timestamps();
 
-            $table->unique(['anio', 'mes']);
+            $table->unique([
+                'tipo_ingreso_id',
+                'tipo_egreso_id',
+                'tipo_movimiento',
+                'anio',
+                'mes'
+            ], 'uk_resumen_mensual');
+
+            $table->index(['anio', 'mes']);
         });
     }
 

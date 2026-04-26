@@ -27,8 +27,6 @@ return new class extends Migration
             $table->tinyInteger('seguro_ninguno')->default(0);
             $table->text('observacion')->nullable();
             $table->foreignId('estado_id')->constrained();
-            $table->foreignId('user_id')->constrained();
-            $table->unsignedBigInteger('usuario_modificacion');
             $table->timestamps();
         });
     }

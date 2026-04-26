@@ -19,6 +19,10 @@ class TipoFamiliarSeeder extends Seeder
             'CONYUGE',
             'HIJO',
             'HIJA',
+            'HERMANO/A',
+            'PADRE',
+            'MADRE',
+            'OTRO',
         ];
 
         foreach ($valores as $item) {

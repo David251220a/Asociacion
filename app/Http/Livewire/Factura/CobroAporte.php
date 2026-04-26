@@ -12,6 +12,9 @@ use App\Models\FacturaAporte;
 use App\Models\FacturaCobro;
 use App\Models\FormaCobro;
 use App\Models\Numeracion;
+use App\Models\Recibo;
+use App\Models\ReciboAporte;
+use App\Models\ReciboPago;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use App\Models\Timbrado;
@@ -27,7 +30,7 @@ class CobroAporte extends Component
     public $aportesPendientes = [];
     public $seleccionados = [];
     public $totalSeleccionado = 0;
-    public $formasCobro = [];
+    public $formasCobro;
     public $bancos = [];
     public $cobros = [];
     public $total_abonado = 0;
@@ -97,19 +100,19 @@ class CobroAporte extends Component
         }
 
         $ultimoAporte = Aporte::where('asociado_id', $this->asociado->id)
-            ->where('estado_id', 1)
-            ->orderByDesc('anio')
-            ->orderByDesc('mes')
-            ->first();
+        ->where('estado_id', 1)
+        ->orderByDesc('anio')
+        ->orderByDesc('mes')
+        ->first();
 
         $cantidadAportes = Aporte::where('asociado_id', $this->asociado->id)
-            ->where('estado_id', 1)
-            ->count();
+        ->where('estado_id', 1)
+        ->count();
 
         if ($ultimoAporte) {
-            $fechaInicio = \Carbon\Carbon::create($ultimoAporte->anio, $ultimoAporte->mes, 1)->addMonth();
+            $fechaInicio = Carbon::create($ultimoAporte->anio, $ultimoAporte->mes, 1)->addMonth();
         } else {
-            $fechaInicio = \Carbon\Carbon::create($this->asociado->anio_aporte, $this->asociado->mes_aporte, 1);
+            $fechaInicio = Carbon::create($this->asociado->anio_aporte, $this->asociado->mes_aporte, 1);
         }
 
         $datos = [];
@@ -234,7 +237,7 @@ class CobroAporte extends Component
 
     public function grabar()
     {
-        
+
         if (!$this->validarCobros()) {
             $this->emit('mensaje_error', 'Debe corregir las formas de cobro antes de grabar.');
             return false;
@@ -253,44 +256,38 @@ class CobroAporte extends Component
             throw new \Exception('Debe seleccionar al menos un aporte.');
         }
 
-        $factura = null;
-        
+        $recibo = null;
+
         DB::beginTransaction();
 
         try {
 
             $numeracion = Numeracion::where('timbrado_id', $this->timbrado->id)
             ->where('establecimiento_id', $this->establecimiento->id)
-            ->where('tipo_documento_id', 1)
+            ->where('modulo', 'RECIBO')
             ->lockForUpdate()
             ->first();
-            
+
+            $institucionId = $this->asociado->institucion_id;
+
             $numeroActual = $numeracion->numero_siguiente;
             $concepto = 'COBRO APORTE INDIVUAL';
             $total = $this->limpiarMonto($this->total_abonado);
             $total_seleccionado = $this->limpiarMonto($this->totalSeleccionado);
 
-            $factura = Factura::create([
+            $recibo = Recibo::create([
                 'persona_id' => $this->asociado->persona->id,
-                'timbrado_id' => $this->timbrado->id,
-                'establecimiento_id' => $this->establecimiento->id,
-                'tipo_factura_id' => 1,
-                'registro_id' => 0,
-                'factura_sucursal' => $this->establecimiento->sucursal,
-                'factura_general' => $this->establecimiento->general,
-                'factura_numero' => $numeroActual,
-                'fecha_factura' => now(),
-                'tipo_documento_id' => 1,
-                'tipo_transaccion_id' => $this->entidad->tipo_transaccion_id,
-                'condicion_pago' => 1,
-                'cuota' => 0,
+                'tipo_recibo_id' => 5,
+                'sucursal' => $this->establecimiento->sucursal,
+                'general' => $this->establecimiento->general,
+                'numero' => $numeroActual,
+                'fecha' => now(),
                 'concepto' => $concepto,
                 'monto_total'         => $total_seleccionado,
                 'monto_abonado'       => $total,
                 'monto_devuelto'      => 0,
                 'estado_id'           => 1,
                 'anulado'             => 0,
-                'generado_sifen'      => 0,
                 'user_id'             => auth()->id(),
             ]);
 
@@ -298,20 +295,22 @@ class CobroAporte extends Component
             $fechaHoy = now()->toDateString();
             $userId = auth()->id();
 
-            $insertFacturaAportes = [];
+            $insertReciboAportes = [];
             $insertAportes = [];
 
             foreach ($aportesSeleccionados as $item) {
                 $fechaAporte = Carbon::createFromDate($item['anio'], $item['mes'], 1)
-                    ->endOfMonth()
-                    ->toDateString();
+                ->endOfMonth()
+                ->toDateString();
 
-                $insertFacturaAportes[] = [
-                    'factura_id'           => $factura->id,
+                $insertReciboAportes[] = [
+                    'recibo_id'           => $recibo->id,
                     'asociado_id'          => $this->asociado->id,
                     'planilla'             => 1, // 1 = INDIVIDUAL
                     'planilla_numero'      => 0,
                     'planilla_anio'        => 0,
+                    'planilla_id' => null,
+                    'institucion_id' => $institucionId,
                     'fecha_aporte'         => $fechaAporte,
                     'mes'                  => $item['mes'],
                     'anio'                 => $item['anio'],
@@ -326,12 +325,13 @@ class CobroAporte extends Component
                 $insertAportes[] = [
                     'asociado_id'          => $this->asociado->id,
                     'tipo_asociado_id'     => $this->asociado->tipo_asociado_id,
+                    'institucion_id' => $institucionId,
                     'mes'                  => $item['mes'],
                     'anio'                 => $item['anio'],
                     'fecha_aporte'         => $fechaAporte,
                     'aporte'               => $item['monto'],
                     'fecha_ingreso'        => $fechaHoy,
-                    'factura_id'           => $factura->id,
+                    'recibo_id'           => $recibo->id,
                     'estado_id'            => 1,
                     'user_id'              => $userId,
                     'usuario_modificacion' => $userId,
@@ -340,8 +340,8 @@ class CobroAporte extends Component
                 ];
             }
 
-            if (!empty($insertFacturaAportes)) {
-                FacturaAporte::insert($insertFacturaAportes);
+            if (!empty($insertReciboAportes)) {
+                ReciboAporte::insert($insertReciboAportes);
             }
 
             if (!empty($insertAportes)) {
@@ -364,18 +364,18 @@ class CobroAporte extends Component
                 }
 
                 $insertCobros[] = [
-                    'factura_id'     => $factura->id,
+                    'recibo_id'     => $recibo->id,
                     'forma_cobro_id' => $formaCobroId,
                     'banco_id'       => $bancoId,
                     'monto'          => $monto,
-                    'factura_id'     => 1,
+                    'estado_id'     => 1,
                     'created_at'     => $ahora,
                     'updated_at'     => $ahora,
                 ];
             }
 
             if (!empty($insertCobros)) {
-                FacturaCobro::insert($insertCobros);
+                ReciboPago::insert($insertCobros);
             }
 
             $numeracion->numero_siguiente = $numeroActual + 1;
@@ -386,49 +386,34 @@ class CobroAporte extends Component
             | RESUMEN MENSUAL
             |--------------------------------------------------------------------------
             */
-            $fechaResumen = Carbon::parse($factura->fecha_factura);
+            $fechaResumen = Carbon::parse($recibo->fecha_factura);
             $anioResumen = (int) $fechaResumen->year;
             $mesResumen  = (int) $fechaResumen->month;
-            $montoIngreso = (float) $factura->monto_total;
+            $montoIngreso = (float) $recibo->monto_total;
 
             $resumenMensual = ResumenMensual::where('anio', $anioResumen)
             ->where('mes', $mesResumen)
+            ->where('tipo_ingreso_id', 5)
+            ->whereNull('tipo_egreso_id')
             ->lockForUpdate()
             ->first();
 
             if (!$resumenMensual) {
-                $saldoAnterior = 0;
-
-                $mesAnterior = $mesResumen - 1;
-                $anioAnterior = $anioResumen;
-
-                if ($mesAnterior <= 0) {
-                    $mesAnterior = 12;
-                    $anioAnterior = $anioResumen - 1;
-                }
-
-                $resumenMesAnterior = ResumenMensual::where('anio', $anioAnterior)
-                ->where('mes', $mesAnterior)
-                ->first();
-
-                if ($resumenMesAnterior) {
-                    $saldoAnterior = (float) $resumenMesAnterior->saldo_final;
-                }
-
                 $resumenMensual = ResumenMensual::create([
-                    'anio'            => $anioResumen,
-                    'mes'             => $mesResumen,
-                    'total_ingreso'   => 0,
-                    'total_egreso'    => 0,
-                    'saldo_final'     => $saldoAnterior,
-                    'fecha_calculo'   => null,
-                    'usuario_calculo' => null,
-                    'observacion'     => 'Creado automáticamente desde cobro de planilla',
+                    'anio'             => $anioResumen,
+                    'mes'              => $mesResumen,
+                    'tipo_ingreso_id'   => 5,
+                    'tipo_egreso_id'   => null,
+                    'tipo_movimiento'  => 'I',
+                    'total_ingreso'    => 0,
+                    'total_egreso'     => 0,
+                    'fecha_calculo'    => null,
+                    'usuario_calculo'  => null,
+                    'observacion'      => 'Creado automáticamente desde cobro de planilla',
                 ]);
             }
 
             $resumenMensual->total_ingreso = (float) $resumenMensual->total_ingreso + $montoIngreso;
-            $resumenMensual->saldo_final   = (float) $resumenMensual->saldo_final + $montoIngreso;
             $resumenMensual->save();
 
             /*
@@ -472,6 +457,6 @@ class CobroAporte extends Component
             return;
         }
 
-        return redirect()->route('factura.show', $factura->id)->with('message', 'Ingreso realizado correctamente.');
+        return redirect()->route('recibo.show', $recibo->id)->with('message', 'Ingreso realizado correctamente.');
     }
 }

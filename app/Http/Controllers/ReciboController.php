@@ -4,32 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Aporte;
 use App\Models\Entidad;
-use App\Models\Factura;
-use App\Models\FacturaAporte;
 use App\Models\Planilla;
+use App\Models\Recibo;
+use App\Models\ReciboAporte;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
-use App\Models\Sifen;
-use App\Services\SifenServices;
+use App\Models\TipoRecibo;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class FacturaController extends Controller
+class ReciboController extends Controller
 {
-    public $sifen;
-
-    public function __construct()
-    {
-        $this->middleware('permission:factura.index')->only('index');
-        $this->middleware('permission:factura.show')->only('show');
-        $this->middleware('permission:factura.anular')->only('anular');
-        $this->middleware('permission:factura.aporte')->only('aporte');
-    }
-
     public function index(Request $request)
     {
         $estado = $request->estado ?? 0;
+        $tipo_recibo_id = $request->tipo_recibo_id ?? 0;
         $fecha_desde = $request->fecha_desde
         ? Carbon::parse($request->fecha_desde)->toDateString()
         : now()->toDateString();
@@ -38,29 +28,40 @@ class FacturaController extends Controller
         ? Carbon::parse($request->fecha_hasta)->toDateString()
         : now()->toDateString();
 
-        $data = Factura::query()
-        ->whereBetween('fecha_factura', [$fecha_desde, $fecha_hasta])
+        $query = Recibo::query()
+        ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
         ->when($estado != 0, fn($q) => $q->where('estado_id', $estado))
-        ->orderByDesc('factura_sucursal')
-        ->orderByDesc('factura_general')
-        ->orderByDesc('factura_numero')
+        ->when($tipo_recibo_id != 0, fn($q) => $q->where('tipo_recibo_id', $tipo_recibo_id));
+
+        $totalQuery = clone $query;
+
+        if ($estado == 0) {
+            $totalQuery->where('estado_id', 1); // activo
+        }
+
+        $totalGeneral = $totalQuery->sum('monto_total');
+
+        $data = $query
+        ->orderByDesc('sucursal')
+        ->orderByDesc('general')
+        ->orderByDesc('numero')
         ->paginate(50);
 
-        return view('factura.index', compact('data', 'fecha_desde', 'fecha_hasta'));
+        $tipoRecibos = TipoRecibo::where('estado_id', 1)->get();
+
+        return view('recibo.index', compact('data','fecha_desde','fecha_hasta','estado', 'tipoRecibos','totalGeneral'));
     }
 
-    public function show(Factura $factura)
+    public function show(Recibo $recibo)
     {
         $entidad = Entidad::find(1);
         $data = collect();
-
-        if ($factura->tipo_factura_id == 1) {
-            $detalle = FacturaAporte::where('factura_id', $factura->id)->first();
-
+        if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)) {
+            $detalle = ReciboAporte::where('recibo_id', $recibo->id)->first();
             if ($detalle) {
                 if ((int) $detalle->planilla === 0) {
                     $planillaId = str_pad($detalle->planilla_numero, 5, '0', STR_PAD_LEFT) . '/' . $detalle->planilla_anio;
-                    $descripcion = "APORTE {$factura->mes}/{$factura->anio} PLANILLA N° {$planillaId}";
+                    $descripcion = "APORTE {$detalle->mes}/{$detalle->anio} PLANILLA N° {$planillaId}";
                 } else {
                     $descripcion = "APORTE MES " . strtoupper($this->nombreMes($detalle->mes)) . "/{$detalle->anio}";
                 }
@@ -69,51 +70,31 @@ class FacturaController extends Controller
                     (object)[
                         'descripcion' => $descripcion,
                         'cantidad' => 1,
-                        'precio' => $factura->monto_total,
-                        'exento' => $factura->monto_total,
+                        'precio' => $recibo->monto_total,
+                        'exento' => $recibo->monto_total,
                         'grabado_5' => 0,
                         'grabado_10' => 0,
                         'iva_10' => 0,
                         'iva_5' => 0,
-                        'total' => $factura->monto_total,
+                        'total' => $recibo->monto_total,
                     ]
                 ]);
             }
         }
 
-        return view('factura.show', compact('factura', 'entidad', 'data'));
+        return view('recibo.show', compact('recibo', 'entidad', 'data'));
     }
 
-    public function anular(Factura $factura, SifenServices $sifen)
+    public function anular(Recibo $recibo)
     {
-       if (!$factura->sifen || $factura->sifen->sifen_estado !== 'APROBADO') {
-            return redirect()->route('factura.index')->with('message', 'No puede anular la factura si no fue aprobada por SIFEN');
-        }
 
-        if ($factura->estado_id == 2) {
-            return redirect()->route('factura.index')->with('message', 'La factura ya está anulada');
+        if ($recibo->estado_id == 2) {
+            return redirect()->route('recibo.index')->with('message', 'El recibo ya está anulado.');
         }
 
         try {
-            $data = $factura->sifen;
-            $xml_formacion = $sifen->cancelacion($data, 'Facturacion incorrecta.');
-            if (!$xml_formacion['success']) {
-                throw new \Exception($xml_formacion['message']);
-            }
-            $xml = $xml_formacion['data']['xml_firmado'];
-            $secuencia = $xml_formacion['data']['secuencia_evento'];
-            $respuesta = $sifen->envioEvento($data, $xml, $secuencia, 2);
-            if (!$respuesta['success']) {
-                throw new \Exception($respuesta['message']);
-            }
-
-            if (strtoupper($respuesta['data']['status']) !== 'APROBADO') {
-                throw new \Exception('SIFEN no aprobó la cancelación: ' . $respuesta['message']);
-            }
-
-            DB::transaction(function () use ($factura) {
-                $detalle = FacturaAporte::where('factura_id', $factura->id)->first();
-
+            DB::transaction(function () use ($recibo) {
+                $detalle = ReciboAporte::where('recibo_id', $recibo->id)->first();
                 if ($detalle && $detalle->planilla_id) {
                     $planilla = Planilla::find($detalle->planilla_id);
 
@@ -127,25 +108,25 @@ class FacturaController extends Controller
                     }
                 }
                 $fecha_anulado = now()->toDateString();
-                $factura->update([
+                $recibo->update([
                     'estado_id' => 2,
                     'usuario_anulacion' => auth()->id(),
                     'fecha_anulado' => $fecha_anulado,
-                    'motivo_anulacion' => 'Facturacion incorrecta',
+                    'motivo_anulacion' => 'Recibo incorrecto',
                 ]);
 
-                FacturaAporte::where('factura_id', $factura->id)->update([
+                ReciboAporte::where('recibo_id', $recibo->id)->update([
                     'estado_id' => 2,
                     'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
                 ]);
 
-                $factura->forma_pagos()->update([
+                $recibo->forma_pagos()->update([
                     'estado_id' => 2,
                     'updated_at' => now(),
                 ]);
 
-                 $afectadosAporte = Aporte::where('factura_id', $factura->id)->update([
+                 $afectadosAporte = Aporte::where('recibo_id', $recibo->id)->update([
                     'estado_id' => 2,
                     'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
@@ -161,21 +142,20 @@ class FacturaController extends Controller
                 | ACTUALIZAR RESUMENES
                 |--------------------------------------------------------------------------
                 */
-                $fechaResumen = Carbon::parse($factura->fecha_factura);
+                $fechaResumen = Carbon::parse($recibo->fecha);
                 $anioResumen = (int) $fechaResumen->year;
                 $mesResumen  = (int) $fechaResumen->month;
-                $montoIngreso = (float) $factura->monto_total;
+                $montoIngreso = (float) $recibo->monto_total;
 
                 $resumenMensual = ResumenMensual::where('anio', $anioResumen)
                 ->where('mes', $mesResumen)
+                ->where('tipo_ingreso_id', $recibo->tipo_recibo_id)
+                ->whereNull('tipo_egreso_id')
                 ->lockForUpdate()
                 ->first();
 
-                if ($resumenMensual) {
-                    $resumenMensual->total_ingreso = (float) $resumenMensual->total_ingreso - $montoIngreso;
-                    $resumenMensual->saldo_final   = (float) $resumenMensual->saldo_final - $montoIngreso;
-                    $resumenMensual->save();
-                }
+                $resumenMensual->total_ingreso -= $montoIngreso;
+                $resumenMensual->save();
 
                 $resumenAnual = ResumenAnual::where('anio', $anioResumen)
                 ->lockForUpdate()
@@ -188,16 +168,19 @@ class FacturaController extends Controller
                         - (float) $resumenAnual->total_egreso;
                     $resumenAnual->save();
                 }
-
-
             });
 
 
         } catch (\Throwable $e) {
-            return redirect()->route('factura.index')->with('message',  $e->getMessage());
+            return redirect()->route('recibo.index')->with('message',  $e->getMessage());
         }
 
-        return redirect()->route('factura.index')->with('message', 'Factura anulada');
+        return redirect()->route('recibo.index')->with('message', 'Recibo anulado.');
+    }
+
+    public function aporte()
+    {
+        return view('recibo.aporte');
     }
 
     private function nombreMes($mes)
@@ -220,14 +203,5 @@ class FacturaController extends Controller
         return $meses[(int) $mes] ?? '';
     }
 
-    private function descripcionFacturaAporte(FacturaAporte $detalle, Factura $factura): string
-    {
-        if ((int) $detalle->planilla === 0) {
-            $planillaId = str_pad($detalle->planilla_numero, 5, '0', STR_PAD_LEFT) . '/' . $detalle->planilla_anio;
-            return "APORTE {$factura->mes}/{$factura->anio} PLANILLA N° {$planillaId}";
-        }
-
-        return "APORTE MES " . strtoupper($this->nombreMes($detalle->mes)) . "/{$detalle->anio}";
-    }
 
 }

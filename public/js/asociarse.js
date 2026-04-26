@@ -4,23 +4,23 @@ const swalWithBootstrapButtons = swal.mixin({
     buttonsStyling: false,
 })
 
-window.addEventListener('load', function() {
+document.addEventListener('livewire:load', function () {
 
-    window.livewire.on('mensaje_error', msj => {
+    Livewire.on('mensaje_error', function (msj) {
         swalWithBootstrapButtons(
             'Atención',
             msj,
             'error'
-        )
+        );
     });
 
-    window.livewire.on('mensaje_exitoso', msj => {
+    Livewire.on('mensaje_exitoso', function (msj) {
         swal({
             title: 'Buen Trabajo',
             text: msj,
             type: 'success',
             padding: '2em'
-        })
+        });
     });
 
 });

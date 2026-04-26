@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Solicitud;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,15 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('solicitud_familiars', function (Blueprint $table) {
+        Schema::create('recibo_donacions', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Solicitud::class)->constrained();
-            $table->foreignId('tipo_familiar')->constrained();
-            $table->string('documento', 20);
-            $table->string('nombre', 200);
-            $table->string('apellido', 200);
-            $table->string('celular', 20);
+            $table->foreignId('persona_id')->constrained();
+            $table->date('fecha');
+            $table->decimal('monto', 12, 0)->default(0);
             $table->foreignId('estado_id')->constrained();
+            $table->foreignId('user_id')->constrained();
+            $table->unsignedBigInteger('usuario_modificacion');
             $table->timestamps();
         });
     }
@@ -34,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('solicitud_familiars');
+        Schema::dropIfExists('recibo_donacions');
     }
 };

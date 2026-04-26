@@ -1,24 +1,23 @@
 ﻿/* Data for the 'Query_Result' table  (Records 1 - 18) */
 
-INSERT INTO [Query_Result]
-  ([id], [descripcion])
-VALUES 
-  (10, N'PARAGUARI'),
-  (9, N'MISIONES'),
-  (7, N'CAAZAPA'),
-  (4, N'CORDILLERA'),
-  (5, N'GUAIRA'),
-  (18, N'CANINDEYU'),
-  (1, N'CAPITAL'),
-  (15, N'PTE. HAYES'),
-  (16, N'BOQUERON'),
-  (12, N'CENTRAL'),
-  (14, N'AMAMBAY'),
-  (2, N'CONCEPCION'),
-  (6, N'CAAGUAZU'),
-  (11, N'ALTO PARANA'),
-  (17, N'ALTO PARAGUAY'),
-  (13, N'NEEMBUCU'),
-  (3, N'SAN PEDRO'),
-  (8, N'ITAPUA')
-GO
+INSERT INTO departamentos
+  (id, descripcion)
+VALUES
+  (10, 'PARAGUARI'),
+  (9, 'MISIONES'),
+  (7, 'CAAZAPA'),
+  (4, 'CORDILLERA'),
+  (5, 'GUAIRA'),
+  (18, 'CANINDEYU'),
+  (1, 'CAPITAL'),
+  (15, 'PTE. HAYES'),
+  (16, 'BOQUERON'),
+  (12, 'CENTRAL'),
+  (14, 'AMAMBAY'),
+  (2, 'CONCEPCION'),
+  (6, 'CAAGUAZU'),
+  (11, 'ALTO PARANA'),
+  (17, 'ALTO PARAGUAY'),
+  (13, 'NEEMBUCU'),
+  (3, 'SAN PEDRO'),
+  (8, 'ITAPUA');

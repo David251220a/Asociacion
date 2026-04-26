@@ -63,8 +63,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-            MuniDepartamentoSeeder::class,
-            InstitucionSeeder::class,
+            // MuniDepartamentoSeeder::class,
+            // InstitucionSeeder::class,
             TipoTransaccionSeeder::class,
             EntidadSeeder::class,
             ActividadEconomicaSeeder::class,
@@ -82,7 +82,10 @@ class DatabaseSeeder extends Seeder
             ObligacionesSeeder::class,
             TipoFamiliarSeeder::class,
             TipoSeguroSeeder::class,
-            TipoFacturaSeeder::class
+            TipoFacturaSeeder::class,
+            TipoReciboSeeder::class,
+            TipoEgresoSeeder::class,
+            TipoIngresoSeeder::class,
         ]);
     }
 }

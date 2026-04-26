@@ -19,11 +19,15 @@
                 </div>
                 @include('varios.mensaje')
                 <form id="form_general" action="{{route('asociado.store')}}" method="post" enctype="multipart/form-data"
-                        onsubmit="
+                    onsubmit="
+                        if (!this.checkValidity()) return true;
+
                         if (this.dataset.enviando === '1') return false;
                         this.dataset.enviando = '1';
+
                         document.getElementById('btnEnviar').disabled = true;
-                        document.getElementById('btnEnviar').innerText = 'Enviando...';"
+                        document.getElementById('btnEnviar').innerText = 'Enviando...';
+                    "
                 >
 
                     @csrf
@@ -241,15 +245,7 @@
                             </div>
 
                             <div class="form-row">
-                                <button id="btnEnviar" type="submit" class="btn btn-success"
-                                    onclick="
-                                        if (this.dataset.clicked === '1') return false;
-                                        this.dataset.clicked = '1';
-                                        this.disabled = true;
-                                        this.innerText = 'Enviando...';
-                                        this.form.requestSubmit();
-                                        return false;"
-                                >
+                                <button id="btnEnviar" type="submit" class="btn btn-success">
                                     Grabar
                                 </button>
                             </div>

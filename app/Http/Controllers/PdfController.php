@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Entidad;
 use App\Models\Factura;
 use App\Models\FacturaAporte;
+use App\Models\Recibo;
+use App\Models\ReciboAporte;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Endroid\QrCode\Builder\Builder;
@@ -51,7 +54,7 @@ class PdfController extends Controller
                 ]);
             }
         }
-        
+
         $pdf = Pdf::loadView('pdf.factura', [
             'qrBase64' => $qrBase64,
             'factura' => $factura,
@@ -59,6 +62,47 @@ class PdfController extends Controller
         ])->setPaper('a4', 'portrait');
 
         return $pdf->stream('factura.pdf');
+    }
+
+    public function recibo(Recibo $recibo)
+    {
+        $entidad = Entidad::find(1);
+        $data = collect();
+
+        if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)) {
+            $detalle = ReciboAporte::where('recibo_id', $recibo->id)->first();
+
+            if ($detalle) {
+                if ((int) $detalle->planilla === 0) {
+                    $planillaId = str_pad($detalle->planilla_numero, 5, '0', STR_PAD_LEFT) . '/' . $detalle->planilla_anio;
+                    $descripcion = "APORTE {$detalle->mes}/{$detalle->anio} PLANILLA N° {$planillaId}";
+                } else {
+                    $descripcion = "APORTE MES " . strtoupper($this->nombreMes($detalle->mes)) . "/{$detalle->anio}";
+                }
+
+                $data = collect([
+                    (object)[
+                        'descripcion' => $descripcion,
+                        'cantidad' => 1,
+                        'precio' => $recibo->monto_total,
+                        'exento' => $recibo->monto_total,
+                        'grabado_5' => 0,
+                        'grabado_10' => 0,
+                        'iva_10' => 0,
+                        'iva_5' => 0,
+                        'total' => $recibo->monto_total,
+                    ]
+                ]);
+            }
+        }
+
+        $pdf = Pdf::loadView('pdf.recibo', [
+            'recibo' => $recibo,
+            'data' => $data,
+            'entidad' => $entidad
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('recibo.pdf');
     }
 
     private function nombreMes($mes)

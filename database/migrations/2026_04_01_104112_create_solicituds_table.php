@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId('sexo_id')->constrained();
             $table->foreignId('estado_civil_id')->constrained();
             $table->foreignId('tipo_vivienda_id')->constrained();
+            $table->foreignId('institucion_id')->constrained();
             $table->integer('numero_solicitud');
             $table->integer('anio');
             $table->date('fecha_solicitud');
@@ -42,8 +43,8 @@ return new class extends Migration
             $table->text('documento_frente')->nullable();
             $table->text('documento_reverso')->nullable();
             $table->text('selfi')->nullable();
+            $table->tinyInteger('acepto_condiciones')->default(0);
             $table->foreignId('estado_id')->constrained();
-            $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('usuario_modificacion');
             $table->timestamps();
         });

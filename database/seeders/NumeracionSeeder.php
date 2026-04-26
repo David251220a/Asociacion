@@ -20,6 +20,17 @@ class NumeracionSeeder extends Seeder
             'establecimiento_id' => 1,
             'tipo_documento_id' => 1,
             'numero_siguiente' => 1,
+            'modulo' => 'SIFEN',
+            'estado_id' => 1,
+            'user_id' => 1,
+        ]);
+
+        Numeracion::create([
+            'timbrado_id' => 1,
+            'establecimiento_id' => 1,
+            'tipo_documento_id' => null,
+            'numero_siguiente' => 1,
+            'modulo' => 'RECIBO',
             'estado_id' => 1,
             'user_id' => 1,
         ]);
