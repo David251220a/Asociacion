@@ -10,4 +10,10 @@ class SolicitudFamiliar extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function tipo_familia()
+    {
+        return $this->belongsTo(TipoFamiliar::class, 'tipo_familiar');
+    }
+
 }

@@ -359,6 +359,7 @@ class AsociarIndex extends Component
                 'estado_civil_id' => $this->estado_civil_id,
                 'tipo_vivienda_id' => $this->tipo_vivienda,
                 'institucion_id' => $this->institucion_id,
+                'tipo_asociado_id' => $this->tipo_id,
                 'anio' => $anio,
                 'numero_solicitud' => $numero,
                 'fecha_solicitud' => now()->toDateString(),

@@ -193,7 +193,7 @@ class AsociadoController extends Controller
                     // guardar hijo
                     Familiar::create([
                         'persona_id' => $persona->id,
-                        'tipo_familiar' => 1,
+                        'tipo_familiar_id' => 1,
                         'documento' => $request->documento_conyuge,
                         'nombre' => mb_strtoupper($request->nombre_conyuge, 'UTF-8'),
                         'apellido' => mb_strtoupper($request->apellido_conyuge, 'UTF-8'),
@@ -211,7 +211,7 @@ class AsociadoController extends Controller
                     // guardar hijo
                     Familiar::create([
                         'persona_id' => $persona->id,
-                        'tipo_familiar' => 2,
+                        'tipo_familiar_id' => 2,
                         'documento' => $request->documento_hijo1,
                         'nombre' => mb_strtoupper($request->nombre_hijo1, 'UTF-8'),
                         'apellido' => mb_strtoupper($request->apellido_hijo1, 'UTF-8'),
@@ -229,7 +229,7 @@ class AsociadoController extends Controller
                     // guardar hijo
                     Familiar::create([
                         'persona_id' => $persona->id,
-                        'tipo_familiar' => 2,
+                        'tipo_familiar_id' => 2,
                         'documento' => $request->documento_hijo2,
                         'nombre' => mb_strtoupper($request->nombre_hijo2, 'UTF-8'),
                         'apellido' => mb_strtoupper($request->apellido_hijo2, 'UTF-8'),

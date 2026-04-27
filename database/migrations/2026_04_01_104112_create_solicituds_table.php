@@ -23,6 +23,7 @@ return new class extends Migration
             $table->foreignId('estado_civil_id')->constrained();
             $table->foreignId('tipo_vivienda_id')->constrained();
             $table->foreignId('institucion_id')->constrained();
+            $table->foreignId('tipo_asociado_id')->constrained();
             $table->integer('numero_solicitud');
             $table->integer('anio');
             $table->date('fecha_solicitud');

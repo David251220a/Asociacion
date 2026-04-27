@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('nombre', 100);
             $table->string('apellido', 100);
             $table->tinyInteger('tipo');
+            $table->tinyInteger('presente')->default(0);
             $table->timestamps();
         });
     }
