@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asociado;
 use App\Models\Entidad;
+use App\Models\EstadoCivil;
 use App\Models\Familiar;
 use App\Models\FichaMedica;
 use App\Models\Miembro;
@@ -11,10 +12,11 @@ use App\Models\Numeraciones;
 use App\Models\Persona;
 use App\Models\Solicitud;
 use App\Models\SolicitudAprobado;
+use App\Models\TipoAsociado;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Mime\Message;
 
 class SolicitudController extends Controller
 {
@@ -97,6 +99,7 @@ class SolicitudController extends Controller
 
             $solicitud->update([
                 'aprobado' => $request->estado,
+                'acta' => $request->acta,
                 'fecha_aprobacion_o_rechazo' => now(),
                 'usuario_modificacion' => auth()->id(),
                 'numero_socio' => $numeroSocio,
@@ -200,4 +203,27 @@ class SolicitudController extends Controller
 
         return $request->all();
     }
+
+    public function imprimir(Solicitud $solicitud)
+    {
+        $entidad = Entidad::find(1);
+
+        $solicitud->load([
+            'familiares.tipo_familia',
+            'ficha_medica',
+            'estado_civil',
+            'ciudad',
+            'tipo_vivienda',
+            'departamento',
+            'distrito',
+        ]);
+
+        $tiposAsociados = TipoAsociado::all();
+        $civil = EstadoCivil::all();
+        $pdf = Pdf::loadView('solicitud.pdf', compact('solicitud', 'entidad','tiposAsociados','civil'))
+        ->setPaper('legal', 'portrait');
+
+        return $pdf->stream('solicitud-'.$solicitud->numero_solicitud.'.pdf');
+    }
+
 }

@@ -102,12 +102,16 @@
                                                     RECHAZADO
                                                 @endif
                                             </td>
-                                            <td class="text-center">
+                                            <td class="">
                                                 {{-- @can('solicitud.show') --}}
-                                                   <a href="{{route('solicitud.show', $item)}}" class="ml-3 btn btn-info btn-sm">
+                                                   <a href="{{route('solicitud.show', $item)}}" class="ml-3" style="font-size: 15px">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                 {{-- @endcan --}}
+
+                                                <a href="{{route('solicitud.imprimir', $item)}}" target="__blank" class="ml-3" style="font-size: 15px">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
 
                                                {{-- @can('ficha_medica.create')
                                                    <a href="{{route('ficha_medica.create', $item)}}" class="ml-3">

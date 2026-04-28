@@ -104,5 +104,6 @@ Route::group([
     Route::get('/solicitud', [SolicitudController::class, 'index'])->name('solicitud.index');
     Route::get('/solicitud/{solicitud}/aprobacion-o-rechazo', [SolicitudController::class, 'show'])->name('solicitud.show');
     Route::post('/solicitud/{solicitud}/aprobacion-o-rechazo', [SolicitudController::class, 'store'])->name('solicitud.store');
+    Route::get('/solicitud/{solicitud}/imprimir', [SolicitudController::class, 'imprimir'])->name('solicitud.imprimir');
 
 });
