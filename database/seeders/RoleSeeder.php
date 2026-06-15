@@ -70,6 +70,15 @@ class RoleSeeder extends Seeder
         $permission = Permission::create(['name' => 'establecimiento.create', 'descripcion' => 'Establecimiento: Crear'])->syncRoles($admin);
         $permission = Permission::create(['name' => 'establecimiento.edit', 'descripcion' => 'Establecimiento: Editar'])->syncRoles($admin);
 
+        $permission = Permission::create(['name' => 'recibo.index', 'descripcion' => 'Recibo: Index'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'recibo.show', 'descripcion' => 'Recibo: Ver'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'recibo.anular', 'descripcion' => 'Recibo: Anular'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'recibo.aporte', 'descripcion' => 'Recibo: Aporte Individual'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'recibo.varios', 'descripcion' => 'Recibo: Donacion'])->syncRoles($admin);
+
+        $permission = Permission::create(['name' => 'solicitud.index', 'descripcion' => 'Solicitud: Index'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'solicitud.show', 'descripcion' => 'Solicitud: Ver'])->syncRoles($admin);
+
 
         // $permission = Permission::create(['name' => 'habilitacion.estado_alumno', 'descripcion' => 'Habilitacion de Curso: Estado Alumno']);
 

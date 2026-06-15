@@ -1,6 +1,4 @@
-﻿/* Data for the 'Query_Result' table  (Records 1 - 18) */
-
-INSERT INTO departamentos
+﻿INSERT INTO departamentos
   (id, descripcion)
 VALUES
   (10, 'PARAGUARI'),

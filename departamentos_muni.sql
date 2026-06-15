@@ -1,8 +1,6 @@
-﻿/* Data for the 'muni_departamentos' table  (Records 1 - 20) */
-
-INSERT INTO `muni_departamentos`
+﻿INSERT INTO `muni_departamentos`
   (`id`, `departamento_id`, `descripcion`, `estado_id`)
-VALUES 
+VALUES
   (1, 100, 'SIN ESPECIFICAR', 1),
   (2, 0, 'CAPITAL', 1),
   (3, 1, 'CONCEPCION', 1),

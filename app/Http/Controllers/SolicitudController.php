@@ -20,6 +20,13 @@ use Illuminate\Support\Facades\DB;
 
 class SolicitudController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:solicitud.index')->only('index');
+        $this->middleware('permission:solicitud.show')->only('show');
+        $this->middleware('permission:solicitud.show')->only('store');
+    }
+
     public function index(Request $request)
     {
         $menorFechaPendiente = Solicitud::where('estado_id', 1)

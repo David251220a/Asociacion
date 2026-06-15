@@ -13,7 +13,7 @@
             </a>
         </li>
 
-        {{-- @can('solicitud.index') --}}
+        @can('solicitud.index')
             <li class="menu">
                 <a href="{{route('solicitud.index')}}" aria-expanded="false" class="dropdown-toggle"
                     @if(Str::startsWith(Route::currentRouteName(), 'solicitud.index')) data-active="true" @endif
@@ -28,7 +28,7 @@
                     </div>
                 </a>
             </li>
-        {{-- @endcan --}}
+        @endcan
 
         @can('asociado.index')
             <li class="menu">
@@ -79,7 +79,7 @@
             </li>
         @endcan
 
-        {{-- @can('recibo.index') --}}
+        @can('recibo.index')
             <li class="menu">
                 <a href="{{route('recibo.index')}}" aria-expanded="false" class="dropdown-toggle"
                     @if(Str::startsWith(Route::currentRouteName(), 'recibo.index')) data-active="true" @endif
@@ -94,9 +94,9 @@
                     </div>
                 </a>
             </li>
-        {{-- @endcan --}}
+        @endcan
 
-        {{-- @can('recibo.aporte') --}}
+        @can('recibo.aporte')
             <li class="menu">
                 <a href="{{route('recibo.aporte')}}" aria-expanded="false" class="dropdown-toggle"
                     @if(Str::startsWith(Route::currentRouteName(), 'recibo.aporte')) data-active="true" @endif
@@ -108,6 +108,23 @@
                             <circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line>
                         </svg>
                         <span>Aporte</span>
+                    </div>
+                </a>
+            </li>
+        @endcan
+
+        {{-- @can('recibo.varios') --}}
+            <li class="menu">
+                <a href="{{route('recibo.varios')}}" aria-expanded="false" class="dropdown-toggle"
+                    @if(Str::startsWith(Route::currentRouteName(), 'recibo.varios')) data-active="true" @endif
+                >
+                    <div class="">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-square"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        <span>Donaciones</span>
                     </div>
                 </a>
             </li>

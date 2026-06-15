@@ -100,6 +100,7 @@ Route::group([
     Route::get('/recibo/{recibo}/ver', [ReciboController::class, 'show'])->name('recibo.show');
     Route::post('/recibo/{recibo}/anular', [ReciboController::class, 'anular'])->name('recibo.anular');
     Route::get('/recibo/cobro-aporte/individual', [ReciboController::class, 'aporte'])->name('recibo.aporte');
+    Route::get('/recibo/cobro-varios', [ReciboController::class, 'varios'])->name('recibo.varios');
 
     Route::get('/solicitud', [SolicitudController::class, 'index'])->name('solicitud.index');
     Route::get('/solicitud/{solicitud}/aprobacion-o-rechazo', [SolicitudController::class, 'show'])->name('solicitud.show');

@@ -7,6 +7,7 @@ use App\Models\Factura;
 use App\Models\FacturaAporte;
 use App\Models\Recibo;
 use App\Models\ReciboAporte;
+use App\Models\ReciboDonacion;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Endroid\QrCode\Builder\Builder;
@@ -91,6 +92,27 @@ class PdfController extends Controller
                         'iva_10' => 0,
                         'iva_5' => 0,
                         'total' => $recibo->monto_total,
+                    ]
+                ]);
+            }
+        }
+
+        if ($recibo->tipo_recibo_id == 6) {
+
+            $detalle = ReciboDonacion::where('recibo_id', $recibo->id)->first();
+
+            if ($detalle) {
+                $data = collect([
+                    (object)[
+                        'descripcion' => 'DONACIÓN',
+                        'cantidad' => 1,
+                        'precio' => $detalle->monto,
+                        'exento' => $detalle->monto,
+                        'grabado_5' => 0,
+                        'grabado_10' => 0,
+                        'iva_10' => 0,
+                        'iva_5' => 0,
+                        'total' => $detalle->monto,
                     ]
                 ]);
             }

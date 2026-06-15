@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('recibo_donacions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('recibo_id')->constrained();
             $table->foreignId('persona_id')->constrained();
             $table->date('fecha');
             $table->decimal('monto', 12, 0)->default(0);

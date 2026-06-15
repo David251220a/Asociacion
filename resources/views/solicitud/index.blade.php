@@ -103,11 +103,11 @@
                                                 @endif
                                             </td>
                                             <td class="">
-                                                {{-- @can('solicitud.show') --}}
+                                                @can('solicitud.show')
                                                    <a href="{{route('solicitud.show', $item)}}" class="ml-3" style="font-size: 15px">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                {{-- @endcan --}}
+                                                @endcan
 
                                                 <a href="{{route('solicitud.imprimir', $item)}}" target="__blank" class="ml-3" style="font-size: 15px">
                                                     <i class="fas fa-file-pdf"></i>

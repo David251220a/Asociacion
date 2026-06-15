@@ -7,6 +7,7 @@ use App\Models\Entidad;
 use App\Models\Planilla;
 use App\Models\Recibo;
 use App\Models\ReciboAporte;
+use App\Models\ReciboDonacion;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use App\Models\TipoRecibo;
@@ -16,6 +17,16 @@ use Illuminate\Support\Facades\DB;
 
 class ReciboController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:recibo.index')->only('index');
+        $this->middleware('permission:recibo.show')->only('show');
+        $this->middleware('permission:recibo.anular')->only('anular');
+        $this->middleware('permission:recibo.aporte')->only('aporte');
+        $this->middleware('permission:recibo.varios')->only('varios');
+    }
+
     public function index(Request $request)
     {
         $estado = $request->estado ?? 0;
@@ -82,6 +93,27 @@ class ReciboController extends Controller
             }
         }
 
+        if ($recibo->tipo_recibo_id == 6) {
+
+            $detalle = ReciboDonacion::where('recibo_id', $recibo->id)->first();
+
+            if ($detalle) {
+                $data = collect([
+                    (object)[
+                        'descripcion' => 'DONACIÓN',
+                        'cantidad' => 1,
+                        'precio' => $detalle->monto,
+                        'exento' => $detalle->monto,
+                        'grabado_5' => 0,
+                        'grabado_10' => 0,
+                        'iva_10' => 0,
+                        'iva_5' => 0,
+                        'total' => $detalle->monto,
+                    ]
+                ]);
+            }
+        }
+
         return view('recibo.show', compact('recibo', 'entidad', 'data'));
     }
 
@@ -126,16 +158,19 @@ class ReciboController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                 $afectadosAporte = Aporte::where('recibo_id', $recibo->id)->update([
+                $afectadosAporte = Aporte::where('recibo_id', $recibo->id)->update([
                     'estado_id' => 2,
                     'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
                 ]);
 
                 // Si querés detectar si no encontró nada:
-                if ($afectadosAporte == 0) {
-                    throw new \Exception('No se encontraron aportes relacionados a la factura para anular.');
+                if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)){
+                    if ($afectadosAporte == 0) {
+                        throw new \Exception('No se encontraron aportes relacionados a la factura para anular.');
+                    }
                 }
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -201,6 +236,11 @@ class ReciboController extends Controller
         ];
 
         return $meses[(int) $mes] ?? '';
+    }
+
+    public function varios()
+    {
+        return view('recibo.varios');
     }
 
 

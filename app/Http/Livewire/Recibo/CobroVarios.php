@@ -1,35 +1,30 @@
 <?php
 
-namespace App\Http\Livewire\Factura;
+namespace App\Http\Livewire\Recibo;
 
-use App\Models\Aporte;
-use App\Models\Asociado;
 use App\Models\Banco;
 use App\Models\Entidad;
 use App\Models\Establecimiento;
-use App\Models\Factura;
-use App\Models\FacturaAporte;
-use App\Models\FacturaCobro;
 use App\Models\FormaCobro;
 use App\Models\Numeracion;
+use App\Models\Persona;
 use App\Models\Recibo;
-use App\Models\ReciboAporte;
+use App\Models\ReciboDonacion;
 use App\Models\ReciboPago;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use App\Models\Timbrado;
+use App\Models\TipoIngreso;
+use App\Models\TipoRecibo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
-class CobroAporte extends Component
+class CobroVarios extends Component
 {
     public $documento;
-    public $asociado;
+    public $persona;
     public $ruc;
-    public $aportesPendientes = [];
-    public $seleccionados = [];
-    public $totalSeleccionado = 0;
     public $formasCobro;
     public $bancos = [];
     public $cobros = [];
@@ -37,6 +32,9 @@ class CobroAporte extends Component
     public $entidad = null;
     public $establecimiento = null;
     public $timbrado = null;
+    public $tipo_ingresos;
+    public $tipo_ingreso_id;
+    public $donacion_monto;
 
     public function mount()
     {
@@ -47,6 +45,9 @@ class CobroAporte extends Component
         ->where('id','<>',0)
         ->orderBy('descripcion')
         ->get();
+        $this->tipo_ingresos = TipoRecibo::whereIn('id', [6])
+        ->get();
+        $this->tipo_ingreso_id = $this->tipo_ingresos->first()->id;
         $this->cobros = [
             [
                 'forma_cobro_id' => '',
@@ -59,86 +60,28 @@ class CobroAporte extends Component
         $this->entidad = Entidad::find(1);
         $this->establecimiento = Establecimiento::find(1);
         $this->timbrado = Timbrado::find(1);
+        $this->donacion_monto = 0;
+    }
+
+
+    public function render()
+    {
+        return view('livewire.recibo.cobro-varios');
     }
 
     public function buscar()
     {
         $documento = str_replace('.', '', $this->documento);
-        $this->asociado = Asociado::with('persona')
-        ->whereRelation('persona', 'documento', $documento)
+        $this->persona = Persona::where('documento', $documento)
         ->first();
 
-        $this->ruc = $this->asociado?->persona?->ruc ?? '';
+        $this->ruc = $this->persona?->ruc ?? '';
 
-        if (empty($this->asociado)) {
-            $this->aportesPendientes = [];
-            $this->emit('mensaje_error', 'No existe asociado con este numero de documento');
+        if (empty($this->persona)) {
+            $this->emit('mensaje_error', 'No existe persona con este numero de documento');
             return;
         }
 
-        $this->cargarAportesPendientes();
-
-    }
-
-    public function render()
-    {
-        return view('livewire.factura.cobro-aporte');
-    }
-
-    public function cargarAportesPendientes()
-    {
-        $this->aportesPendientes = [];
-        $this->seleccionados = [];
-        $this->totalSeleccionado = 0;
-
-        if (!$this->asociado) {
-            return;
-        }
-
-        $ultimoAporte = Aporte::where('asociado_id', $this->asociado->id)
-        ->where('estado_id', 1)
-        ->orderByDesc('anio')
-        ->orderByDesc('mes')
-        ->first();
-
-        $cantidadAportes = Aporte::where('asociado_id', $this->asociado->id)
-        ->where('estado_id', 1)
-        ->count();
-
-        if ($ultimoAporte) {
-            $fechaInicio = Carbon::create($ultimoAporte->anio, $ultimoAporte->mes, 1)->addMonth();
-        } else {
-            $fechaInicio = Carbon::create($this->asociado->anio_aporte, $this->asociado->mes_aporte, 1);
-        }
-
-        $datos = [];
-
-        for ($i = 0; $i < 12; $i++) {
-            $fecha = $fechaInicio->copy()->addMonths($i);
-
-            $numeroPeriodo = $cantidadAportes + $i + 1;
-            $monto = $numeroPeriodo <= 5 ? 30000 : 20000;
-
-            $datos[] = [
-                'id' => $i,
-                'mes' => $fecha->month,
-                'anio' => $fecha->year,
-                'mes_nombre' => ucfirst($fecha->locale('es')->translatedFormat('F')),
-                'numero_periodo' => $numeroPeriodo,
-                'monto' => $monto,
-            ];
-        }
-
-        $this->aportesPendientes = $datos;
-    }
-
-    public function updatedSeleccionados()
-    {
-        $this->totalSeleccionado = collect($this->aportesPendientes)
-        ->filter(function ($item) {
-            return in_array($item['id'], $this->seleccionados);
-        })
-        ->sum('monto');
     }
 
     private function limpiarMonto($monto)
@@ -215,13 +158,9 @@ class CobroAporte extends Component
         }
 
         $total = $this->limpiarMonto($this->total_abonado);
-        $total_seleccionado = $this->limpiarMonto($this->totalSeleccionado);
+        $total_seleccionado = $this->limpiarMonto($this->donacion_monto);
         if ($total != $total_seleccionado) {
-            $this->addError('total_abonado', 'El total abonado debe ser igual al monto seleccionado.');
-        }
-
-        if (count($this->seleccionados) === 0) {
-            $this->addError('seleccionados', 'Debe seleccionar al menos un aporte.');
+            $this->addError('total_abonado', 'El total abonado debe ser igual al monto donado.');
         }
 
         if ($this->getErrorBag()->isNotEmpty()) {
@@ -233,23 +172,14 @@ class CobroAporte extends Component
 
     public function grabar()
     {
-
         if (!$this->validarCobros()) {
             $this->emit('mensaje_error', 'Debe corregir las formas de cobro antes de grabar.');
             return false;
         }
 
-        if (!$this->asociado) {
-            $this->emit('mensaje_error', 'Debe seleccionar una asociado valido.');
+        if (!$this->persona) {
+            $this->emit('mensaje_error', 'Debe seleccionar una persona valido.');
             return;
-        }
-
-        $aportesSeleccionados = collect($this->aportesPendientes)
-        ->filter(fn($item) => in_array($item['id'], $this->seleccionados))
-        ->values();
-
-        if ($aportesSeleccionados->isEmpty()) {
-            throw new \Exception('Debe seleccionar al menos un aporte.');
         }
 
         $recibo = null;
@@ -264,16 +194,16 @@ class CobroAporte extends Component
             ->lockForUpdate()
             ->first();
 
-            $institucionId = $this->asociado->institucion_id;
+            $institucionId = $this->persona->asociado?->institucion_id ?? 1;
 
             $numeroActual = $numeracion->numero_siguiente;
-            $concepto = 'COBRO APORTE INDIVUAL';
+            $concepto = 'INGRESOS VARIOS - DONACIONES';
             $total = $this->limpiarMonto($this->total_abonado);
-            $total_seleccionado = $this->limpiarMonto($this->totalSeleccionado);
+            $total_seleccionado = $this->limpiarMonto($this->donacion_monto);
 
             $recibo = Recibo::create([
-                'persona_id' => $this->asociado->persona->id,
-                'tipo_recibo_id' => 5,
+                'persona_id' => $this->persona->id,
+                'tipo_recibo_id' => $this->tipo_ingreso_id,
                 'sucursal' => $this->establecimiento->sucursal,
                 'general' => $this->establecimiento->general,
                 'numero' => $numeroActual,
@@ -291,58 +221,15 @@ class CobroAporte extends Component
             $fechaHoy = now()->toDateString();
             $userId = auth()->id();
 
-            $insertReciboAportes = [];
-            $insertAportes = [];
-
-            foreach ($aportesSeleccionados as $item) {
-                $fechaAporte = Carbon::createFromDate($item['anio'], $item['mes'], 1)
-                ->endOfMonth()
-                ->toDateString();
-
-                $insertReciboAportes[] = [
-                    'recibo_id'           => $recibo->id,
-                    'asociado_id'          => $this->asociado->id,
-                    'planilla'             => 1, // 1 = INDIVIDUAL
-                    'planilla_numero'      => 0,
-                    'planilla_anio'        => 0,
-                    'planilla_id' => null,
-                    'institucion_id' => $institucionId,
-                    'fecha_aporte'         => $fechaAporte,
-                    'mes'                  => $item['mes'],
-                    'anio'                 => $item['anio'],
-                    'aporte'               => $item['monto'],
-                    'estado_id'            => 1,
-                    'user_id'              => $userId,
-                    'usuario_modificacion' => $userId,
-                    'created_at'           => $ahora,
-                    'updated_at'           => $ahora,
-                ];
-
-                $insertAportes[] = [
-                    'asociado_id'          => $this->asociado->id,
-                    'tipo_asociado_id'     => $this->asociado->tipo_asociado_id,
-                    'institucion_id' => $institucionId,
-                    'mes'                  => $item['mes'],
-                    'anio'                 => $item['anio'],
-                    'fecha_aporte'         => $fechaAporte,
-                    'aporte'               => $item['monto'],
-                    'fecha_ingreso'        => $fechaHoy,
-                    'recibo_id'           => $recibo->id,
-                    'estado_id'            => 1,
-                    'user_id'              => $userId,
-                    'usuario_modificacion' => $userId,
-                    'created_at'           => $ahora,
-                    'updated_at'           => $ahora,
-                ];
-            }
-
-            if (!empty($insertReciboAportes)) {
-                ReciboAporte::insert($insertReciboAportes);
-            }
-
-            if (!empty($insertAportes)) {
-                Aporte::insert($insertAportes);
-            }
+            ReciboDonacion::create([
+                'recibo_id' => $recibo->id,
+                'persona_id' => $this->persona->id,
+                'fecha' => $ahora,
+                'monto' => $total_seleccionado,
+                'estado_id' => 1,
+                'user_id' => auth()->id(),
+                'usuario_modificacion' => auth()->id()
+            ]);
 
             $insertCobros = [];
 
@@ -389,7 +276,7 @@ class CobroAporte extends Component
 
             $resumenMensual = ResumenMensual::where('anio', $anioResumen)
             ->where('mes', $mesResumen)
-            ->where('tipo_ingreso_id', 5)
+            ->where('tipo_ingreso_id', $this->tipo_ingreso_id)
             ->whereNull('tipo_egreso_id')
             ->lockForUpdate()
             ->first();
@@ -398,14 +285,14 @@ class CobroAporte extends Component
                 $resumenMensual = ResumenMensual::create([
                     'anio'             => $anioResumen,
                     'mes'              => $mesResumen,
-                    'tipo_ingreso_id'   => 5,
+                    'tipo_ingreso_id'   => $this->tipo_ingreso_id,
                     'tipo_egreso_id'   => null,
                     'tipo_movimiento'  => 'I',
                     'total_ingreso'    => 0,
                     'total_egreso'     => 0,
                     'fecha_calculo'    => null,
                     'usuario_calculo'  => null,
-                    'observacion'      => 'Creado automáticamente desde cobro de planilla',
+                    'observacion'      => 'Creado automáticamente desde cobro varios - donaciones',
                 ]);
             }
 
@@ -437,7 +324,7 @@ class CobroAporte extends Component
                     'saldo_final'     => $saldoInicialAnual,
                     'fecha_calculo'   => null,
                     'usuario_calculo' => null,
-                    'observacion'     => 'Creado automáticamente desde cobro de planilla',
+                    'observacion'     => 'Creado automáticamente desde cobro varios - donaciones',
                 ]);
             }
 
@@ -455,4 +342,6 @@ class CobroAporte extends Component
 
         return redirect()->route('recibo.show', $recibo->id)->with('message', 'Ingreso realizado correctamente.');
     }
+
+
 }

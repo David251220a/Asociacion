@@ -78,7 +78,7 @@ class DatabaseSeeder extends Seeder
             TipoAsociadoSeeder::class,
             EstadoCivilSeeder::class,
             TipoViviendaSeeder::class,
-            PersonaSeeder::class,
+            // PersonaSeeder::class,
             ObligacionesSeeder::class,
             TipoFamiliarSeeder::class,
             TipoSeguroSeeder::class,

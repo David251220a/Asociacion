@@ -1,6 +1,4 @@
-﻿/* Data for the 'Query_Result' table  (Records 1 - 252) */
-
-INSERT INTO distritos
+﻿INSERT INTO distritos
   (id, departamento_id, descripcion)
 VALUES
   (1, 1, 'ASUNCION (DISTRITO)'),

@@ -107,7 +107,7 @@
                                                 @endif
                                             </td>
                                             <td class="text-center">
-                                                {{-- @can('recibo.show') --}}
+                                                @can('recibo.show')
                                                     <a href="{{route('recibo.show', $item)}}" class="mr-3">
                                                         <svg
                                                             xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -115,9 +115,9 @@
                                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
                                                         </svg>
                                                     </a>
-                                                {{-- @endcan --}}
+                                                @endcan
 
-                                                {{-- @can('recibo.anular') --}}
+                                                @can('recibo.anular')
                                                     @if ($item->anulado == 0)
                                                         <button type="button" class="btn btn-danger btn-sm mr-3" data-toggle="modal" data-target="#exampleModalCenter_{{ $item->id }}">
                                                             <svg
@@ -167,7 +167,7 @@
                                                             </div>
                                                         </div>
                                                     @endif
-                                                {{-- @endcan --}}
+                                                @endcan
 
                                             </td>
                                         </tr>

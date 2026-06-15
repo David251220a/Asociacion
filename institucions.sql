@@ -1,8 +1,6 @@
-﻿/* Data for the 'institucions' table  (Records 1 - 276) */
-
-INSERT INTO `institucions`
+﻿INSERT INTO `institucions`
   (`id`, `muni_departamento_id`, `departamento_id`, `municipio_id`, `descripcion`, `estado_id`)
-VALUES 
+VALUES
   (1, 1, 100, 1, 'SIN ESPECIFICAR', 1),
   (2, 2, 0, 1, 'MUN DE ASUNCION', 1),
   (3, 2, 0, 2, 'D.A.M.A.', 1),
@@ -183,7 +181,7 @@ VALUES
   (178, 12, 10, 4, 'MUN DE DOMINGO M. DE IRALA', 1),
   (179, 12, 10, 5, 'MUN DE DR. JUAN LEON MALLORQUIN', 1),
   (180, 12, 10, 6, 'MUN DE ITAKYRY', 1),
-  (181, 12, 10, 7, 'MUN DE JUAN E. O''LEARY', 1),
+  (181, 12, 10, 7, 'MUN DE JUAN E. O LEARY', 1),
   (182, 12, 10, 8, 'MUN DE YGUAZU', 1),
   (183, 12, 10, 9, 'MUN DE LOS CEDRALES', 1),
   (184, 12, 10, 10, 'MUN DE NARANJAL', 1),
