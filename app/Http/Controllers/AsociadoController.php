@@ -80,7 +80,7 @@ class AsociadoController extends Controller
             'numero_socio' => 'required|unique:asociados,numero_socio',
             'documento' => 'required|unique:personas,documento',
             'nombre' => 'required',
-            'nombre' => 'required',
+            'apellido' => 'required',
             'fecha_nacimiento' => 'required|date',
             'departamento_id' => 'required',
             'distrito_id' => 'required',
