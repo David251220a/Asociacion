@@ -26,23 +26,23 @@ class DatabaseSeeder extends Seeder
 
         $this->call(RoleSeeder::class);
 
-        User::firstOrCreate([
-            'name' => 'Admin',
-            'lastname' => 'Admin',
-            'documento' => '4918642',
-            'username' => 'admin',
-            'celular' => '0976820842',
-            'email' => 'admin@dev',
-            'password' => Hash::make('admin123456'),
-        ])->assignRole('admin');
+        // User::firstOrCreate([
+        //     'name' => 'Admin',
+        //     'lastname' => 'Admin',
+        //     'documento' => '4918642',
+        //     'username' => 'admin',
+        //     'celular' => '0976820842',
+        //     'email' => 'admin@dev',
+        //     'password' => Hash::make('admin123456'),
+        // ])->assignRole('admin');
 
-        $estado = ['ACTIVO', 'INACTIVO'];
+        // $estado = ['ACTIVO', 'INACTIVO'];
 
-        foreach ($estado as $item) {
-            Estado::firstOrCreate([
-                'descripcion' => $item
-            ]);
-        }
+        // foreach ($estado as $item) {
+        //     Estado::firstOrCreate([
+        //         'descripcion' => $item
+        //     ]);
+        // }
 
         // Departamento::create([
         //     'descripcion' => 'CAPITAL'
@@ -58,34 +58,34 @@ class DatabaseSeeder extends Seeder
         //     'descripcion' => 'ASUNCION (DISTRITO)'
         // ]);
 
-        Secuencia::create([
-            'secuencia' => 0
-        ]);
+        // Secuencia::create([
+        //     'secuencia' => 0
+        // ]);
 
-        $this->call([
-            // MuniDepartamentoSeeder::class,
-            // InstitucionSeeder::class,
-            TipoTransaccionSeeder::class,
-            EntidadSeeder::class,
-            ActividadEconomicaSeeder::class,
-            FormaCobroSeeder::class,
-            BancoSeeder::class,
-            TipoDocumentoSeeder::class,
-            EstablecimientoSeeder::class,
-            NumeracionSeeder::class,
-            TipoPersonaSeeder::class,
-            SexoSeeder::class,
-            TipoAsociadoSeeder::class,
-            EstadoCivilSeeder::class,
-            TipoViviendaSeeder::class,
-            // PersonaSeeder::class,
-            ObligacionesSeeder::class,
-            TipoFamiliarSeeder::class,
-            TipoSeguroSeeder::class,
-            TipoFacturaSeeder::class,
-            TipoReciboSeeder::class,
-            TipoEgresoSeeder::class,
-            TipoIngresoSeeder::class,
-        ]);
+        // $this->call([
+        //     // MuniDepartamentoSeeder::class,
+        //     // InstitucionSeeder::class,
+        //     TipoTransaccionSeeder::class,
+        //     EntidadSeeder::class,
+        //     ActividadEconomicaSeeder::class,
+        //     FormaCobroSeeder::class,
+        //     BancoSeeder::class,
+        //     TipoDocumentoSeeder::class,
+        //     EstablecimientoSeeder::class,
+        //     NumeracionSeeder::class,
+        //     TipoPersonaSeeder::class,
+        //     SexoSeeder::class,
+        //     TipoAsociadoSeeder::class,
+        //     EstadoCivilSeeder::class,
+        //     TipoViviendaSeeder::class,
+        //     // PersonaSeeder::class,
+        //     ObligacionesSeeder::class,
+        //     TipoFamiliarSeeder::class,
+        //     TipoSeguroSeeder::class,
+        //     TipoFacturaSeeder::class,
+        //     TipoReciboSeeder::class,
+        //     TipoEgresoSeeder::class,
+        //     TipoIngresoSeeder::class,
+        // ]);
     }
 }

@@ -50,8 +50,9 @@ class SolicitudController extends Controller
     {
         $data = $solicitud;
         $entidad = Entidad::find(1);
-        $miembros = Miembro::where('presente', 1)->get();
-        return view('solicitud.show', compact('data', 'entidad', 'miembros'));
+        $tipos = ['PRESIDENTE', 'VICEPRESIDENTE', 'SECRETARIO', 'TESORERA', 'PRO-TESORERA', 'MIEMBROS', 'SINDICO'];
+        $miembros = Miembro::where('presente', 1)->orderBy('tipo', 'ASC')->get();
+        return view('solicitud.show', compact('data', 'entidad', 'miembros','tipos'));
     }
 
     public function store(Solicitud $solicitud, Request $request)
@@ -84,9 +85,7 @@ class SolicitudController extends Controller
             if (!$numeracionSocio) {
                 $mayorSocio = Asociado::max('numero_socio');
 
-                $numeroSocio = $mayorSocio && $mayorSocio >= 100000
-                    ? $mayorSocio + 1
-                    : 100000;
+                $numeroSocio = ($mayorSocio ?? 0) + 1;
 
                 $numeracionSocio = Numeraciones::create([
                     'tipo' => 2,

@@ -300,20 +300,8 @@
                             <h4>Miembros Presentes</h4>
                             <div class="row">
                                 @foreach ($miembros as $item)
-                                    @php
-                                        $desc= '';
-                                        if($item->tipo == 1){
-                                            $desc= 'PRESIDENTE';
-                                        }
-                                        if($item->tipo == 2){
-                                            $desc= 'ADMINISTRADOR';
-                                        }
-                                        if($item->tipo == 3){
-                                            $desc= 'TESORERO';
-                                        }
-                                    @endphp
                                     <div class="form-group col-md-4">
-                                        <label for="miembros">{{ $desc }}</label>
+                                        <label for="miembros">{{ $tipos[$item->tipo] }}</label>
                                         <input type="text" value="{{ $item->nombre . " " . $item->apellido }}" class="form-control" @readonly(true)>
                                     </div>
                                 @endforeach

@@ -9,6 +9,7 @@ use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\GrupoUsuarioController;
 use App\Http\Controllers\LimpiarController;
+use App\Http\Controllers\MiembroController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
@@ -51,6 +52,8 @@ Route::group([
     Route::resource('/asociados', AsociadoController::class)->names('asociado');
     Route::resource('/users', UsuarioController::class)->names('user');
     Route::resource('/roles', GrupoUsuarioController::class)->names('role');
+    Route::get('/permiso-crear', [GrupoUsuarioController::class, 'permiso_crear'])->name('role.permiso_crear');
+    Route::post('/permiso-crear', [GrupoUsuarioController::class, 'permiso_crear_post'])->name('role.permiso_crear_post');
 
     Route::get('/distritos/{departamento}', [AsociadoController::class, 'getDistritos']);
     Route::get('/ciudades/{id}', [AsociadoController::class, 'getCiudades']);
@@ -108,5 +111,11 @@ Route::group([
     Route::get('/solicitud/{solicitud}/aprobacion-o-rechazo', [SolicitudController::class, 'show'])->name('solicitud.show');
     Route::post('/solicitud/{solicitud}/aprobacion-o-rechazo', [SolicitudController::class, 'store'])->name('solicitud.store');
     Route::get('/solicitud/{solicitud}/imprimir', [SolicitudController::class, 'imprimir'])->name('solicitud.imprimir');
+
+    Route::get('/miembros', [MiembroController::class, 'index'])->name('miembros.index');
+    Route::post('/miembros/crear', [MiembroController::class, 'store'])->name('miembros.store');
+    Route::post('/miembros/update', [MiembroController::class, 'update'])->name('miembros.update');
+    Route::get('/miembros/{id}/presente', [MiembroController::class, 'cambiarPresente'])->name('miembros.cambiarPresente');
+
 
 });

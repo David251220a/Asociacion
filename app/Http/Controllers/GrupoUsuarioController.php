@@ -58,4 +58,25 @@ class GrupoUsuarioController extends Controller
         $role->save();
         return redirect()->route('role.index')->with(['message' => 'Registro exitoso!']);
     }
+
+    public function permiso_crear()
+    {
+        return view('roles.permiso');
+    }
+
+    public function permiso_crear_post(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'descripcion' => 'required'
+        ]);
+
+        Permission::create([
+            'name' => $request->name,
+            'guard_name' => 'web',
+            'descripcion' => $request->descripcion
+        ]);
+
+        return redirect()->route('role.index')->with('message', 'Permiso creado con exito.');
+    }
 }
