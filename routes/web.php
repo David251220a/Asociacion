@@ -10,6 +10,7 @@ use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\GrupoUsuarioController;
 use App\Http\Controllers\LimpiarController;
 use App\Http\Controllers\MiembroController;
+use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
@@ -117,5 +118,8 @@ Route::group([
     Route::post('/miembros/update', [MiembroController::class, 'update'])->name('miembros.update');
     Route::get('/miembros/{id}/presente', [MiembroController::class, 'cambiarPresente'])->name('miembros.cambiarPresente');
 
+    Route::get('/orden-pago', [OrdenPagoController::class, 'index'])->name('orden.index');
+    Route::get('/orden-pago/crear', [OrdenPagoController::class, 'create'])->name('orden.create');
+    Route::get('/orden-pago/{ordenPago}/crear', [OrdenPagoController::class, 'pago'])->name('orden.pago');
 
 });

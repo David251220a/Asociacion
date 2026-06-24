@@ -56,7 +56,8 @@ class ReciboController extends Controller
         ->orderByDesc('sucursal')
         ->orderByDesc('general')
         ->orderByDesc('numero')
-        ->paginate(50);
+        ->paginate(50)
+        ->withQueryString();
 
         $tipoRecibos = TipoRecibo::where('estado_id', 1)->get();
 

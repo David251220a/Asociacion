@@ -96,6 +96,19 @@
             </li>
         @endcan
 
+        @can('orden.index')
+            <li class="menu">
+                <a href="{{route('orden.index')}}" aria-expanded="false" class="dropdown-toggle"
+                    @if(Str::startsWith(Route::currentRouteName(), 'orden.index')) data-active="true" @endif
+                >
+                    <div class="">
+                        <i class="fas fa-donate mr-3"></i>
+                        <span>Orden de Pago</span>
+                    </div>
+                </a>
+            </li>
+        @endcan
+
         @can('recibo.aporte')
             <li class="menu">
                 <a href="{{route('recibo.aporte')}}" aria-expanded="false" class="dropdown-toggle"
