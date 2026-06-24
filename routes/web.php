@@ -8,6 +8,7 @@ use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\GrupoUsuarioController;
+use App\Http\Controllers\LimpiarController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
@@ -36,6 +37,7 @@ Route::get('/contactos', [WebController::class, 'contacto'])->name('contacto');
 Route::get('/noticias', [WebController::class, 'noticias'])->name('noticias');
 Route::get('/noticias/{noticias}/ver', [WebController::class, 'noticias_show'])->name('noticias.show');
 Route::get('/asociarse', [WebController::class, 'asociarse'])->name('asociarse');
+Route::get('/limpiar', [LimpiarController::class, 'limpiar'])->name('limpiar');
 
 Route::get('/logout', [LoginController::class, 'logout']);
 
