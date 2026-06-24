@@ -116,6 +116,7 @@ class SolicitudController extends Controller
                 SolicitudAprobado::create([
                     'solicitud_id' => $solicitud->id,
                     'miembro_id' => $item->id,
+                    'nombre_apellido' => $item->nombre . ' ' . $item->apellido,
                     'presente' => 1,
                 ]);
             }
