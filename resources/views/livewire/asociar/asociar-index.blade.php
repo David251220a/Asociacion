@@ -185,27 +185,46 @@
 
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label fw-semibold">Departamento</label>
-                                        <select class="form-control form-control-lg asociarse-input" wire:model="departamento_id">
+                                        <select
+                                            class="form-control form-control-lg asociarse-input"
+                                            wire:model="departamento_id"
+                                            wire:change="cambiarDepartamento">
+
                                             @foreach ($departamentos as $item)
-                                                <option value="{{ $item->id }}">{{ $item->descripcion }}</option>
+                                                <option value="{{ $item->id }}">
+                                                    {{ $item->descripcion }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
 
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label fw-semibold">Distrito</label>
-                                        <select class="form-control form-control-lg asociarse-input" wire:model="distrito_id">
+                                        <select
+                                            class="form-control form-control-lg asociarse-input"
+                                            wire:key="distrito-{{ $departamento_id }}"
+                                            wire:model="distrito_id"
+                                            wire:change="cambiarDistrito">
+
                                             @foreach ($distritos as $item)
-                                                <option value="{{ $item->id }}">{{ $item->descripcion }}</option>
+                                                <option value="{{ $item->id }}">
+                                                    {{ $item->descripcion }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
 
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label fw-semibold">Ciudad</label>
-                                        <select class="form-control form-control-lg asociarse-input" wire:model="ciudad_id">
+                                        <select
+                                            class="form-control form-control-lg asociarse-input"
+                                            wire:key="ciudad-{{ $distrito_id }}"
+                                            wire:model="ciudad_id">
+
                                             @foreach ($ciudades as $item)
-                                                <option value="{{ $item->id }}">{{ $item->descripcion }}</option>
+                                                <option value="{{ $item->id }}">
+                                                    {{ $item->descripcion }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -222,7 +241,7 @@
 
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label fw-semibold">Descripción de vivienda</label>
-                                        <textarea class="form-control asociarse-input" rows="3" wire:model.defer="descripcion_vivienda"></textarea>
+                                        <input type="text" class="form-control asociarse-input" wire:model.defer="descripcion_vivienda">
                                     </div>
 
                                     <div class="col-md-12 mb-4">
@@ -236,7 +255,7 @@
                                 </div>
 
                                 <div class="d-flex justify-content-between gap-3">
-                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="$set('paso', 2)">
+                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="volverPasoDos">
                                         Retroceder
                                     </button>
 
@@ -284,7 +303,7 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label>Nombre</label>
+                                            <label>Apellido</label>
                                             <input type="text" wire:model="familiares.{{ $index }}.apellido" class="form-control">
                                         </div>
 
@@ -310,7 +329,7 @@
                                 </button>
 
                                 <div class="d-flex justify-content-between gap-3">
-                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="$set('paso', 3)">
+                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="volverPasoTres">
                                         Retroceder
                                     </button>
 
@@ -385,11 +404,11 @@
 
                                 <div class="col-md-12 mb-4">
                                     <label class="form-label fw-semibold">Observaciones</label>
-                                    <textarea class="form-control asociarse-input" rows="3" wire:model.defer="observacion_medica" placeholder="Ingrese alguna observación si corresponde"></textarea>
+                                    <input type="text" class="form-control asociarse-input" wire:model.defer="observacion_medica" placeholder="Ingrese alguna observación si corresponde">
                                 </div>
 
                                 <div class="d-flex justify-content-between gap-3">
-                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="$set('paso', 4)">
+                                    <button type="button" class="btn btn-lg asociarse-btn-back w-50" wire:click="volverPasoCuatro">
                                         Retroceder
                                     </button>
 
@@ -427,11 +446,15 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Documento frente</label>
                                     <input type="file"
-                                        wire:key="documento-frente"
+                                        wire:key="documento_frente"
                                         wire:model="documento_frente"
                                         class="form-control form-control-lg asociarse-input"
-                                        accept=".jpg,.jpeg,.pdf"
+                                        accept=".jpg,.jpeg"
                                     >
+
+                                    <div wire:loading wire:target="documento_frente" class="mt-1 text-primary">
+                                        Cargando archivo...
+                                    </div>
 
                                     <div wire:loading.remove wire:target="documento_frente">
                                         @if($documento_frente)
@@ -445,11 +468,16 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Documento reverso</label>
                                     <input type="file"
-                                        wire:key="documento-reverso"
+                                        wire:key="documento_reverso"
                                         wire:model="documento_reverso"
                                         class="form-control form-control-lg asociarse-input"
-                                        accept=".jpg,.jpeg,.pdf"
+                                        accept=".jpg,.jpeg"
                                     >
+
+                                    <div wire:loading wire:target="documento_reverso" class="mt-1 text-primary">
+                                        Cargando archivo...
+                                    </div>
+
 
                                     <div wire:loading.remove wire:target="documento_reverso">
                                         @if($documento_reverso)
@@ -468,6 +496,10 @@
                                         class="form-control form-control-lg asociarse-input"
                                         accept=".jpg,.jpeg"
                                     >
+
+                                    <div wire:loading wire:target="selfie" class="mt-1 text-primary">
+                                        Cargando archivo...
+                                    </div>
 
                                     <div wire:loading.remove wire:target="selfie">
                                         @if($selfie)

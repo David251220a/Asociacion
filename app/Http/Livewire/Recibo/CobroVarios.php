@@ -131,6 +131,10 @@ class CobroVarios extends Component
 
     protected function validarCobros()
     {
+        foreach ($this->cobros as $i => $cobro) {
+            $this->cobros[$i]['monto'] = $this->limpiarMonto($cobro['monto'] ?? 0);
+        }
+
         $this->validate([
             'cobros' => 'required|array|min:1',
             'cobros.*.forma_cobro_id' => 'required|exists:forma_cobros,id',

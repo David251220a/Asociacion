@@ -33,7 +33,7 @@
 
                                                     <div class="col-sm-6 col-12 mr-auto">
                                                         <div class="d-flex">
-                                                            <img class="company-logo" src="assets/img/cork-logo.png" alt="company">
+                                                            <img class="company-logo" src="{{ Storage::url('/iconos/logo.jpg') }}" alt="company" style="width: 180px; height:120px">
                                                             <h3 class="in-heading align-self-center">AJUPEM</h3>
                                                         </div>
                                                     </div>
