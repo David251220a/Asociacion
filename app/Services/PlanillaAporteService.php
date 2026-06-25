@@ -27,6 +27,7 @@ class PlanillaAporteService
         ->where('ap.anio', $anio)
         ->where('ap.mes', $mes)
         ->where('a.estado_id', 1)
+        ->where('ap.estado_id', 1)
         ->whereIn('a.tipo_asociado_id', $tipos)
         ->groupBy('ap.asociado_id');
 
