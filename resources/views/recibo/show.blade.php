@@ -83,7 +83,9 @@
                                                         <div class="inv--payment-info">
                                                             @foreach ($recibo->forma_pagos as $item)
                                                                 <p><span class=" inv-subtitle">Forma de Pago:</span> <span>{{$item->forma_cobro->descripcion}}</span></p>
+                                                                <p><span class=" inv-subtitle">Fecha:</span> <span>{{ date('d/m/Y', strtotime($item->fecha)) }}</span></p>
                                                                 <p><span class=" inv-subtitle">Banco: </span> <span>{{$item->banco->descripcion}}</span></p>
+                                                                <p><span class=" inv-subtitle">Nro. Comprobante: </span> <span>{{$item->numero_comprobante}}</span></p>
                                                                 <p><span class=" inv-subtitle">Monto Abando  :</span> <span>{{number_format($item->monto, 0, ',', '.')}}</span></p>
                                                                 <hr>
                                                             @endforeach

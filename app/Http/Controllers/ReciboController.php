@@ -138,6 +138,13 @@ class ReciboController extends Controller
                             'fecha_pagado' => null,
                             'usuario_modificacion' => auth()->id(),
                         ]);
+
+                        $planilla->detalles()->update([
+                            'pagado' => 0,
+                            'saldo' => DB::raw('monto_esperado'),
+                            'usuario_modificacion' => auth()->id(),
+                            'updated_at' => now(),
+                        ]);
                     }
                 }
                 $fecha_anulado = now()->toDateString();
@@ -168,7 +175,7 @@ class ReciboController extends Controller
                 // Si querés detectar si no encontró nada:
                 if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)){
                     if ($afectadosAporte == 0) {
-                        throw new \Exception('No se encontraron aportes relacionados a la factura para anular.');
+                        throw new \Exception('No se encontraron aportes relacionados al recibo para anular.');
                     }
                 }
 

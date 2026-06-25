@@ -17,11 +17,11 @@
                     </div>
 
                     <div class="col-md-6 text-end">
-                        {{-- @can('orden.create') --}}
+                        @can('orden.create')
                             <a href="{{ route('orden.create') }}" class="btn btn-primary">
                                 <i class="fa fa-plus"></i> Agregar
                             </a>
-                        {{-- @endcan --}}
+                        @endcan
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
                                 <div class="input-group">
                                     <select name="estado" id="estado" class="form-control">
                                         <option value="9" {{ $estado == 9 ? 'selected' : '' }}>TODOS</option>
-                                        <option value="1" {{ $estado == 1 ? 'selected' : '' }}>ACTIVO</option>
+                                        <option value="1" {{ $estado == 1 ? 'selected' : '' }}>PAGADO</option>
                                         <option value="2" {{ $estado == 2 ? 'selected' : '' }}>ANULADO</option>
                                         <option value="0" {{ $estado == 0 ? 'selected' : '' }}>PENDIENTE</option>
                                     </select>
@@ -117,17 +117,24 @@
                                                     <span class="badge badge-warning">PENDIENTE</span>
                                                 @endif
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-left">
+                                                @can('orden.pago')
+                                                    @if ($item->pagos->sum('monto') <> $item->total)
+                                                        <a href="{{route('orden.pago', $item)}}" class="mr-3" title="Registrar pago">
+                                                            <i class="fas fa-receipt" style="font-size: 20px"></i>
+                                                        </a>
+                                                    @endif
+                                                @endcan
 
-                                                {{-- @can('orden.show')
-                                                    <a href="{{route('orden.show', $item)}}" class="mr-3">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
-                                                        </svg>
+                                                @can('orden.show')
+                                                    <a href="{{route('orden.show', $item)}}" class="mr-3" title="Ver Orden Pago">
+                                                        <i class="fas fa-eye" class="mr-3" style="font-size: 20px"></i>
                                                     </a>
-                                                @endcan --}}
+                                                @endcan
+
+                                                <a href="{{route('pdf.orden', $item)}}" target="_blank">
+                                                    <i class="fas fa-print" class="mr-3" style="font-size: 20px"></i>
+                                                </a>
 
                                             </td>
                                         </tr>
@@ -145,7 +152,7 @@
                 </div>
 
                 <div class="row">
-                    {{-- {{ $data->appends(request()->query())->links() }} --}}
+                    {{ $data->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>

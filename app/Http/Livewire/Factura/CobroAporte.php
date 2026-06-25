@@ -49,10 +49,12 @@ class CobroAporte extends Component
         ->get();
         $this->cobros = [
             [
+                'fecha_pago' => now()->toDateString(),
                 'forma_cobro_id' => '',
                 'banco_id' => '',
                 'banco_ver' => 0,
                 'monto' => 0,
+                'numero_comprobante' => '',
             ]
         ];
 
@@ -153,10 +155,12 @@ class CobroAporte extends Component
     public function agregarCobro()
     {
         $this->cobros[] = [
+            'fecha_pago' => now()->toDateString(),
             'forma_cobro_id' => '',
             'banco_id' => '',
             'banco_ver' => 0,
             'monto' => 0,
+            'numero_comprobante' => '',
         ];
     }
 
@@ -201,6 +205,10 @@ class CobroAporte extends Component
         foreach ($this->cobros as $i => $cobro) {
             if (empty($cobro['forma_cobro_id'])) {
                 $this->addError("cobros.$i.forma_cobro_id", 'Debe seleccionar una forma de cobro.');
+            }
+
+            if (!empty($cobro['banco_ver']) && empty($cobro['numero_comprobante'])) {
+                $this->addError("cobros.$i.numero_comprobante", 'Debe ingresar el número de comprobante.');
             }
 
             $monto = $this->limpiarMonto($cobro['monto'] ?? 0);
@@ -361,9 +369,11 @@ class CobroAporte extends Component
 
                 $insertCobros[] = [
                     'recibo_id'     => $recibo->id,
+                    'fecha' => $cobro['fecha_pago'] ?? now()->toDateString(),
                     'forma_cobro_id' => $formaCobroId,
                     'banco_id'       => $bancoId,
                     'monto'          => $monto,
+                    'numero_comprobante' => $cobro['numero_comprobante'] ?? '',
                     'estado_id'     => 1,
                     'created_at'     => $ahora,
                     'updated_at'     => $ahora,

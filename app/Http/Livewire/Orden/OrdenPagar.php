@@ -1,43 +1,28 @@
 <?php
 
-namespace App\Http\Livewire\Recibo;
+namespace App\Http\Livewire\Orden;
 
 use App\Models\Banco;
-use App\Models\Entidad;
-use App\Models\Establecimiento;
 use App\Models\FormaCobro;
-use App\Models\Numeracion;
-use App\Models\Persona;
-use App\Models\Recibo;
-use App\Models\ReciboDonacion;
-use App\Models\ReciboPago;
+use App\Models\OrdenPago;
+use App\Models\OrdenPagoPago;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
-use App\Models\Timbrado;
-use App\Models\TipoIngreso;
-use App\Models\TipoRecibo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
-class CobroVarios extends Component
+class OrdenPagar extends Component
 {
-    public $documento;
-    public $persona;
-    public $ruc;
-    public $formasCobro;
+    public $data;
     public $bancos = [];
     public $cobros = [];
     public $total_abonado = 0;
-    public $entidad = null;
-    public $establecimiento = null;
-    public $timbrado = null;
-    public $tipo_ingresos;
-    public $tipo_ingreso_id;
-    public $donacion_monto;
+    public $formasCobro;
 
-    public function mount()
+    public function mount(OrdenPago $ordenPago)
     {
+        $this->data = $ordenPago;
         $this->formasCobro = FormaCobro::where('estado_id', 1)
         ->orderBy('descripcion')
         ->get();
@@ -45,9 +30,6 @@ class CobroVarios extends Component
         ->where('id','<>',0)
         ->orderBy('descripcion')
         ->get();
-        $this->tipo_ingresos = TipoRecibo::whereIn('id', [6])
-        ->get();
-        $this->tipo_ingreso_id = $this->tipo_ingresos->first()->id;
         $this->cobros = [
             [
                 'fecha_pago' => now()->toDateString(),
@@ -58,41 +40,11 @@ class CobroVarios extends Component
                 'numero_comprobante' => '',
             ]
         ];
-
-        $this->entidad = Entidad::find(1);
-        $this->establecimiento = Establecimiento::find(1);
-        $this->timbrado = Timbrado::find(1);
-        $this->donacion_monto = 0;
     }
-
 
     public function render()
     {
-        return view('livewire.recibo.cobro-varios');
-    }
-
-    public function buscar()
-    {
-        $documento = str_replace('.', '', $this->documento);
-        $this->persona = Persona::where('documento', $documento)
-        ->first();
-
-        $this->ruc = $this->persona?->ruc ?? '';
-
-        if (empty($this->persona)) {
-            $this->emit('mensaje_error', 'No existe persona con este numero de documento');
-            return;
-        }
-
-    }
-
-    private function limpiarMonto($monto)
-    {
-        $monto = trim((string) $monto);
-        $monto = str_replace(['.', ',', ' '], '', $monto);
-        $monto = preg_replace('/[^0-9]/', '', $monto);
-
-        return $monto === '' ? 0 : (int) $monto;
+        return view('livewire.orden.orden-pagar');
     }
 
     public function agregarCobro()
@@ -133,12 +85,17 @@ class CobroVarios extends Component
         });
     }
 
+    private function limpiarMonto($monto)
+    {
+        $monto = trim((string) $monto);
+        $monto = str_replace(['.', ',', ' '], '', $monto);
+        $monto = preg_replace('/[^0-9]/', '', $monto);
+
+        return $monto === '' ? 0 : (int) $monto;
+    }
+
     protected function validarCobros()
     {
-        foreach ($this->cobros as $i => $cobro) {
-            $this->cobros[$i]['monto'] = $this->limpiarMonto($cobro['monto'] ?? 0);
-        }
-
         $this->validate([
             'cobros' => 'required|array|min:1',
             'cobros.*.forma_cobro_id' => 'required|exists:forma_cobros,id',
@@ -150,29 +107,16 @@ class CobroVarios extends Component
         ]);
 
         foreach ($this->cobros as $i => $cobro) {
-            if (empty($cobro['forma_cobro_id'])) {
-                $this->addError("cobros.$i.forma_cobro_id", 'Debe seleccionar una forma de cobro.');
-            }
-
-            $monto = $this->limpiarMonto($cobro['monto'] ?? 0);
-
-            if ($monto <= 0) {
-                $this->addError("cobros.$i.monto", 'Debe ingresar un monto válido.');
-            }
-
             if (!empty($cobro['banco_ver']) && empty($cobro['banco_id'])) {
                 $this->addError("cobros.$i.banco_id", 'Debe seleccionar un banco.');
             }
-
             if (!empty($cobro['banco_ver']) && empty($cobro['numero_comprobante'])) {
                 $this->addError("cobros.$i.numero_comprobante", 'Debe ingresar el número de comprobante.');
             }
         }
 
-        $total = $this->limpiarMonto($this->total_abonado);
-        $total_seleccionado = $this->limpiarMonto($this->donacion_monto);
-        if ($total != $total_seleccionado) {
-            $this->addError('total_abonado', 'El total abonado debe ser igual al monto donado.');
+        if ($this->total_abonado != $this->data->total) {
+            $this->addError('total_abonado', 'La suma del total a pagar debe ser igual al monto de la Orden de Pago.');
         }
 
         if ($this->getErrorBag()->isNotEmpty()) {
@@ -182,67 +126,24 @@ class CobroVarios extends Component
         return true;
     }
 
-    public function grabar()
+    public function pagar()
     {
         if (!$this->validarCobros()) {
             $this->emit('mensaje_error', 'Debe corregir las formas de cobro antes de grabar.');
             return false;
         }
 
-        if (!$this->persona) {
-            $this->emit('mensaje_error', 'Debe seleccionar una persona valido.');
-            return;
-        }
+        $orden = OrdenPago::find($this->data->id);
 
-        $recibo = null;
+        if($orden->estado_pago == 1){
+            $this->emit('mensaje_error', 'La orden de pago ya se encuentra pagado.');
+            return false;
+        }
 
         DB::beginTransaction();
 
         try {
-
-            $numeracion = Numeracion::where('timbrado_id', $this->timbrado->id)
-            ->where('establecimiento_id', $this->establecimiento->id)
-            ->where('modulo', 'RECIBO')
-            ->lockForUpdate()
-            ->first();
-
-            $institucionId = $this->persona->asociado?->institucion_id ?? 1;
-
-            $numeroActual = $numeracion->numero_siguiente;
-            $concepto = 'INGRESOS VARIOS - DONACIONES';
-            $total = $this->limpiarMonto($this->total_abonado);
-            $total_seleccionado = $this->limpiarMonto($this->donacion_monto);
-
-            $recibo = Recibo::create([
-                'persona_id' => $this->persona->id,
-                'tipo_recibo_id' => $this->tipo_ingreso_id,
-                'sucursal' => $this->establecimiento->sucursal,
-                'general' => $this->establecimiento->general,
-                'numero' => $numeroActual,
-                'fecha' => now(),
-                'concepto' => $concepto,
-                'monto_total'         => $total_seleccionado,
-                'monto_abonado'       => $total,
-                'monto_devuelto'      => 0,
-                'estado_id'           => 1,
-                'anulado'             => 0,
-                'user_id'             => auth()->id(),
-            ]);
-
             $ahora = now();
-            $fechaHoy = now()->toDateString();
-            $userId = auth()->id();
-
-            ReciboDonacion::create([
-                'recibo_id' => $recibo->id,
-                'persona_id' => $this->persona->id,
-                'fecha' => $ahora,
-                'monto' => $total_seleccionado,
-                'estado_id' => 1,
-                'user_id' => auth()->id(),
-                'usuario_modificacion' => auth()->id()
-            ]);
-
             $insertCobros = [];
 
             foreach ($this->cobros as $cobro) {
@@ -259,39 +160,45 @@ class CobroVarios extends Component
                 }
 
                 $insertCobros[] = [
-                    'recibo_id'     => $recibo->id,
-                    'fecha' => $cobro['fecha_pago'] ?? now()->toDateString(),
+                    'orden_pago_id'     => $orden->id,
+                    'fecha_pago' => $cobro['fecha_pago'] ?? now()->toDateString(),
                     'forma_cobro_id' => $formaCobroId,
                     'banco_id'       => $bancoId,
                     'monto'          => $monto,
                     'numero_comprobante' => $cobro['numero_comprobante'] ?? '',
-                    'estado_id'     => 1,
+                    'estado_id'      => 1,
+                    'observacion' => '',
+                    'user_id' => auth()->id(),
+                    'usuario_modificacion' => auth()->id(),
                     'created_at'     => $ahora,
                     'updated_at'     => $ahora,
                 ];
             }
 
             if (!empty($insertCobros)) {
-                ReciboPago::insert($insertCobros);
+                OrdenPagoPago::insert($insertCobros);
             }
 
-            $numeracion->numero_siguiente = $numeroActual + 1;
-            $numeracion->save();
+            $orden->update([
+                'estado_pago' => 1,
+                'fecha_pago' => $ahora,
+            ]);
 
             /*
+            /*
             |--------------------------------------------------------------------------
-            | RESUMEN MENSUAL
+            | RESUMEN MENSUAL - INGRESO POR APORTE PLANILLA
             |--------------------------------------------------------------------------
             */
-            $fechaResumen = Carbon::parse($recibo->fecha_factura);
-            $anioResumen = (int) $fechaResumen->year;
-            $mesResumen  = (int) $fechaResumen->month;
-            $montoIngreso = (float) $recibo->monto_total;
+            $fechaResumen = $ahora;
+            $anioResumen  = (int) $fechaResumen->year;
+            $mesResumen   = (int) $fechaResumen->month;
+            $montoEgreso = (float) $orden->total;
 
             $resumenMensual = ResumenMensual::where('anio', $anioResumen)
             ->where('mes', $mesResumen)
-            ->where('tipo_ingreso_id', $this->tipo_ingreso_id)
-            ->whereNull('tipo_egreso_id')
+            ->where('tipo_egreso_id', $orden->tipo_egreso_id)
+            ->whereNull('tipo_ingreso_id')
             ->lockForUpdate()
             ->first();
 
@@ -299,18 +206,18 @@ class CobroVarios extends Component
                 $resumenMensual = ResumenMensual::create([
                     'anio'             => $anioResumen,
                     'mes'              => $mesResumen,
-                    'tipo_ingreso_id'   => $this->tipo_ingreso_id,
-                    'tipo_egreso_id'   => null,
-                    'tipo_movimiento'  => 'I',
+                    'tipo_ingreso_id'   => null,
+                    'tipo_egreso_id'   => $orden->tipo_egreso_id,
+                    'tipo_movimiento'  => 'E',
                     'total_ingreso'    => 0,
                     'total_egreso'     => 0,
                     'fecha_calculo'    => null,
                     'usuario_calculo'  => null,
-                    'observacion'      => 'Creado automáticamente desde cobro varios - donaciones',
+                    'observacion'      => 'Creado automáticamente desde orden de pago',
                 ]);
             }
 
-            $resumenMensual->total_ingreso = (float) $resumenMensual->total_ingreso + $montoIngreso;
+            $resumenMensual->total_egreso = (float) $resumenMensual->total_egreso + $montoEgreso;
             $resumenMensual->save();
 
             /*
@@ -338,24 +245,21 @@ class CobroVarios extends Component
                     'saldo_final'     => $saldoInicialAnual,
                     'fecha_calculo'   => null,
                     'usuario_calculo' => null,
-                    'observacion'     => 'Creado automáticamente desde cobro varios - donaciones',
+                    'observacion'     => 'Creado automáticamente desde orden de pago',
                 ]);
             }
 
-            $resumenAnual->total_ingreso = (float) $resumenAnual->total_ingreso + $montoIngreso;
+            $resumenAnual->total_egreso = (float) $resumenAnual->total_egreso + $montoEgreso;
             $resumenAnual->saldo_final   = ((float) $resumenAnual->saldo_inicial + (float) $resumenAnual->total_ingreso) - (float) $resumenAnual->total_egreso;
             $resumenAnual->save();
 
             DB::commit();
-
         } catch (\Throwable $e) {
             DB::rollBack();
             $this->emit('mensaje_error', $e->getMessage());
-            return;
+            return false;
         }
 
-        return redirect()->route('recibo.show', $recibo->id)->with('message', 'Ingreso realizado correctamente.');
+        return redirect()->route('orden.show', $orden)->with('message','Orden de pago pagado correctamente.');
     }
-
-
 }

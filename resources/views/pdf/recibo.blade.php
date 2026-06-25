@@ -47,7 +47,7 @@
 
         .datos {
             margin-top: 10px;
-            line-height: 1.8;
+            line-height: 1.1;
         }
 
         table {
@@ -181,14 +181,23 @@
                 </tr>
             </tfoot>
         </table>
-
-        <div class="datos">
-            <strong>Forma de pago:</strong>
-            {{ $recibo->formaCobro->descripcion ?? 'Efectivo' }} <br>
-
-            <strong>Observación:</strong>
-            {{ $recibo->observacion ?? 'Sin observación' }}
-        </div>
+        @foreach ($recibo->forma_pagos as $item)
+            <div class="datos">
+                <strong>Forma de pago:</strong>
+                {{ $item->forma_cobro->descripcion}} <br>
+                <strong>Fecha:</strong>
+                {{ date('d/m/Y', strtotime($item->fecha)) }} <br>
+                <strong>Banco:</strong>
+                {{ $item->banco->descripcion}} <br>
+                <strong>Nro. Comprobante:</strong>
+                {{ $item->numero_comprobante}} <br>
+                <strong>Monto:</strong>
+                {{ number_format($item->monto, 0, ',', '.')}} <br>
+            </div>
+        @endforeach
+        <br>
+        <strong>Observación:</strong>
+        {{ $recibo->observacion ?? 'Sin observación' }}
 
         <table class="firmas">
             <tr>

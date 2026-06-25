@@ -75,10 +75,12 @@ class PlanillaCobro extends Component
         ->get();
         $this->cobros = [
             [
+                'fecha_pago' => now()->toDateString(),
                 'forma_cobro_id' => '',
                 'banco_id' => '',
                 'banco_ver' => 0,
                 'monto' => 0,
+                'numero_comprobante' => '',
             ]
         ];
 
@@ -201,10 +203,12 @@ class PlanillaCobro extends Component
 
         $this->cobros = [
             [
+                'fecha_pago' => now()->toDateString(),
                 'forma_cobro_id' => '',
                 'banco_id' => '',
                 'banco_ver' => 0,
                 'monto' => 0,
+                'numero_comprobante' => '',
             ]
         ];
 
@@ -214,10 +218,12 @@ class PlanillaCobro extends Component
     public function agregarCobro()
     {
         $this->cobros[] = [
+            'fecha_pago' => now()->toDateString(),
             'forma_cobro_id' => '',
             'banco_id' => '',
             'banco_ver' => 0,
             'monto' => 0,
+            'numero_comprobante' => '',
         ];
     }
 
@@ -266,6 +272,9 @@ class PlanillaCobro extends Component
         foreach ($this->cobros as $i => $cobro) {
             if (!empty($cobro['banco_ver']) && empty($cobro['banco_id'])) {
                 $this->addError("cobros.$i.banco_id", 'Debe seleccionar un banco.');
+            }
+            if (!empty($cobro['banco_ver']) && empty($cobro['numero_comprobante'])) {
+                $this->addError("cobros.$i.numero_comprobante", 'Debe ingresar el número de comprobante.');
             }
         }
 
@@ -394,7 +403,10 @@ class PlanillaCobro extends Component
             ->select(
                 'planilla_detalles.asociado_id',
                 'personas.documento',
-                'planilla_detalles.institucion_id'
+                'planilla_detalles.institucion_id',
+                'planilla_detalles.monto_esperado',
+                'planilla_detalles.pagado',
+                'planilla_detalles.id'
             )
             ->get()
             ->map(function ($item) {
@@ -402,6 +414,9 @@ class PlanillaCobro extends Component
                     'asociado_id' => $item->asociado_id,
                     'documento'   => $this->limpiarDocumento($item->documento),
                     'institucion_id'=> $item->institucion_id,
+                    'monto_esperado'  => (int) $item->monto_esperado,
+                    'pagado'          => (int) $item->pagado,
+                    'detalle_id' => (int) $item->id,
                 ];
             });
 
@@ -423,6 +438,18 @@ class PlanillaCobro extends Component
                 $asociadoId = $mapaPlanilla[$item['documento']]['asociado_id'];
                 $institucionId = $mapaPlanilla[$item['documento']]['institucion_id'];
                 $monto = (int) $item['monto'];
+
+                // Actualizar el detalle de la planilla
+                $detallePlanilla = $mapaPlanilla[$item['documento']];
+                $nuevoPagado = (float) $detallePlanilla['pagado'] + $monto;
+                $nuevoSaldo  = max(0, (float) $detallePlanilla['monto_esperado'] - $nuevoPagado);
+
+                PlanillaDetalle::where('id', $detallePlanilla['detalle_id'])->update([
+                    'pagado' => $nuevoPagado,
+                    'saldo' => $nuevoSaldo,
+                    'usuario_modificacion' => $userId,
+                    'updated_at' => $ahora,
+                ]);
 
                 $insertReciboAportes[] = [
                     'recibo_id' => $recibo->id,
@@ -486,9 +513,11 @@ class PlanillaCobro extends Component
 
                 $insertCobros[] = [
                     'recibo_id'     => $recibo->id,
+                    'fecha' => $cobro['fecha_pago'] ?? now()->toDateString(),
                     'forma_cobro_id' => $formaCobroId,
                     'banco_id'       => $bancoId,
                     'monto'          => $monto,
+                    'numero_comprobante' => $cobro['numero_comprobante'] ?? '',
                     'estado_id'      => 1,
                     'created_at'     => $ahora,
                     'updated_at'     => $ahora,

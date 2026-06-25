@@ -23,7 +23,7 @@
                         <label>Nombre y Apellido</label>
                         <input type="text" value="{{ $asociado?->persona?->nombre . ' ' . $asociado?->persona?->apellido }}" class="form-control" readonly>
                     </div>
-                    
+
                 </div>
             </div>
 
@@ -76,15 +76,27 @@
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr>
-                                    <th style="width: 35%;">Forma de Cobro</th>
-                                    <th style="width: 30%;">Banco</th>
-                                    <th style="width: 20%;">Monto</th>
-                                    <th style="width: 15%;">Acción</th>
+                                    <th style="width: 15%;">Fecha</th>
+                                    <th style="width: 25%;">Forma de Cobro</th>
+                                    <th style="width: 20%;">Banco</th>
+                                    <th style="width: 15%;">N° Comprobante</th>
+                                    <th style="width: 15%;">Monto</th>
+                                    <th style="width: 10%;">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($cobros as $index => $item)
                                     <tr>
+                                        <td>
+                                            <input type="date"
+                                                wire:model="cobros.{{ $index }}.fecha_pago"
+                                                class="form-control">
+
+                                            @error("cobros.$index.fecha_pago")
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
+                                        </td>
+
                                         <td>
                                             <select wire:change="cambioFormaCobro($event.target.value, {{ $index }})" class="form-control">
                                                 <option value="">Seleccionar</option>
@@ -110,6 +122,17 @@
                                             @else
                                                 <input type="text" class="form-control" value="No requiere banco" readonly>
                                             @endif
+                                        </td>
+
+                                        <td>
+                                            <input type="text"
+                                                wire:model.defer="cobros.{{ $index }}.numero_comprobante"
+                                                class="form-control"
+                                                placeholder="N° comprobante">
+
+                                            @error("cobros.$index.numero_comprobante")
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
                                         </td>
 
                                         <td>
@@ -163,9 +186,9 @@
                     <div class="form-row mb-3">
 
                         <div class="form-group col-md-4 d-flex align-items-end">
-                            <button 
-                                type="button" 
-                                wire:click="grabar" 
+                            <button
+                                type="button"
+                                wire:click="grabar"
                                 wire:loading.attr="disabled"
                                 wire:target="grabar"
                                 class="btn btn-success"

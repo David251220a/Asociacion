@@ -10,4 +10,9 @@ class PlanillaDetalle extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function asociado()
+    {
+        return $this->belongsTo(Asociado::class);
+    }
 }

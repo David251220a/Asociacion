@@ -82,6 +82,8 @@ Route::group([
 
     Route::get('/pdf/{factura}/factura', [PdfController::class, 'factura'])->name('pdf.factura');
     Route::get('/pdf/{recibo}/recibo', [PdfController::class, 'recibo'])->name('pdf.recibo');
+    Route::get('/pdf/{ordenPago}/orden-pago', [PdfController::class, 'orden'])->name('pdf.orden');
+    Route::get('/pdf/{planilla}/planilla-generacion', [PdfController::class, 'planilla'])->name('pdf.planilla');
 
     Route::get('/entidad', [EntidadController::class, 'index'])->name('entidad.index');
     Route::get('/entidad/firma', [EntidadController::class, 'firma'])->name('entidad.firma');
@@ -121,5 +123,6 @@ Route::group([
     Route::get('/orden-pago', [OrdenPagoController::class, 'index'])->name('orden.index');
     Route::get('/orden-pago/crear', [OrdenPagoController::class, 'create'])->name('orden.create');
     Route::get('/orden-pago/{ordenPago}/crear', [OrdenPagoController::class, 'pago'])->name('orden.pago');
+    Route::get('/orden-pago/{ordenPago}/ver', [OrdenPagoController::class, 'show'])->name('orden.show');
 
 });

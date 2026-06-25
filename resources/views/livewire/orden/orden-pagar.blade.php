@@ -1,135 +1,61 @@
-<div class="col-lg-12 layout-spacing">
+<div  class="col-lg-12 layout-spacing">
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <div class="row align-items-center mb-3">
                 <div class="col-md-6">
-                    <h3 class="mb-0">Cobro de Planilla</h3>
+                    <h3 class="mb-0">Orden de Pago: {{ str_pad($data->numero, 7, '0', STR_PAD_LEFT) }}/{{ $data->anio }}</h3>
                 </div>
             </div>
 
-            <div class="col-lg-12 col-md-12 col-sm-12">
-                <div class="form-row mb-2">
+            @include('varios.mensaje')
 
-                    <div class="form-group col-md-2">
-                        <label>Documento</label>
-                        <input type="text" wire:model.defer="documento" wire:blur="buscarPersona" id="documento" onkeyup="punto_decimal(this)" class="form-control text-right">
-                    </div>
-
-                    <div class="form-group col-md-2">
-                        <label>RUC</label>
-                        <input type="text" value="{{ $persona['ruc'] ?? '' }}" class="form-control text-right" readonly>
-                    </div>
-
-                    <div class="form-group col-md-5">
-                        <label>Persona</label>
-                        <input type="text" value="{{ $persona['nombre'] ?? '' }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Archivo Excel</label>
-                        <input type="file" wire:model="archivo" class="form-control" accept=".xlsx,.xls" @if($verificado) disabled @endif>
-                        <div wire:loading wire:target="archivo" class="text-primary mt-1">
-                            Cargando archivo...
-                        </div>
-
-                        @if($archivo)
-                            <small class="text-success d-block mt-1">
-                                Archivo seleccionado: {{ $archivo->getClientOriginalName() }}
-                            </small>
-                        @endif
-
-                        @error('archivo')
-                            <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Tipo Asociado</label>
-                        <input type="text" value="{{ $planilla->tipoAsociado->descripcion }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-6">
-                        <label>Institucion</label>
-                        <input type="text" value="{{ ($planilla->tipo_asociado_id == 3 ? $planilla->institucion->descripcion : 'JUBILADOS') }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Mes</label>
-                        <input type="text" wire:model.defer="mes" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Año</label>
-                        <input type="text" value="{{ $planilla->anio }}" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group col-md-3">
-                        <label>Monto Generado Planilla</label>
-                        <input type="text" value="{{ number_format($planilla->total, 0, ',', '.') }}" class="form-control text-right" readonly>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="col-lg-12 col-md-12 col-sm-12">
-                <div class="form-row mb-3">
-                    <div class="form-group col-md-2">
-                        <button type="button" wire:click="verificar" wire:key="archivo-{{ $verificado ? 'bloqueado' : 'libre' }}" class="btn btn-primary"  @if($verificado) disabled @endif>
-                            <span wire:loading.remove wire:target="verificar">Verificar</span>
-                            <span wire:loading wire:target="verificar">Verificando...</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            @if(count($erroresDocumentos) > 0)
-                <div class="col-lg-12">
-                    <div class="alert alert-danger">
-                        <strong>Se encontraron documentos con problemas. No se puede grabar.</strong>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Fila</th>
-                                    <th>Documento</th>
-                                    <th>Mensaje</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($erroresDocumentos as $error)
-                                    <tr>
-                                        <td>{{ $error['fila'] }}</td>
-                                        <td>{{ $error['documento'] }}</td>
-                                        <td>{{ $error['mensaje'] }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
-
-            @if($verificado && count($erroresDocumentos) == 0)
-                <div class="col-lg-12">
-                    <div class="form-row mb-3">
-                        <div class="form-group col-md-2">
-                            <label>Cantidad Personas</label>
-                            <input type="text" class="form-control text-right" value="{{ $cantidad_excel }}" readonly>
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-row mb-2">
+                        <div class="form-group col-md-3">
+                            <label for="documento">Documento</label>
+                            <input type="text" wire:blur="buscarPersona" class="form-control" value="{{$data->persona->documento}}" readonly style="color: black; font-weight:bold">
                         </div>
 
                         <div class="form-group col-md-3">
-                            <label>Monto Excel</label>
-                            <input type="text" class="form-control text-right" value="{{ number_format($monto_excel, 0, ',', '.') }}" readonly>
+                            <label for="ruc">RUC</label>
+                            <input type="text" class="form-control" value="{{ $data->persona->ruc }}" readonly style="color: black; font-weight:bold">
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="beneficiario">Beneficiario</label>
+                            <input type="text" class="form-control" value="{{ $data->persona->nombre . ' ' . $data->persona->apellido }}" readonly style="color: black; font-weight:bold">
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="tipo_egreso_id">Tipo Egreso</label>
+                            <input type="text" class="form-control" value="{{ $data->tipo_egreso->descripcion }}" readonly style="color: black; font-weight:bold">
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="concepto">Concepto</label>
+                            <input type="text" class="form-control" value="{{$data->concepto}}" readonly style="color: black; font-weight:bold">
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="observacion">Observacion</label>
+                            <input type="text" class="form-control" value="{{$data->descripcion}}" readonly style="color: black; font-weight:bold">
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <label for="total">Total</label>
+                            <input type="text" class="form-control text-right" value="{{number_format($data->total, 0, ',', '.')}}" readonly style="color: black; font-weight:bold">
                         </div>
                     </div>
-                </div>
 
+                </div>
+            </div>
+
+            <div class="row mt-4">
                 <div class="col-lg-12">
                     <div class="form-row mb-2">
                         <div class="col-md-12">
-                            <label><strong>Formas de Cobro</strong></label>
+                            <label><strong>Forma de Pago</strong></label>
                         </div>
                     </div>
 
@@ -138,7 +64,7 @@
                             <thead>
                                 <tr>
                                     <th style="width: 15%;">Fecha</th>
-                                    <th style="width: 25%;">Forma de Cobro</th>
+                                    <th style="width: 25%;">Forma de Pago</th>
                                     <th style="width: 20%;">Banco</th>
                                     <th style="width: 15%;">N° Comprobante</th>
                                     <th style="width: 15%;">Monto</th>
@@ -241,33 +167,21 @@
                         <small class="text-danger">{{ $message }}</small>
                     @enderror
                 </div>
+            </div>
 
-                <div class="col-lg-12">
-                    <div class="form-row mb-3">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-row mt-3">
+                        <button type="button" wire:click="pagar" class="btn btn-success mr-2">
+                            Pagar
+                        </button>
 
-                        <div class="form-group col-md-4 d-flex align-items-end">
-                            <button
-                                type="button"
-                                wire:click="cancelar"
-                                class="btn btn-danger mr-2"
-                            >
-                                Cancelar
-                            </button>
-
-                            <button
-                                type="button"
-                                wire:click="grabar"
-                                wire:loading.attr="disabled"
-                                wire:target="grabar"
-                                class="btn btn-success"
-                            >
-                                <span wire:loading.remove wire:target="grabar">Grabar</span>
-                                <span wire:loading wire:target="grabar">Procesando...</span>
-                            </button>
-                        </div>
+                        <a href="{{route('orden.index')}}" class="btn btn-danger">
+                            Cancelar
+                        </a>
                     </div>
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 </div>

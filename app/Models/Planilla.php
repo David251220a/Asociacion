@@ -25,4 +25,5 @@ class Planilla extends Model
     {
         return $this->belongsTo(Institucion::class);
     }
+
 }

@@ -9,14 +9,30 @@ use Illuminate\Http\Request;
 
 class OrdenPagoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:orden.index')->only('index');
+        $this->middleware('permission:orden.create')->only('create');
+        $this->middleware('permission:orden.show')->only('show');
+        $this->middleware('permission:orden.pago')->only('pago');
+    }
+
     public function index(Request $request)
     {
         $estado = $request->estado ?? 9;
         $tipo_egrego_id = $request->tipo_egrego_id ?? 0;
 
-        $fecha_desde = $request->fecha_desde
-        ? Carbon::parse($request->fecha_desde)->toDateString()
-        : now()->toDateString();
+        if($request->fecha_desde){
+            $fecha_desde = $request->fecha_desde;
+        }else{
+            $fecha_desde = OrdenPago::where('estado_id', 1)
+            ->where('estado_pago', 0)
+            ->min('fecha');
+
+            if(empty($fecha_desde)){
+                $fecha_desde = now()->toDateString();
+            }
+        }
 
         $fecha_hasta = $request->fecha_hasta
         ? Carbon::parse($request->fecha_hasta)->toDateString()
@@ -52,9 +68,15 @@ class OrdenPagoController extends Controller
         return view('orden.create');
     }
 
+    public function show(OrdenPago $ordenPago)
+    {
+        $data = $ordenPago;
+        return view('orden.show', compact('data'));
+    }
+
     public function pago(OrdenPago $ordenPago)
     {
-        return $ordenPago;
+        return view('orden.pago', compact('ordenPago'));
     }
 
 

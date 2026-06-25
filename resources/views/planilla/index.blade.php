@@ -144,9 +144,9 @@
                                             <td class="text-right">
                                                 {{number_format($item->monto_pagado, 0, ',', '.')}}
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-left">
                                                 @can('planilla.exportarDetalle')
-                                                    <a href="{{route('planilla.exportarDetalle', $item)}}" class="mr-3">
+                                                    <a href="{{route('planilla.exportarDetalle', $item)}}" class="mr-3" title="Planilla Descargar">
                                                         <svg
                                                             xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                             stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -155,9 +155,13 @@
                                                     </a>
                                                 @endcan
 
+                                                <a href="{{route('pdf.planilla', $item)}}" target="_blank" title="Imprimir Planilla">
+                                                    <i class="fas fa-print" class="mr-3" style="font-size: 20px"></i>
+                                                </a>
+
                                                 @can('planilla.cobrar')
                                                     @if ($item->pagado == 0)
-                                                        <a href="{{route('planilla.cobrar', $item)}}" class="mr-3">
+                                                        <a href="{{route('planilla.cobrar', $item)}}" class="mr-3" title="Planilla Pagar">
                                                             <svg
                                                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                                                 stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line>

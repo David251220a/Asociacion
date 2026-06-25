@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Entidad;
 use App\Models\Factura;
 use App\Models\FacturaAporte;
+use App\Models\OrdenPago;
+use App\Models\Planilla;
 use App\Models\Recibo;
 use App\Models\ReciboAporte;
 use App\Models\ReciboDonacion;
@@ -125,6 +127,28 @@ class PdfController extends Controller
         ])->setPaper('a4', 'portrait');
 
         return $pdf->stream('recibo.pdf');
+    }
+
+    public function orden(OrdenPago $ordenPago)
+    {
+        $entidad = Entidad::find(1);
+        $data = $ordenPago;
+        $pdf = Pdf::loadView('pdf.orden', [
+            'data' => $data,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('orden_pago.pdf');
+    }
+
+    public function planilla(Planilla $planilla)
+    {
+        $entidad = Entidad::find(1);
+        $data = $planilla;
+        $pdf = Pdf::loadView('pdf.planilla', [
+            'data' => $data,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Planilla Aporte.pdf');
     }
 
     private function nombreMes($mes)

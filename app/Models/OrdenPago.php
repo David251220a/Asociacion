@@ -20,4 +20,14 @@ class OrdenPago extends Model
     {
         return $this->belongsTo(Persona::class);
     }
+
+    public function pagos()
+    {
+        return $this->hasMany(OrdenPagoPago::class);
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(OrdenPagoDetalle::class);
+    }
 }
