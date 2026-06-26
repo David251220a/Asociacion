@@ -118,7 +118,7 @@
                                                 {{ $item->planilla_anio }}/{{ str_pad($item->planilla_numero, 5, '0', STR_PAD_LEFT) }}
                                             </td>
                                             <td class="">
-                                                {{ $item->anio }}/{{$item->mes}}
+                                                {{ $item->anio }}/{{str_pad($item->mes, 2, '0', STR_PAD_LEFT)}}
                                             </td>
                                             <td>
                                                 {{ $item->tipoAsociado->descripcion ?? '' }}

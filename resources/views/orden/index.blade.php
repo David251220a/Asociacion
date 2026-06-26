@@ -132,12 +132,19 @@
                                                     </a>
                                                 @endcan
 
+                                                @can('orden.anular')
+                                                    <button type="button" class="btn btn-danger btn-sm mr-3" title="Anular Orden Pago" data-toggle="modal" data-target="#anular_{{$item->id}}">
+                                                        <i class="fas fa-trash-alt" style="font-size: 10px"></i>
+                                                    </button>
+                                                @endcan
+
                                                 <a href="{{route('pdf.orden', $item)}}" target="_blank">
                                                     <i class="fas fa-print" class="mr-3" style="font-size: 20px"></i>
                                                 </a>
 
                                             </td>
                                         </tr>
+                                        @include('orden.anular')
                                     @endforeach
                                 </tbody>
                                 <tfoot>

@@ -124,5 +124,6 @@ Route::group([
     Route::get('/orden-pago/crear', [OrdenPagoController::class, 'create'])->name('orden.create');
     Route::get('/orden-pago/{ordenPago}/crear', [OrdenPagoController::class, 'pago'])->name('orden.pago');
     Route::get('/orden-pago/{ordenPago}/ver', [OrdenPagoController::class, 'show'])->name('orden.show');
+    Route::post('/orden-pago/{ordenPago}/anular', [OrdenPagoController::class, 'anular'])->name('orden.anular');
 
 });
