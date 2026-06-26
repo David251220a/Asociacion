@@ -10,4 +10,9 @@ class Aporte extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function recibo()
+    {
+        return $this->belongsTo(Recibo::class);
+    }
 }

@@ -25,4 +25,10 @@ class Asociado extends Model
     {
         return $this->belongsTo(TipoAsociado::class);
     }
+
+    public function aportes_activo()
+    {
+        return $this->hasMany(Aporte::class)->where('estado_id', 1);
+    }
+
 }

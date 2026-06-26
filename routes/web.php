@@ -8,6 +8,7 @@ use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
 use App\Http\Controllers\GrupoUsuarioController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LimpiarController;
 use App\Http\Controllers\MiembroController;
 use App\Http\Controllers\OrdenPagoController;
@@ -48,7 +49,9 @@ Auth::routes();
 Route::group([
     'middleware' => 'auth',
 ], function(){
-    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/aporte', [HomeController::class, 'aporte'])->name('aporte');
 
     Route::resource('/asociados', AsociadoController::class)->names('asociado');
     Route::resource('/users', UsuarioController::class)->names('user');

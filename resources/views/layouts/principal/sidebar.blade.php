@@ -13,6 +13,25 @@
             </a>
         </li>
 
+        @if(Auth::user()->persona?->asociado)
+            <li class="menu">
+                <a href="{{ route('aporte') }}" aria-expanded="false"
+                class="dropdown-toggle"
+                @if(Str::startsWith(Route::currentRouteName(), 'aporte')) data-active="true" @endif>
+                    <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="feather feather-dollar-sign">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Aporte</span>
+                    </div>
+                </a>
+            </li>
+        @endif
+
         @can('solicitud.index')
             <li class="menu">
                 <a href="{{route('solicitud.index')}}" aria-expanded="false" class="dropdown-toggle"
@@ -102,7 +121,13 @@
                     @if(Str::startsWith(Route::currentRouteName(), 'orden.index')) data-active="true" @endif
                 >
                     <div class="">
-                        <i class="fas fa-donate mr-3"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="feather feather-credit-card">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
                         <span>Orden de Pago</span>
                     </div>
                 </a>
