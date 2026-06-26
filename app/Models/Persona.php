@@ -20,4 +20,9 @@ class Persona extends Model
     {
         return $this->hasOne(Asociado::class);
     }
+
+    public function tipo_persona()
+    {
+        return $this->belongsTo(TipoPersona::class);
+    }
 }

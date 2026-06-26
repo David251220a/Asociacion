@@ -13,6 +13,7 @@ use App\Http\Controllers\LimpiarController;
 use App\Http\Controllers\MiembroController;
 use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\PersonaController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\SifenController;
@@ -128,5 +129,11 @@ Route::group([
     Route::get('/orden-pago/{ordenPago}/crear', [OrdenPagoController::class, 'pago'])->name('orden.pago');
     Route::get('/orden-pago/{ordenPago}/ver', [OrdenPagoController::class, 'show'])->name('orden.show');
     Route::post('/orden-pago/{ordenPago}/anular', [OrdenPagoController::class, 'anular'])->name('orden.anular');
+
+    Route::get('/personas', [PersonaController::class, 'index'])->name('persona.index');
+    Route::get('/personas/crear', [PersonaController::class, 'create'])->name('persona.create');
+    Route::post('/personas/crear', [PersonaController::class, 'store'])->name('persona.store');
+    Route::get('/personas/{persona}/editar', [PersonaController::class, 'edit'])->name('persona.edit');
+    Route::post('/personas/{persona}/editar', [PersonaController::class, 'update'])->name('persona.update');
 
 });

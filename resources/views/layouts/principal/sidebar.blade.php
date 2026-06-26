@@ -49,6 +49,25 @@
             </li>
         @endcan
 
+        @can('persona.index')
+            <li class="menu">
+                <a href="{{route('persona.index')}}" aria-expanded="false" class="dropdown-toggle"
+                    @if(Str::startsWith(Route::currentRouteName(), 'persona.index')) data-active="true" @endif
+                >
+                    <div class="">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="feather feather-user">
+                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Personas</span>
+                    </div>
+                </a>
+            </li>
+        @endcan
+
         @can('asociado.index')
             <li class="menu">
                 <a href="{{route('asociado.index')}}" aria-expanded="false" class="dropdown-toggle"
