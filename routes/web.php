@@ -16,6 +16,7 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PersonaController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
+use App\Http\Controllers\ResumenMensualController;
 use App\Http\Controllers\SifenController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\UsuarioController;
@@ -135,5 +136,7 @@ Route::group([
     Route::post('/personas/crear', [PersonaController::class, 'store'])->name('persona.store');
     Route::get('/personas/{persona}/editar', [PersonaController::class, 'edit'])->name('persona.edit');
     Route::post('/personas/{persona}/editar', [PersonaController::class, 'update'])->name('persona.update');
+
+    Route::get('/resumen', [ResumenMensualController::class, 'index'])->name('resumen.index');
 
 });

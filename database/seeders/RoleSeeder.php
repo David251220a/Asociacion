@@ -79,13 +79,19 @@ class RoleSeeder extends Seeder
         // $permission = Permission::create(['name' => 'solicitud.index', 'descripcion' => 'Solicitud: Index'])->syncRoles($admin);
         // $permission = Permission::create(['name' => 'solicitud.show', 'descripcion' => 'Solicitud: Ver'])->syncRoles($admin);
 
-        $permission = Permission::create(['name' => 'miembros.index', 'descripcion' => 'Miembros'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'miembros.index', 'descripcion' => 'Miembros'])->syncRoles($admin);
 
-        $permission = Permission::create(['name' => 'orden.index', 'descripcion' => 'Orden Pago: Index'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'orden.show', 'descripcion' => 'Orden Pago: Ver'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'orden.create', 'descripcion' => 'Orden Pago: crear'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'orden.pago', 'descripcion' => 'Orden Pago: Pagar'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'orden.anular', 'descripcion' => 'Orden Pago: Anular'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'orden.index', 'descripcion' => 'Orden Pago: Index'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'orden.show', 'descripcion' => 'Orden Pago: Ver'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'orden.create', 'descripcion' => 'Orden Pago: crear'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'orden.pago', 'descripcion' => 'Orden Pago: Pagar'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'orden.anular', 'descripcion' => 'Orden Pago: Anular'])->syncRoles($admin);
+
+        $permission = Permission::create(['name' => 'persona.index', 'descripcion' => 'Persona: Index'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'persona.create', 'descripcion' => 'Persona: Crear'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'persona.edit', 'descripcion' => 'Persona: Editar'])->syncRoles($admin);
+
+        $permission = Permission::create(['name' => 'resumen.index', 'descripcion' => 'Resumen'])->syncRoles($admin);
 
 
         // $permission = Permission::create(['name' => 'habilitacion.estado_alumno', 'descripcion' => 'Habilitacion de Curso: Estado Alumno']);
