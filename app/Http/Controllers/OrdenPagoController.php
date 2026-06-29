@@ -98,6 +98,10 @@ class OrdenPagoController extends Controller
             DB::transaction(function () use ($ordenPago, $request) {
 
                 $fecha_anulado = now()->toDateString();
+                $restar_tesoreria = 0;
+                if ($ordenPago->estado_pago == 1){
+                    $restar_tesoreria = 1;
+                }
 
                 $ordenPago->update([
                     'estado_id' => 2,
@@ -117,35 +121,39 @@ class OrdenPagoController extends Controller
                     'estado_id' => 2,
                     'updated_at' => now(),
                 ]);
-                /*
-                |--------------------------------------------------------------------------
-                | ACTUALIZAR RESUMENES
-                |--------------------------------------------------------------------------
-                */
-                $fechaResumen = Carbon::parse($ordenPago->fecha);
-                $anioResumen = (int) $fechaResumen->year;
-                $mesResumen  = (int) $fechaResumen->month;
-                $montoEgreso = (float) $ordenPago->total;
 
-                $resumenMensual = ResumenMensual::where('anio', $anioResumen)
-                ->where('mes', $mesResumen)
-                ->where('tipo_egreso_id', $ordenPago->tipo_egreso_id)
-                ->whereNull('tipo_ingreso_id')
-                ->lockForUpdate()
-                ->first();
+                if ($restar_tesoreria == 1){
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ACTUALIZAR RESUMENES
+                    |--------------------------------------------------------------------------
+                    */
+                    $fechaResumen = Carbon::parse($ordenPago->fecha);
+                    $anioResumen = (int) $fechaResumen->year;
+                    $mesResumen  = (int) $fechaResumen->month;
+                    $montoEgreso = (float) $ordenPago->total;
 
-                $resumenMensual->total_egreso -= $montoEgreso;
-                $resumenMensual->save();
+                    $resumenMensual = ResumenMensual::where('anio', $anioResumen)
+                    ->where('mes', $mesResumen)
+                    ->where('tipo_egreso_id', $ordenPago->tipo_egreso_id)
+                    ->whereNull('tipo_ingreso_id')
+                    ->lockForUpdate()
+                    ->first();
 
-                $resumenAnual = ResumenAnual::where('anio', $anioResumen)
-                ->lockForUpdate()
-                ->first();
+                    $resumenMensual->total_egreso -= $montoEgreso;
+                    $resumenMensual->save();
 
-                if ($resumenAnual) {
-                    $resumenAnual->total_egreso = (float) $resumenAnual->total_egreso - $montoEgreso;
-                    $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial + (float) $resumenAnual->total_ingreso - (float) $resumenAnual->total_egreso;
-                    $resumenAnual->save();
+                    $resumenAnual = ResumenAnual::where('anio', $anioResumen)
+                    ->lockForUpdate()
+                    ->first();
+
+                    if ($resumenAnual) {
+                        $resumenAnual->total_egreso = (float) $resumenAnual->total_egreso - $montoEgreso;
+                        $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial + (float) $resumenAnual->total_ingreso - (float) $resumenAnual->total_egreso;
+                        $resumenAnual->save();
+                    }
                 }
+
             });
 
         } catch (\Throwable $e) {
