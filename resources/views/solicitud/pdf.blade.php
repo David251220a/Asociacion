@@ -23,7 +23,8 @@
                     <div class="datos-entidad">
                         Tel: {{ $entidad->telefono ?? '' }} <br>
                         Dirección: {{ $entidad->direccion ?? '' }} <br>
-                        Correo: {{ $entidad->email ?? '' }}
+                        Correo: {{ $entidad->email ?? '' }} <br>
+                        Solicitud:{{ str_pad($solicitud->numero_solicitud, 7, '0', STR_PAD_LEFT) }}/{{$solicitud->anio}}
                     </div>
                 </td>
             </tr>

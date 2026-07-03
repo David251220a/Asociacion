@@ -13,5 +13,6 @@
     <script src="{{asset('assets/js/libs/jquery-3.1.1.min.js')}}"></script>
     <script src="{{asset('plugins/sweetalerts/sweetalert2.min.js')}}"></script>
     <script src="{{asset('plugins/sweetalerts/custom-sweetalert.js')}}"></script>
+    <script src="{{ asset('js/inputmask.min.js') }}"></script>
     <script src="{{ asset('js/asociarse.js') }}"></script>
 @endsection

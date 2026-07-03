@@ -15,9 +15,12 @@ use App\Models\SolicitudFamiliar;
 use App\Models\SolicitudFichaMedica;
 use App\Models\TipoAsociado;
 use Carbon\Carbon;
+use Dotenv\Validator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Mail\SolicitudRealizadaMail;
+use Illuminate\Support\Facades\Mail;
 
 class AsociarIndex extends Component
 {
@@ -92,6 +95,23 @@ class AsociarIndex extends Component
         $this->familiares = [
             ['tipo' => '1', 'nombre' => '', 'apellido' => '', 'ci' => '', 'telefono' => '']
         ];
+        try {
+    $solicitud = Solicitud::find(1);
+
+    $correoDestino = trim($solicitud->email ?? '');
+
+    if ($correoDestino == '') {
+        $correoDestino = 'davidortiz25122010@gmail.com';
+    }
+
+    Mail::to($correoDestino)
+        ->send(new SolicitudRealizadaMail($solicitud));
+
+    dd('envio');
+
+} catch (\Throwable $e) {
+    dd($e->getMessage(), $e->getFile(), $e->getLine());
+}
     }
 
     public function render()
@@ -247,9 +267,10 @@ class AsociarIndex extends Component
             return [false, 'La fecha de nacimiento no puede estar vacía.'];
         }
 
-        try {
-            $fecha = Carbon::createFromFormat('Y-m-d', $this->fecha_nacimiento);
-        } catch (\Exception $e) {
+        $fecha = Carbon::createFromFormat('d/m/Y', trim($this->fecha_nacimiento));
+
+        // Verifica que la fecha exista realmente
+        if ($fecha->format('d/m/Y') !== trim($this->fecha_nacimiento)) {
             return [false, 'Debe ingresar una fecha válida.'];
         }
 
@@ -273,19 +294,15 @@ class AsociarIndex extends Component
             return [false, 'El número de celular no puede estar vacío.'];
         }
 
-        if (empty($this->email)) {
-            return [false, 'El email no puede estar vacío.'];
-        }
-
-        $email = strtolower(trim($this->email));
-
-        $existeEmail = Persona::where('email', $email)->exists();
-
-        if ($existeEmail) {
-            return [false, 'El email ya está registrado a otro socio.'];
-        }
-
-        $this->email = $email;
+        // if (empty($this->email)) {
+        //     return [false, 'El email no puede estar vacío.'];
+        // }
+        // $email = strtolower(trim($this->email));
+        // $existeEmail = Persona::where('email', $email)->exists();
+        // if ($existeEmail) {
+        //     return [false, 'El email ya está registrado a otro socio.'];
+        // }
+        // $this->email = $email;
 
         return [true, ''];
     }
@@ -304,11 +321,11 @@ class AsociarIndex extends Component
             return;
         }
 
-        if (empty($this->descripcion_vivienda)) {
-            $this->emit('mensaje_error', 'El campo descripción vivienda no puede quedar vacío.');
-            $this->paso = 3;
-            return;
-        }
+        // if (empty($this->descripcion_vivienda)) {
+        //     $this->emit('mensaje_error', 'El campo descripción vivienda no puede quedar vacío.');
+        //     $this->paso = 3;
+        //     return;
+        // }
 
         if (empty($this->tipo_vivienda) || $this->tipo_vivienda == 0) {
             $this->emit('mensaje_error', 'Debe seleccionar un tipo de vivienda.');
@@ -428,6 +445,9 @@ class AsociarIndex extends Component
             $rutaReverso = $this->documento_reverso->store('solicitudes/documentos', 'public');
             $rutaSelfie = $this->selfie->store('solicitudes/selfies', 'public');
 
+            $fechaNacimiento = Carbon::createFromFormat('d/m/Y', $this->fecha_nacimiento)
+            ->format('Y-m-d');
+
             $solicitud = Solicitud::create([
                 'departamento_id' => $this->departamento_id,
                 'distrito_id' => $this->distrito_id,
@@ -449,11 +469,11 @@ class AsociarIndex extends Component
                 'documento' => $documento,
                 'nombre' => mb_strtoupper($this->nombre, 'UTF-8'),
                 'apellido' => mb_strtoupper($this->apellido, 'UTF-8'),
-                'fecha_nacimiento' => $this->fecha_nacimiento,
+                'fecha_nacimiento' => $fechaNacimiento,
                 'direccion' => $this->domicilio,
                 'barrio' => $this->barrio,
                 'celular' => $this->celular,
-                'email' => $this->email,
+                'email' => $this->email ? strtolower(trim($this->email)) : null,
                 'vivienda' => $this->descripcion_vivienda,
                 'documento_frente' => $rutaFrente,
                 'documento_reverso' => $rutaReverso,
@@ -499,9 +519,16 @@ class AsociarIndex extends Component
 
             DB::commit();
 
-            $this->solicitud_final_numero = str_pad($numero, 5, '0', STR_PAD_LEFT);
+            $correoDestino = trim($solicitud->email ?? '');
+            if ($correoDestino == '') {
+                $correoDestino = 'davidortiz25122010@gmail.com';
+            }
+            Mail::to($correoDestino)
+            ->send(new SolicitudRealizadaMail($solicitud));
+
+            $this->solicitud_final_numero = str_pad($numero, 7, '0', STR_PAD_LEFT);
             $this->solicitud_final_anio = $anio;
-            $this->correo_enviado = false;
+            $this->correo_enviado = true;
             $this->paso = 7;
 
             $this->emit('mensaje_exitoso', 'Solicitud enviada correctamente.');
@@ -512,4 +539,43 @@ class AsociarIndex extends Component
             return;
         }
     }
+
+    private function validarFechaNacimiento()
+    {
+        $validator = Validator::make([
+            'fecha_nacimiento' => $this->fecha_nacimiento,
+        ], [
+            'fecha_nacimiento' => [
+                'required',
+                'regex:/^\d{2}\/\d{2}\/\d{4}$/',
+                function ($attribute, $value, $fail) {
+                    try {
+                        $fecha = Carbon::createFromFormat('d/m/Y', $value);
+
+                        if ($fecha->format('d/m/Y') !== $value) {
+                            $fail('La fecha de nacimiento no es válida.');
+                        }
+
+                        if ($fecha->isFuture()) {
+                            $fail('La fecha de nacimiento no puede ser futura.');
+                        }
+
+                    } catch (\Exception $e) {
+                        $fail('La fecha de nacimiento no es válida.');
+                    }
+                },
+            ],
+        ], [
+            'fecha_nacimiento.required' => 'Debe ingresar la fecha de nacimiento.',
+            'fecha_nacimiento.regex' => 'La fecha debe tener el formato dd/mm/aaaa.',
+        ]);
+
+        if ($validator->fails()) {
+            $this->emit('mensaje_error', $validator->errors()->first());
+            return false;
+        }
+
+        return true;
+    }
+
 }

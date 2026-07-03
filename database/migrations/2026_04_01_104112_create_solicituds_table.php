@@ -39,7 +39,7 @@ return new class extends Migration
             $table->text('direccion');
             $table->string('barrio', 250);
             $table->string('celular')->nullable();
-            $table->string('email',250);
+            $table->string('email',250)->nullable();
             $table->text('vivienda')->nullable();
             $table->text('documento_frente')->nullable();
             $table->text('documento_reverso')->nullable();

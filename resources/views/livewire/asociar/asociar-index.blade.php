@@ -95,7 +95,7 @@
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-semibold">Fecha de nacimiento</label>
-                                        <input type="date" class="form-control form-control-lg asociarse-input" wire:model.defer="fecha_nacimiento">
+                                        <input type="text" class="form-control form-control-lg asociarse-input" id="fecha_nacimiento" wire:model.defer="fecha_nacimiento" placeholder="dd/mm/aaaa" maxlength="10" autocomplete="off">
                                     </div>
 
                                     <div class="col-md-6 mb-3">
