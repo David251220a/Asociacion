@@ -283,12 +283,12 @@
 
                                 <div class="form-group col-md-3">
                                     <label for="desde">Fecha Inicio Descuento</label>
-                                    <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ $entidad->fecha_inicio }}" class="form-control" required>
+                                    <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ now()->format('Y-m-d') }}" class="form-control" required>
                                 </div>
 
                                 <div class="form-group col-md-3">
                                     <label for="desde">Acta</label>
-                                    <input type="number" name="acta" id="acta" value="{{ $entidad->acta }}" class="form-control" required>
+                                    <input type="number" name="acta" id="acta" value="{{ $entidad->acta }}" class="form-control">
                                 </div>
 
                                 <div class="form-group col-md-3">

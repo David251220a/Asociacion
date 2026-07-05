@@ -95,23 +95,6 @@ class AsociarIndex extends Component
         $this->familiares = [
             ['tipo' => '1', 'nombre' => '', 'apellido' => '', 'ci' => '', 'telefono' => '']
         ];
-        try {
-    $solicitud = Solicitud::find(1);
-
-    $correoDestino = trim($solicitud->email ?? '');
-
-    if ($correoDestino == '') {
-        $correoDestino = 'davidortiz25122010@gmail.com';
-    }
-
-    Mail::to($correoDestino)
-        ->send(new SolicitudRealizadaMail($solicitud));
-
-    dd('envio');
-
-} catch (\Throwable $e) {
-    dd($e->getMessage(), $e->getFile(), $e->getLine());
-}
     }
 
     public function render()
@@ -521,7 +504,7 @@ class AsociarIndex extends Component
 
             $correoDestino = trim($solicitud->email ?? '');
             if ($correoDestino == '') {
-                $correoDestino = 'davidortiz25122010@gmail.com';
+                $correoDestino = 'ajupem.py@gmail.com';
             }
             Mail::to($correoDestino)
             ->send(new SolicitudRealizadaMail($solicitud));

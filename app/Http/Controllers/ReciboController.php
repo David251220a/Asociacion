@@ -139,7 +139,7 @@ class ReciboController extends Controller
                             'usuario_modificacion' => auth()->id(),
                         ]);
 
-                        $planilla->detalles()->update([
+                        $planilla->planillaDetalle()->update([
                             'pagado' => 0,
                             'saldo' => DB::raw('monto_esperado'),
                             'usuario_modificacion' => auth()->id(),

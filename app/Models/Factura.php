@@ -13,7 +13,7 @@ class Factura extends Model
 
     public function persona()
     {
-        return $this->belongsTo(Persona::class); 
+        return $this->belongsTo(Persona::class);
     }
 
     public function sifen()
@@ -31,7 +31,7 @@ class Factura extends Model
         return $this->hasMany(FacturaCobro::class);
     }
 
-     public function tipodocumentofactura()
+    public function tipodocumentofactura()
     {
         return $this->belongsTo(TipoDocumento::class, 'tipo_documento_id');
     }

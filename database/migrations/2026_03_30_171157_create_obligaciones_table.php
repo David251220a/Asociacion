@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('obligaciones', function (Blueprint $table) {
             $table->id();
             $table->foreignId('entidad_id')->constrained();
-            $table->integer('codigo')->default();
+            $table->integer('codigo')->default(0);
             $table->string('descripcion');
             $table->foreignId('estado_id')->constrained();
             $table->timestamps();

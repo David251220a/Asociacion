@@ -57,13 +57,26 @@ class SolicitudController extends Controller
 
     public function store(Solicitud $solicitud, Request $request)
     {
-        $request->validate([
-            'fecha_inicio' => 'required|date|after_or_equal:today',
-            'acta' => 'required',
-            'estado' => 'required'
-        ], [
-            'fecha_inicio.after_or_equal' => 'La fecha no puede ser menor a hoy.',
-        ]);
+        if ($request->estado == 1){
+            $request->validate([
+                'fecha_inicio' => 'required|date|after_or_equal:today',
+                'acta' => 'required',
+                'estado' => 'required'
+            ], [
+                'fecha_inicio.after_or_equal' => 'La fecha no puede ser menor a hoy.',
+                'acta' => 'El campo acta es requirido.'
+            ]);
+        }else{
+            $request->validate([
+                'fecha_inicio' => 'required|date|after_or_equal:today',
+                'motivo' => 'required',
+                'estado' => 'required'
+            ], [
+                'fecha_inicio.after_or_equal' => 'La fecha no puede ser menor a hoy.',
+                'motivo' => 'El campo motivo rechazo es requerido.'
+            ]);
+        }
+
 
         if($request->estado == 2){
             if (empty($request->motivo)){
@@ -103,12 +116,16 @@ class SolicitudController extends Controller
                 $numeracionSocio->save();
             }
 
+            $acta = ($request->acta) ? $request->acta : '0' ;
+            $motivo = ($request->motivo) ? $request->motivo : '' ;
+
             $solicitud->update([
                 'aprobado' => $request->estado,
-                'acta' => $request->acta,
+                'acta' => $acta,
                 'fecha_aprobacion_o_rechazo' => now(),
                 'usuario_modificacion' => auth()->id(),
                 'numero_socio' => $numeroSocio,
+                'motivo_rechazo' => $motivo
             ]);
 
             $miembros = Miembro::where('presente', 1)->get();
@@ -121,87 +138,90 @@ class SolicitudController extends Controller
                 ]);
             }
 
-            $persona = Persona::create([
-                'departamento_id' => $solicitud->departamento_id,
-                'distrito_id' => $solicitud->distrito_id,
-                'ciudad_id' => $solicitud->ciudad_id,
-                'tipo_persona_id' => $solicitud->tipo_persona_id,
-                'sexo_id' => $solicitud->sexo_id,
-                'estado_civil_id' => $solicitud->estado_civil_id,
-                'tipo_vivienda_id' => $solicitud->tipo_vivienda_id,
-                'documento' => $solicitud->documento,
-                'ruc' => $solicitud->documento,
-                'nombre' => $solicitud->nombre,
-                'apellido' => $solicitud->apellido,
-                'fecha_nacimiento' => $solicitud->fecha_nacimiento,
-                'direccion' => $solicitud->direccion,
-                'barrio' => $solicitud->barrio,
-                'celular' => $solicitud->celular,
-                'email' => $solicitud->email,
-                'vivienda' => $solicitud->vivienda,
-                'documento_frente' => $solicitud->documento_frente,
-                'documento_reverso' => $solicitud->documento_reverso,
-                'selfi' => $solicitud->selfi,
-                'estado_id' => 1,
-                'user_id' => auth()->id(),
-                'usuario_modificacion' => auth()->id(),
-            ]);
+            if ($request->estado == 1){
+                $persona = Persona::create([
+                    'departamento_id' => $solicitud->departamento_id,
+                    'distrito_id' => $solicitud->distrito_id,
+                    'ciudad_id' => $solicitud->ciudad_id,
+                    'tipo_persona_id' => $solicitud->tipo_persona_id,
+                    'sexo_id' => $solicitud->sexo_id,
+                    'estado_civil_id' => $solicitud->estado_civil_id,
+                    'tipo_vivienda_id' => $solicitud->tipo_vivienda_id,
+                    'documento' => $solicitud->documento,
+                    'ruc' => $solicitud->documento,
+                    'nombre' => $solicitud->nombre,
+                    'apellido' => $solicitud->apellido,
+                    'fecha_nacimiento' => $solicitud->fecha_nacimiento,
+                    'direccion' => $solicitud->direccion,
+                    'barrio' => $solicitud->barrio,
+                    'celular' => $solicitud->celular,
+                    'email' => $solicitud->email,
+                    'vivienda' => $solicitud->vivienda,
+                    'documento_frente' => $solicitud->documento_frente,
+                    'documento_reverso' => $solicitud->documento_reverso,
+                    'selfi' => $solicitud->selfi,
+                    'estado_id' => 1,
+                    'user_id' => auth()->id(),
+                    'usuario_modificacion' => auth()->id(),
+                ]);
 
-            $fecha = Carbon::parse($request->fecha_inicio);
-            $mes = $fecha->month;
-            $anio = $fecha->year;
+                $fecha = Carbon::parse($request->fecha_inicio);
+                $mes = $fecha->month;
+                $anio = $fecha->year;
 
-            $asociado = Asociado::create([
-                'persona_id' => $persona->id,
-                'tipo_asociado_id' => $solicitud->tipo_asociado_id,
-                'institucion_id' => $solicitud->institucion_id,
-                'fecha_admision' => now(),
-                'solicitud_id' => $solicitud->id,
-                'anio_aporte' => $anio,
-                'mes_aporte' => $mes,
-                'numero_socio' => $numeroSocio,
-                'fecha_baja' => null,
-                'motivo' => 0,
-                'motivo_baja_otro' => '',
-                'estado_id' => 1,
-                'user_id' => auth()->id(),
-                'usuario_modificacion' => auth()->id(),
-            ]);
-
-            foreach ($solicitud->familiares as $item) {
-                Familiar::create([
+                $asociado = Asociado::create([
                     'persona_id' => $persona->id,
-                    'tipo_familiar_id' => $item->tipo_familiar,
-                    'documento' => $item->documento,
-                    'nombre' => $item->nombre,
-                    'apellido' => $item->apellido,
-                    'celular' => $item->celular,
+                    'tipo_asociado_id' => $solicitud->tipo_asociado_id,
+                    'institucion_id' => $solicitud->institucion_id,
+                    'fecha_admision' => now(),
+                    'solicitud_id' => $solicitud->id,
+                    'anio_aporte' => $anio,
+                    'mes_aporte' => $mes,
+                    'numero_socio' => $numeroSocio,
+                    'fecha_baja' => null,
+                    'motivo' => 0,
+                    'motivo_baja_otro' => '',
+                    'estado_id' => 1,
+                    'user_id' => auth()->id(),
+                    'usuario_modificacion' => auth()->id(),
+                ]);
+
+                foreach ($solicitud->familiares as $item) {
+                    Familiar::create([
+                        'persona_id' => $persona->id,
+                        'tipo_familiar_id' => $item->tipo_familiar,
+                        'documento' => $item->documento,
+                        'nombre' => $item->nombre,
+                        'apellido' => $item->apellido,
+                        'celular' => $item->celular,
+                        'estado_id' => 1,
+                        'user_id' => auth()->id(),
+                        'usuario_modificacion' => auth()->id(),
+                    ]);
+                }
+
+                FichaMedica::UpdateOrCreate([
+                    'asociado_id' => $asociado->id
+                ],
+                [
+                    'cancer' => $solicitud->ficha_medica->cancer,
+                    'diabetes' => $solicitud->ficha_medica->diabetes,
+                    'presion_alta' => $solicitud->ficha_medica->presion_alta,
+                    'otro' => $solicitud->ficha_medica->otro,
+                    'medicamentos' => $solicitud->ficha_medica->medicamentos,
+                    'seguro_particular' => $solicitud->ficha_medica->seguro_particular,
+                    'seguro_ips' => $solicitud->ficha_medica->seguro_ips,
+                    'seguro_ninguno' => $solicitud->ficha_medica->seguro_ninguno,
+                    'observacion' => $solicitud->ficha_medica->observacion,
                     'estado_id' => 1,
                     'user_id' => auth()->id(),
                     'usuario_modificacion' => auth()->id(),
                 ]);
             }
 
-            FichaMedica::UpdateOrCreate([
-                'asociado_id' => $asociado->id
-            ],
-            [
-                'cancer' => $solicitud->ficha_medica->cancer,
-                'diabetes' => $solicitud->ficha_medica->diabetes,
-                'presion_alta' => $solicitud->ficha_medica->presion_alta,
-                'otro' => $solicitud->ficha_medica->otro,
-                'medicamentos' => $solicitud->ficha_medica->medicamentos,
-                'seguro_particular' => $solicitud->ficha_medica->seguro_particular,
-                'seguro_ips' => $solicitud->ficha_medica->seguro_ips,
-                'seguro_ninguno' => $solicitud->ficha_medica->seguro_ninguno,
-                'observacion' => $solicitud->ficha_medica->observacion,
-                'estado_id' => 1,
-                'user_id' => auth()->id(),
-                'usuario_modificacion' => auth()->id(),
-            ]);
             $desc = ($request->estado == 1) ? 'APROBADO' : 'RECHAZADO' ;
             DB::commit();
-            return redirect()->route('solicitud.show', $solicitud)->with('message', 'Solicitud'.$desc .' con exito.');
+            return redirect()->route('solicitud.show', $solicitud)->with('message', 'Solicitud '.$desc .' con exito.');
         } catch (\Throwable $e) {
             DB::rollBack();
             return redirect()->back()->withErrors($e->getMessage());
