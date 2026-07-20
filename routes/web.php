@@ -138,5 +138,7 @@ Route::group([
     Route::post('/personas/{persona}/editar', [PersonaController::class, 'update'])->name('persona.update');
 
     Route::get('/resumen', [ResumenMensualController::class, 'index'])->name('resumen.index');
+    Route::get('/recalcular', [ResumenMensualController::class, 'recalcular'])->name('resumen.recalcular');
+    Route::post('/recalcular', [ResumenMensualController::class, 'recalcular_post'])->name('resumen.recalcular_post');
 
 });

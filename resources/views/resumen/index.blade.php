@@ -130,6 +130,12 @@
                             </a>
                         </div>
 
+                        <div class="form-group col-md-2">
+                            <a href="{{ route('resumen.recalcular') }}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-sync-alt mr-1"></i> Recalcular
+                            </a>
+                        </div>
+
                     </div>
                 </form>
 

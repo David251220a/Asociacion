@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Factura;
 use App\Models\OrdenPago;
 use App\Models\Recibo;
+use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -192,5 +193,181 @@ class ResumenMensualController extends Controller
             'egresosTipoDatos'
         ));
 
+    }
+
+    public function recalcular()
+    {
+        $hoy = Carbon::now();
+        $anio = $hoy->year;
+        return view('resumen.recalcular', compact('anio'));
+    }
+
+    public function recalcular_post(Request $request)
+    {
+        $request->validate([
+            'anio' => [
+                'required',
+                'integer',
+                'min:2020',
+                'max:' . now()->year,
+            ],
+        ]);
+
+        $anio = (int) $request->anio;
+
+        DB::transaction(function () use ($anio) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | INGRESOS
+            |--------------------------------------------------------------------------
+            */
+
+            $ingresos = Recibo::query()
+            ->selectRaw('
+                tipo_recibo_id,
+                MONTH(fecha) AS mes,
+                SUM(monto_total) AS total_ingreso
+            ')
+            ->whereYear('fecha', $anio)
+            ->where('estado_id', 1)
+            ->where('anulado', 0)
+            ->groupBy(
+                'tipo_recibo_id',
+                DB::raw('MONTH(fecha)')
+            )
+            ->get();
+
+            /*
+            |--------------------------------------------------------------------------
+            | EGRESOS
+            |--------------------------------------------------------------------------
+            */
+
+            $egresos = OrdenPago::query()
+            ->selectRaw('
+                tipo_egreso_id,
+                MONTH(fecha_pago) AS mes,
+                SUM(total) AS total_egreso
+            ')
+            ->whereYear('fecha_pago', $anio)
+            ->where('estado_id', 1)
+            ->where('estado_pago', 1)
+            ->whereNull('fecha_anulado')
+            ->whereNotNull('fecha_pago')
+            ->groupBy(
+                'tipo_egreso_id',
+                DB::raw('MONTH(fecha_pago)')
+            )
+            ->get();
+
+            /*
+            |--------------------------------------------------------------------------
+            | ELIMINAR EL RESUMEN ANTERIOR DEL AÑO
+            |--------------------------------------------------------------------------
+            */
+
+            ResumenMensual::where('anio', $anio)->delete();
+
+            /*
+            |--------------------------------------------------------------------------
+            | GUARDAR INGRESOS
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($ingresos as $ingreso) {
+                ResumenMensual::create([
+                    'tipo_movimiento'  => 'I',
+                    'tipo_ingreso_id'  => $ingreso->tipo_recibo_id,
+                    'tipo_egreso_id'   => null,
+                    'anio'             => $anio,
+                    'mes'              => $ingreso->mes,
+                    'total_ingreso'    => $ingreso->total_ingreso,
+                    'total_egreso'     => 0,
+                    'fecha_calculo'    => now(),
+                    'usuario_calculo'  => auth()->id(),
+                    'observacion'      => 'Ingreso recalculado desde recibos',
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | GUARDAR EGRESOS
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($egresos as $egreso) {
+                ResumenMensual::create([
+                    'tipo_movimiento'  => 'E',
+                    'tipo_ingreso_id'  => null,
+                    'tipo_egreso_id'   => $egreso->tipo_egreso_id,
+                    'anio'             => $anio,
+                    'mes'              => $egreso->mes,
+                    'total_ingreso'    => 0,
+                    'total_egreso'     => $egreso->total_egreso,
+                    'fecha_calculo'    => now(),
+                    'usuario_calculo'  => auth()->id(),
+                    'observacion'      => 'Egreso recalculado desde órdenes de pago',
+                ]);
+            }
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESUMEN ANUAL
+        |--------------------------------------------------------------------------
+        */
+
+        $totalIngresoAnual = ResumenMensual::where('anio', $anio)
+        ->sum('total_ingreso');
+
+        $totalEgresoAnual = ResumenMensual::where('anio', $anio)
+        ->sum('total_egreso');
+
+        $resumenActual = ResumenAnual::where('anio', $anio)
+        ->lockForUpdate()
+        ->first();
+
+        $resumenAnterior = ResumenAnual::where('anio', $anio - 1)
+        ->lockForUpdate()
+        ->first();
+
+        /*
+        * Si existe el año anterior, su saldo final pasa a ser
+        * el saldo inicial del año solicitado.
+        *
+        * Si no existe, conserva el saldo inicial que ya tenía
+        * el año actual. Si tampoco existe, comienza en cero.
+        */
+        $saldoInicial = $resumenAnterior
+            ? $resumenAnterior->saldo_final
+            : ($resumenActual->saldo_inicial ?? 0);
+
+        $saldoFinal = $saldoInicial
+            + $totalIngresoAnual
+            - $totalEgresoAnual;
+
+        ResumenAnual::updateOrCreate(
+            [
+                'anio' => $anio,
+            ],
+            [
+                'saldo_inicial'   => $saldoInicial,
+                'total_ingreso'   => $totalIngresoAnual,
+                'total_egreso'    => $totalEgresoAnual,
+                'saldo_final'     => $saldoFinal,
+                'fecha_calculo'   => now(),
+                'usuario_calculo' => auth()->user()->name,
+                'observacion'     => 'Resumen anual recalculado desde los resúmenes mensuales',
+            ]
+        );
+
+        return redirect()
+            ->back()
+            ->with(
+                'message',
+                'Los ingresos y egresos del año ' . $anio .
+                ' fueron recalculados correctamente.'
+            );
     }
 }
