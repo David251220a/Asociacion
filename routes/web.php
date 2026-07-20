@@ -141,4 +141,10 @@ Route::group([
     Route::get('/recalcular', [ResumenMensualController::class, 'recalcular'])->name('resumen.recalcular');
     Route::post('/recalcular', [ResumenMensualController::class, 'recalcular_post'])->name('resumen.recalcular_post');
 
+
+    Route::post('/persona_foto_actualizar/{persona}/', [HomeController::class, 'persona_foto_actualizar'])->name('persona.foto.guardar');
+
+    Route::get('/solicitudes', [HomeController::class, 'solicitudes'])->name('solicitudes');
+    Route::get('/solicitudes/nueva_solicitud', [HomeController::class, 'nueva_solicitud'])->name('nueva_solicitud');
+
 });

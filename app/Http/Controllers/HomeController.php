@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asociado;
 use App\Models\Persona;
+use App\Models\SolicitudAyudaSocial;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -27,7 +28,8 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        $persona = Persona::where('documento', auth()->user()->documento)->first();
+        return view('home', compact('persona'));
     }
 
     public function aporte()
@@ -96,5 +98,40 @@ class HomeController extends Controller
             'ultimoAporte',
             'antiguedad'
         ));
+    }
+
+    public function persona_foto_actualizar(Persona $persona, Request $request)
+    {
+        $request->validate([
+            'selfi' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg',
+            ],
+        ]);
+
+        $ruta = $request
+        ->file('selfi')
+        ->store('personas/selfis', 'public');
+
+        $persona->selfi = $ruta;
+        $persona->save();
+
+        return redirect()->route('home');
+    }
+
+    public function solicitudes()
+    {
+        $persona = Persona::where('documento', auth()->user()->documento)->first();
+        $data = SolicitudAyudaSocial::where('persona_id', $persona->id)
+        ->where('anio', 2026)
+        ->paginate(15);
+
+        return view('portal.solicitud_index', compact('data'));
+    }
+
+    public function nueva_solicitud()
+    {
+        return view('portal.seleccionar_solicitud');
     }
 }

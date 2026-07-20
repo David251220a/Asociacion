@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('estado_solicituds', function (Blueprint $table) {
             $table->id();
+            $table->string('descripcion', 100);
             $table->timestamps();
         });
     }

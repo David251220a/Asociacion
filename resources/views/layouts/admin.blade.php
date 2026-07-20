@@ -38,7 +38,7 @@
             </div>
             <div class="footer-wrapper">
                 <div class="footer-section f-section-1">
-                    <p class="">Cjppm © 2025 <a target="_blank" href="https://designreset.com/">Dirección de TIC</a>, All rights reserved.</p>
+                    <p class="">AJUPEM © 2025 <a target="_blank" href="https://designreset.com/"></a>, All rights reserved.</p>
                 </div>
             </div>
         </div>
