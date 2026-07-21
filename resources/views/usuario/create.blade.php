@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('styles')  
+@section('styles')
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/elements/alert.css')}}">
     <link href="{{asset('assets/css/elements/infobox.css')}}" rel="stylesheet" type="text/css" />
 @endsection
@@ -58,7 +58,7 @@
                         <select name="rol" id="rol" class="form-control">
                             <option value=""></option>
                             @foreach ($role as $item)
-                                <option value="{{$item->id}}">{{$item->name}}</option>
+                                <option value="{{$item->name}}">{{$item->name}}</option>
                             @endforeach
                         </select>
                     </div>
