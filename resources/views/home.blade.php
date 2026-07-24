@@ -139,6 +139,59 @@
             background-color: #fff3cd;
         }
 
+        .perfil-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            max-width: 780px;
+            margin: 20px 0;
+        }
+
+        .perfil-info-item {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid #e2eaf2;
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.80);
+        }
+
+        .perfil-info-icono {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: #1b6fc2;
+            background-color: #e5f0fb;
+            font-size: 16px;
+        }
+
+        .perfil-info-texto {
+            min-width: 0;
+        }
+
+        .perfil-info-texto small {
+            display: block;
+            margin-bottom: 2px;
+            color: #8996a3;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .perfil-info-texto span {
+            display: block;
+            overflow-wrap: anywhere;
+            color: #34495e;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
         @media (max-width: 767.98px) {
             .perfil-contenido {
                 flex-direction: column;
@@ -158,6 +211,13 @@
 
             .perfil-datos h2 {
                 font-size: 23px;
+            }
+
+            .perfil-info-grid {
+                grid-template-columns: 1fr;
+                width: 100%;
+                margin: 20px 0;
+                text-align: left;
             }
         }
     </style>
@@ -231,6 +291,56 @@
                             institucional y brindar un mejor servicio a nuestros
                             asociados.
                         </p>
+
+                        <div class="perfil-info-grid">
+
+                            <div class="perfil-info-item">
+                                <div class="perfil-info-icono">
+                                    <i class="fa fa-envelope"></i>
+                                </div>
+
+                                <div class="perfil-info-texto">
+                                    <small>Correo electrónico</small>
+
+                                    <span>
+                                        {{ $persona->email ?: 'No registrado' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="perfil-info-item">
+                                <div class="perfil-info-icono">
+                                    <i class="fa fa-phone"></i>
+                                </div>
+
+                                <div class="perfil-info-texto">
+                                    <small>Celular</small>
+
+                                    <span>
+                                        {{ $persona->celular ?: 'No registrado' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="perfil-info-item">
+                                <div class="perfil-info-icono">
+                                    <i class="fa fa-calendar"></i>
+                                </div>
+
+                                <div class="perfil-info-texto">
+                                    <small>Fecha de nacimiento</small>
+
+                                    <span>
+                                        @if ($persona->fecha_nacimiento)
+                                            {{ \Carbon\Carbon::parse($persona->fecha_nacimiento)->format('d/m/Y') }}
+                                        @else
+                                            No registrada
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
 
                         @if ($tieneSelfi)
                             <div class="foto-registrada">

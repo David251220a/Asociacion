@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Persona;
+use App\Models\Asociado;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Str;
 
 class UsuarioController extends Controller
 {
@@ -149,6 +153,157 @@ class UsuarioController extends Controller
         $user->update();
         $user->syncRoles($request->rol);
         return redirect()->route('user.index')->with('message', 'Se edito con exito el usuario: ' . $user->name . '!.');
+    }
+
+    public function cambiar_contrase()
+    {
+        return view('usuario.cambiar_usuario');
+    }
+
+    public function cambiar_contrase_post(Request $request)
+    {
+        $request->validate([
+            'current_password' => [
+                'required',
+                'current_password',
+            ],
+            'password' => [
+                'required',
+                'confirmed',
+                'different:current_password',
+                Password::min(8)
+                    ->letters()
+                    ->numbers(),
+            ],
+        ], [
+            'current_password.required' =>
+                'Debe ingresar su contraseña actual.',
+
+            'current_password.current_password' =>
+                'La contraseña actual es incorrecta.',
+
+            'password.required' =>
+                'Debe ingresar la nueva contraseña.',
+
+            'password.confirmed' =>
+                'La confirmación de la contraseña no coincide.',
+
+            'password.different' =>
+                'La nueva contraseña debe ser diferente a la actual.',
+        ]);
+
+        $usuario = $request->user();
+        $usuario->password = Hash::make($request->password);
+        $usuario->save();
+        $request->session()->regenerate();
+        return redirect()->route('user.cambiar_contrase')->with('message', 'La contraseña fue actualizada correctamente.');
+    }
+
+    public function generarUsuariosAsociados()
+    {
+        $creados = 0;
+        $omitidos = 0;
+
+        Asociado::query()
+        ->with('persona')
+        ->where('estado_id', 1)
+        ->whereHas('persona', function ($query) {
+            $query->where('estado_id', 1);
+        })
+        ->chunkById(100, function ($asociados) use (
+            &$creados,
+            &$omitidos
+        ) {
+            foreach ($asociados as $asociado) {
+
+                $persona = $asociado->persona;
+
+                if (!$persona) {
+                    $omitidos++;
+                    continue;
+                }
+
+                $documento = trim((string) $persona->documento);
+
+                if ($documento === '') {
+                    $omitidos++;
+                    continue;
+                }
+
+                /*
+                * Si ya existe un usuario con el documento,
+                * no se vuelve a crear.
+                */
+                $existe = User::where('documento', $documento)
+                ->exists();
+
+                if ($existe) {
+                    $omitidos++;
+                    continue;
+                }
+
+                /*
+                * Preparar la parte inicial del correo.
+                * Elimina puntos, espacios, guiones y caracteres especiales.
+                */
+                $correoBase = Str::lower(
+                    Str::ascii($documento)
+                );
+
+                $correoBase = preg_replace(
+                    '/[^a-z0-9]/',
+                    '',
+                    $correoBase
+                );
+
+                if ($correoBase === '') {
+                    $omitidos++;
+                    continue;
+                }
+
+                $correo = $correoBase . '@ajupem';
+                $contador = 1;
+
+                /*
+                * Garantizar que el correo no se repita.
+                */
+                while (User::where('email', $correo)->exists()) {
+                    $correo = $correoBase
+                        . $contador
+                        . '@ajupem';
+
+                    $contador++;
+                }
+
+                DB::transaction(function () use (
+                    $persona,
+                    $documento,
+                    $correo
+                ) {
+                    $usuario = new User();
+
+                    $usuario->username = $documento;
+                    $usuario->documento = $documento;
+                    $usuario->name = strtoupper(trim($persona->nombre));
+                    $usuario->lastname = strtoupper(trim($persona->apellido));
+                    $usuario->email = $correo;
+
+                    $usuario->password = Hash::make(
+                        'Ajupem2026*'
+                    );
+                    $usuario->save();
+
+                    /*
+                    * Si utilizás Spatie Permission:
+                    */
+                    // $usuario->assignRole('ASOCIADO');
+                });
+
+                $creados++;
+            }
+        });
+
+        return 'Usuarios Creados';
     }
 
 }

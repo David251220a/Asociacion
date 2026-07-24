@@ -147,4 +147,8 @@ Route::group([
     Route::get('/solicitudes', [HomeController::class, 'solicitudes'])->name('solicitudes');
     Route::get('/solicitudes/nueva_solicitud', [HomeController::class, 'nueva_solicitud'])->name('nueva_solicitud');
 
+    Route::get('/cambiar-password', [UsuarioController::class, 'cambiar_contrase'])->name('user.cambiar_contrase');
+    Route::post('/cambiar-password', [UsuarioController::class, 'cambiar_contrase_post'])->name('user.cambiar_contrase_post');
+    // Route::get('/crear-usuario', [UsuarioController::class, 'generarUsuariosAsociados'])->name('user.generarUsuariosAsociados');
+
 });
