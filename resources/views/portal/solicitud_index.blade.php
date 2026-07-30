@@ -93,7 +93,7 @@
                                 <th>Número</th>
                                 <th>Fecha</th>
                                 <th>Tipo de solicitud</th>
-                                <th class="text-right">Monto</th>
+                                <th class="text-right">Monto Aprobado</th>
                                 <th>Estado</th>
                                 <th class="text-center">Acción</th>
                             </tr>
@@ -115,39 +115,51 @@
                                     </td>
 
                                     <td>
-                                        <span class="badge badge-light">
-                                            AYUDA SOCIAL
-                                        </span>
+                                        @if ($item->tipo_codigo === 'AYUDA_SOCIAL')
+                                            <span class="badge badge-success">
+                                                {{ $item->tipo_solicitud }}
+                                            </span>
+                                        @elseif ($item->tipo_codigo === 'ACTUALIZACION_DATOS')
+                                            <span class="badge badge-primary">
+                                                {{ $item->tipo_solicitud }}
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td class="monto-solicitud">
-                                        G. {{ number_format($item->monto_solicitado, 0, ',', '.') }}
+                                        @if ($item->tipo_codigo === 'AYUDA_SOCIAL')
+                                            @if ($item->monto > 0)
+                                                G. {{ number_format($item->monto,0,',','.') }}
+                                            @else
+                                                <span class="text-muted">
+                                                    Pendiente
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">
+                                                No aplica
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td>
-                                        <span class="badge badge-info">
-                                            {{ $item->estadoSolicitud->descripcion ?? 'SIN ESTADO' }}
+                                        <span class="badge badge-{{ $item->estado_color ?? 'secondary' }}">
+                                            {{ $item->estado_descripcion ?? 'SIN ESTADO' }}
                                         </span>
                                     </td>
 
                                     <td class="text-center">
-                                        <a href="#" class="btn-ver-solicitud" title="Ver solicitud">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="22"
-                                                height="22"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                class="feather feather-eye"
-                                            >
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </a>
+
+                                        @if ($item->tipo_codigo === 'AYUDA_SOCIAL')
+                                            <a href="{{ route('ayuda_social_show', $item->id) }}" class="btn btn-sm btn-outline-primary" title="Ver solicitud de ayuda social">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                        @elseif ($item->tipo_codigo === 'ACTUALIZACION_DATOS')
+                                            <a href="{{ route('actualizacion_datos_show', $item->id) }}" class="btn btn-sm btn-outline-primary" title="Ver solicitud de actualización de datos">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                        @endif
+
                                     </td>
                                 </tr>
 
@@ -156,7 +168,6 @@
                                 <tr>
                                     <td colspan="6" class="tabla-vacia">
                                         <i class="fas far fa-file-alt"></i>
-
                                         Todavía no realizaste ninguna solicitud
                                         durante el año {{ now()->year }}.
                                     </td>

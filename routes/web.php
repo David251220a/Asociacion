@@ -18,6 +18,7 @@ use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\ResumenMensualController;
 use App\Http\Controllers\SifenController;
+use App\Http\Controllers\SolicitudAyudaSocialController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\WebController;
@@ -146,9 +147,21 @@ Route::group([
 
     Route::get('/solicitudes', [HomeController::class, 'solicitudes'])->name('solicitudes');
     Route::get('/solicitudes/nueva_solicitud', [HomeController::class, 'nueva_solicitud'])->name('nueva_solicitud');
+    Route::get('/solicitudes/ayuda-social', [HomeController::class, 'ayuda_social'])->name('ayuda_social');
+    Route::post('/solicitudes/ayuda-social', [HomeController::class, 'ayuda_social_store'])->name('ayuda_social_store');
+    Route::get('/solicitudes/ayuda-social/{id}/ver', [HomeController::class, 'ayuda_social_show'])->name('ayuda_social_show');
+    Route::get('/solicitudes/actualizar-datos', [HomeController::class, 'actualizar_datos'])->name('actualizar_datos');
+    Route::post('/solicitudes/actualizar-datos', [HomeController::class, 'actualizar_datos_post'])->name('actualizar_datos_post');
+    Route::get('/solicitudes/actualizar-datos/{id}/ver', [HomeController::class, 'actualizacion_datos_show'])->name('actualizacion_datos_show');
 
     Route::get('/cambiar-password', [UsuarioController::class, 'cambiar_contrase'])->name('user.cambiar_contrase');
     Route::post('/cambiar-password', [UsuarioController::class, 'cambiar_contrase_post'])->name('user.cambiar_contrase_post');
     // Route::get('/crear-usuario', [UsuarioController::class, 'generarUsuariosAsociados'])->name('user.generarUsuariosAsociados');
+
+    Route::get('/ayuda-social/solicitud', [SolicitudAyudaSocialController::class, 'index'])->name('solicitud.index_ayuda_social');
+    Route::get('/ayuda-social/solicitud/{solicitudAyuda}/aprobacion-rechazo', [SolicitudAyudaSocialController::class, 'show'])->name('solicitud.show_ayuda_social');
+    Route::post('/ayuda-social/solicitud/{solicitudAyuda}/aprobacion-rechazo', [SolicitudAyudaSocialController::class, 'aprobar_ayuda_social'])->name('solicitud.aprobar_ayuda_social');
+    Route::post('/ayuda-social/solicitud/{solicitudAyuda}/rechazo', [SolicitudAyudaSocialController::class, 'rechazar_ayuda_social'])->name('solicitud.rechazar_ayuda_social');
+
 
 });

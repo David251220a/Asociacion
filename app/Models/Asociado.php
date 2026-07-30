@@ -31,4 +31,9 @@ class Asociado extends Model
         return $this->hasMany(Aporte::class)->where('estado_id', 1);
     }
 
+    public function institucion()
+    {
+        return $this->belongsTo(Institucion::class);
+    }
+
 }

@@ -77,6 +77,8 @@
     <div class="col-lg-12 layout-spacing">
         <div class="statbox widget box box-shadow">
 
+
+
             <div class="widget-content widget-content-area">
                 <div class="row align-items-center mb-4">
                     <div class="col-md-8">
@@ -89,7 +91,6 @@
                             Seleccioná el tipo de solicitud que deseas realizar.
                         </p>
                     </div>
-
                     <div class="col-md-4 text-md-right mt-3 mt-md-0">
                         <a
                             href="{{ route('solicitudes') }}"
@@ -101,15 +102,28 @@
                     </div>
                 </div>
 
+                @include('varios.mensaje')
+
                 <hr class="mb-4">
 
                 <div class="row">
 
                     <div class="col-lg-4 col-md-6 mb-4">
-                        <a
-                            href="#"
-                            class="solicitud-opcion"
-                        >
+                        <a href="{{route('actualizar_datos')}}" class="solicitud-opcion">
+                            <div class="solicitud-icono datos">
+                                <i class="fas fa-user-edit"></i>
+                            </div>
+
+                            <h4>Actualización de datos</h4>
+
+                            <p>
+                                Solicitar la corrección de información personal.
+                            </p>
+                        </a>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <a href="{{ route('ayuda_social')}}" class="solicitud-opcion">
                             <div class="solicitud-icono ayuda">
                                 <i class="fas fa-hands-helping"></i>
                             </div>
@@ -124,10 +138,7 @@
                     </div>
 
                     <div class="col-lg-4 col-md-6 mb-4">
-                        <a
-                            href="#"
-                            class="solicitud-opcion"
-                        >
+                        <a href="#" class="solicitud-opcion">
                             <div class="solicitud-icono prestamo">
                                 <i class="fas fa-hand-holding-usd"></i>
                             </div>
@@ -136,23 +147,6 @@
 
                             <p>
                                 Iniciar una nueva solicitud de préstamo.
-                            </p>
-                        </a>
-                    </div>
-
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <a
-                            href="#"
-                            class="solicitud-opcion"
-                        >
-                            <div class="solicitud-icono datos">
-                                <i class="fas fa-user-edit"></i>
-                            </div>
-
-                            <h4>Actualización de datos</h4>
-
-                            <p>
-                                Solicitar la corrección de información personal.
                             </p>
                         </a>
                     </div>

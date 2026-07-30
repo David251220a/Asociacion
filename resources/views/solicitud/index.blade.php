@@ -13,7 +13,10 @@
             <div class="widget-content widget-content-area">
                 <div class="row align-items-center mb-3">
                     <div class="col-md-6">
-                        <h3 class="mb-0">Solicitudes</h3>
+                        <h3 class="mb-1">Solicitudes de Asociación</h3>
+                        <p class="text-muted mb-0">
+                            Consulte y gestione todas las solicitudes para formar parte de la asociación.
+                        </p>
                     </div>
 
                 </div>
