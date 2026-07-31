@@ -370,6 +370,8 @@ class HomeController extends Controller
                 'estado_id' => 1,
                 'user_id' => auth()->user()->id,
                 'usuario_modificacion' => auth()->user()->id,
+                'fecha_anulacion' => null,
+                'motivo_anulacion' => '',
             ]);
 
             DB::commit();

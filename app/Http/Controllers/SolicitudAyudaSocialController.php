@@ -27,8 +27,7 @@ class SolicitudAyudaSocialController extends Controller
         $hasta = $request->hasta ?? now()->format('Y-m-d');
         $estado = $request->estado ?? "1";
         $estados_solicitud = EstadoSolicitud::all();
-        $data = SolicitudAyudaSocial::where('estado_id', 1)
-        ->where('estado_solicitud_id', $estado)
+        $data = SolicitudAyudaSocial::where('estado_solicitud_id', $estado)
         ->whereBetween('fecha_solicitud', [$desde, $hasta])
         ->orderBy('created_at', 'ASC')
         ->paginate(50);

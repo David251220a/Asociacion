@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrdenPago;
-use App\Models\OrdenPagoDetalle;
-use App\Models\ResumenAnual;
-use App\Models\ResumenMensual;
 use App\Models\TipoEgreso;
+use App\Services\AnularOrdenPagoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class OrdenPagoController extends Controller
 {
@@ -84,84 +82,43 @@ class OrdenPagoController extends Controller
         return view('orden.pago', compact('ordenPago'));
     }
 
-    public function anular(OrdenPago $ordenPago, Request $request)
+    public function anular(OrdenPago $ordenPago, Request $request, AnularOrdenPagoService $servicio)
     {
-        $request->validate([
-            'motivo_anulacion' => 'required'
+        $datos = $request->validate([
+            'motivo_anulacion' => [
+                'required',
+                'string',
+                'max:1000',
+            ],
+            'tipo_anulacion' => [
+                'required',
+                Rule::in([
+                    'solo_orden',
+                    'reemitir',
+                    'completa',
+                ]),
+            ],
         ]);
 
-        if ($ordenPago->estado_id == 2) {
-            return redirect()->route('orden.index')->withErrors('La Orden de Pago ya está anulado.');
-        }
-
         try {
-            DB::transaction(function () use ($ordenPago, $request) {
 
-                $fecha_anulado = now()->toDateString();
-                $restar_tesoreria = 0;
-                if ($ordenPago->estado_pago == 1){
-                    $restar_tesoreria = 1;
-                }
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 7 && $datos['tipo_anulacion'] === 'reemitir') {
+                $nuevaOrden = $servicio->anularAyudaSocialYReemitir($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
+                return redirect()->route('orden.pago', $nuevaOrden->id)->with('message','La orden anterior fue anulada y se generó correctamente una nueva orden de pago.');
+            }
 
-                $ordenPago->update([
-                    'estado_id' => 2,
-                    'estado_pago' => 2,
-                    'usuario_modificacion' => auth()->id(),
-                    'fecha_anulado' => $fecha_anulado,
-                    'motivo_anulado' => $request->motivo_anulacion,
-                ]);
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 7 && $datos['tipo_anulacion'] === 'completa') {
+                $servicio->anularAyudaSocialCompleta($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
+                return redirect()->route('orden.index')->with('message','La orden de pago y la solicitud de ayuda social fueron anuladas correctamente.');
+            }
 
-                OrdenPagoDetalle::where('orden_pago_id', $ordenPago->id)->update([
-                    'estado_id' => 2,
-                    'usuario_modificacion' => auth()->id(),
-                    'updated_at' => now(),
-                ]);
-
-                $ordenPago->pagos()->update([
-                    'estado_id' => 2,
-                    'updated_at' => now(),
-                ]);
-
-                if ($restar_tesoreria == 1){
-                    /*
-                    |--------------------------------------------------------------------------
-                    | ACTUALIZAR RESUMENES
-                    |--------------------------------------------------------------------------
-                    */
-                    $fechaResumen = Carbon::parse($ordenPago->fecha);
-                    $anioResumen = (int) $fechaResumen->year;
-                    $mesResumen  = (int) $fechaResumen->month;
-                    $montoEgreso = (float) $ordenPago->total;
-
-                    $resumenMensual = ResumenMensual::where('anio', $anioResumen)
-                    ->where('mes', $mesResumen)
-                    ->where('tipo_egreso_id', $ordenPago->tipo_egreso_id)
-                    ->whereNull('tipo_ingreso_id')
-                    ->lockForUpdate()
-                    ->first();
-
-                    $resumenMensual->total_egreso -= $montoEgreso;
-                    $resumenMensual->save();
-
-                    $resumenAnual = ResumenAnual::where('anio', $anioResumen)
-                    ->lockForUpdate()
-                    ->first();
-
-                    if ($resumenAnual) {
-                        $resumenAnual->total_egreso = (float) $resumenAnual->total_egreso - $montoEgreso;
-                        $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial + (float) $resumenAnual->total_ingreso - (float) $resumenAnual->total_egreso;
-                        $resumenAnual->save();
-                    }
-                }
-
-            });
+            $servicio->anularSinOrigen($ordenPago, $datos['motivo_anulacion'], auth()->user()->id);
+            return redirect()->route('orden.index')->with('message','La orden de pago fue anulada correctamente.');
 
         } catch (\Throwable $e) {
-            return redirect()->route('orden.index')->withErrors($e->getMessage());
+            report($e);
+            return redirect()->back()->withErrors(['orden' => $e->getMessage(),]);
         }
-
-        return redirect()->route('orden.index')->with('message', 'Orden de Pago anulado.');
-
     }
 
 

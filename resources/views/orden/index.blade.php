@@ -4,6 +4,46 @@
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/elements/alert.css')}}">
     <link href="{{asset('assets/css/elements/infobox.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/css/tables/table-basic.css')}}" rel="stylesheet" type="text/css" />
+    <style>
+        .opcion-anulacion {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 16px;
+            border: 1px solid #dfe5eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .opcion-anulacion:hover {
+            border-color: #1b6fc2;
+            background-color: #f5f9fd;
+        }
+
+        .opcion-anulacion input {
+            margin-top: 5px;
+            margin-right: 13px;
+        }
+
+        .opcion-anulacion span {
+            display: block;
+        }
+
+        .opcion-anulacion strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #1b3a5b;
+        }
+
+        .opcion-anulacion small {
+            display: block;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -135,7 +175,7 @@
 
                                                 @can('orden.anular')
                                                     @if ($item->estado_pago <> 2)
-                                                        <button type="button" class="btn btn-danger btn-sm mr-3" title="Anular Orden Pago" data-toggle="modal" data-target="#anular_{{$item->id}}">
+                                                        <button type="button" class="btn btn-danger btn-sm mr-3" title="Anular Orden Pago" data-toggle="modal" data-target="#anular_dos_{{$item->id}}">
                                                             <i class="fas fa-trash-alt" style="font-size: 10px"></i>
                                                         </button>
                                                     @endif
@@ -149,6 +189,7 @@
                                             </td>
                                         </tr>
                                         @include('orden.anular')
+                                        @include('orden.anular_dos')
                                     @endforeach
                                 </tbody>
                                 <tfoot>
@@ -173,4 +214,42 @@
 
 
 @section('js')
+    <script>
+        function bloquearAnulacion(formulario) {
+
+            if (formulario.dataset.enviado === '1') {
+                return false;
+            }
+
+            formulario.dataset.enviado = '1';
+
+            const boton = formulario.querySelector(
+                '.btn-confirmar-anulacion'
+            );
+
+            if (boton) {
+                boton.disabled = true;
+                boton.style.pointerEvents = 'none';
+
+                boton.innerHTML = `
+                    <span
+                        class="spinner-border spinner-border-sm mr-2"
+                        role="status"
+                        aria-hidden="true"
+                    ></span>
+                    Anulando...
+                `;
+            }
+
+            /*
+             * Esperamos unos milisegundos para permitir que el navegador
+             * muestre el botón deshabilitado antes de enviar.
+             */
+            setTimeout(function () {
+                formulario.submit();
+            }, 400);
+
+            return false;
+        }
+    </script>
 @endsection

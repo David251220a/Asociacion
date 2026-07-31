@@ -148,7 +148,7 @@
                                                         Sin orden de pago
                                                     </span>
                                                 @else
-                                                    {{ str_pad($item->numero, 7, '0', STR_PAD_LEFT) }}/{{ $item->anio }}
+                                                    {{ str_pad($item->orden_pago->numero, 7, '0', STR_PAD_LEFT) }}/{{ $item->orden_pago->anio }}
                                                 @endif
                                             </td>
                                             <td>
@@ -161,9 +161,13 @@
                                                         <span class="badge badge-warning">
                                                             Pendiente de pago
                                                         </span>
-                                                    @else
+                                                    @elseif ((int) $item->orden_pago->estado_pago === 1)
                                                         <span class="badge badge-success">
                                                             Pagada
+                                                        </span>
+                                                    @elseif ((int) $item->orden_pago->estado_pago === 2)
+                                                        <span class="badge badge-danger">
+                                                            Anulado
                                                         </span>
                                                     @endif
                                                 </span>
@@ -176,10 +180,12 @@
                                                 @endcan
 
                                                 @can('orden.pago')
-                                                    @if ($item->orden_pago->pagos->sum('monto') <> $item->orden_pago->total)
-                                                        <a href="{{route('orden.pago', $item->orden_pago)}}" class="mr-3" title="Registrar pago">
-                                                            <i class="fas fa-receipt" style="font-size: 20px"></i>
-                                                        </a>
+                                                    @if ($item->orden_pago)
+                                                        @if ($item->orden_pago->pagos->sum('monto') <> $item->orden_pago->total)
+                                                            <a href="{{route('orden.pago', $item->orden_pago)}}" class="mr-3" title="Registrar pago">
+                                                                <i class="fas fa-receipt" style="font-size: 20px"></i>
+                                                            </a>
+                                                        @endif
                                                     @endif
                                                 @endcan
 
