@@ -18,6 +18,8 @@ class EntidadController extends Controller
         $this->middleware('permission:entidad.obligacion_editar')->only(['obligacion_editar', 'obligacion_editar_post']);
         $this->middleware('permission:entidad.actividades')->only(['actividades', 'actividades_post']);
         $this->middleware('permission:entidad.actividades_editar')->only(['actividades_editar', 'actividades_editar_post']);
+        $this->middleware('permission:entidad_soli.solicitud')->only('solicitud');
+        $this->middleware('permission:entidad_soli.solicitud_ayuda_social')->only(['solicitud_ayuda_social', 'solicitud_ayuda_social_post']);
     }
 
     public function index()
@@ -154,6 +156,34 @@ class EntidadController extends Controller
         ]);
 
         return redirect()->route('entidad.index')->with('message', 'Actividad Economica editado correctamente.');
+    }
+
+    public function solicitud()
+    {
+        $data = Entidad::find(1);
+        return view('entidad.solicitud', compact('data'));
+    }
+
+    public function solicitud_ayuda_social()
+    {
+        $data = Entidad::find(1);
+        return view('entidad.solicitud_activar_ayuda', compact('data'));
+    }
+
+    public function solicitud_ayuda_social_post(Request $request)
+    {
+        $request->validate([
+            'limite' => 'required',
+            'activar' => 'required'
+        ]);
+
+        $data = Entidad::find(1);
+        $data->update([
+            'activo_ayuda_social' => $request->activar,
+            'limite_ayuda_social' => $request->limite
+        ]);
+
+        return redirect()->route('entidad_soli.solicitud')->with('message', 'Ayuda social editado correctamente.');
     }
 
 }

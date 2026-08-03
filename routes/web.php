@@ -100,8 +100,11 @@ Route::group([
     Route::post('/entidad/obligaciones/{obligaciones}/editar', [EntidadController::class, 'obligacion_editar_post'])->name('entidad.obligacion_editar_post');
     Route::get('/entidad/actividades/agregar', [EntidadController::class, 'actividades'])->name('entidad.actividades');
     Route::post('/entidad/actividades/agregar', [EntidadController::class, 'actividades_post'])->name('entidad.actividades_post');
-     Route::get('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar'])->name('entidad.actividades_editar');
+    Route::get('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar'])->name('entidad.actividades_editar');
     Route::post('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar_post'])->name('entidad.actividades_editar_post');
+    Route::get('/entidad/solicitudes', [EntidadController::class, 'solicitud'])->name('entidad_soli.solicitud');
+    Route::get('/entidad/solicitudes/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social'])->name('entidad_soli.solicitud_ayuda_social');
+    Route::post('/entidad/solicitudes/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social_post'])->name('entidad_soli.solicitud_ayuda_social_post');
 
 
     Route::get('/establecimiento', [EstablecimientoController::class, 'index'])->name('establecimiento.index');

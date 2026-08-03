@@ -342,7 +342,6 @@ class AnularOrdenPagoService
                 'fecha_anulacion' => now()->toDateString(),
                 'motivo_anulacion' => $motivo,
                 'usuario_modificacion' => $usuarioId,
-                'estado_id' => 2,
             ]);
         });
     }

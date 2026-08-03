@@ -20,7 +20,8 @@
     $contrasActiva = request()->routeIs(['user.cambiar_contrase']);
     $consultas = request()->routeIs(['factura.index', 'recibo.index', 'recibo.show', 'resumen.index']);
     $cobros = request()->routeIs(['recibo.aporte', 'recibo.varios']);
-    $parametro_general = request()->routeIs(['entidad.*', 'miembros.*', 'role.*', 'user.*', 'establecimiento.*']) && !request()->routeIs('user.cambiar_contrase');
+    $parametro_general = request()->routeIs(['entidad.*', 'miembros.*', 'role.*', 'user.*', 'establecimiento.*', 'entidad_soli.*']) && !request()->routeIs('user.cambiar_contrase');
+    $soliActivarActivar = request()->routeIs(['entidad_soli.*']);
 @endphp
 
 <nav id="sidebar">
@@ -396,6 +397,13 @@
                         <li class="{{ $establecimientoActiva ? 'active' : '' }}">
                             <a href="{{route('establecimiento.index')}}" >
                                 <span>Establecimiento</span>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('entidad_soli.solicitud')
+                        <li class="{{ $soliActivarActivar ? 'active' : '' }}">
+                            <a href="{{route('entidad_soli.solicitud')}}" >
+                                <span>Solicitudes</span>
                             </a>
                         </li>
                     @endcan

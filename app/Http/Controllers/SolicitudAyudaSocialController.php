@@ -15,7 +15,8 @@ class SolicitudAyudaSocialController extends Controller
 {
     public function __construct()
     {
-
+        $this->middleware('permission:solicitud.index_ayuda_social')->only('index');
+        $this->middleware('permission:solicitud.show_ayuda_social')->only(['show', 'aprobar_ayuda_social', 'rechazar_ayuda_social']);
     }
 
     public function index(Request $request)
