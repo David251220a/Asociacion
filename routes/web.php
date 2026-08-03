@@ -18,6 +18,7 @@ use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\ResumenMensualController;
 use App\Http\Controllers\SifenController;
+use App\Http\Controllers\SolicitudActualizacionDatosController;
 use App\Http\Controllers\SolicitudAyudaSocialController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\UsuarioController;
@@ -166,5 +167,8 @@ Route::group([
     Route::post('/ayuda-social/solicitud/{solicitudAyuda}/aprobacion-rechazo', [SolicitudAyudaSocialController::class, 'aprobar_ayuda_social'])->name('solicitud.aprobar_ayuda_social');
     Route::post('/ayuda-social/solicitud/{solicitudAyuda}/rechazo', [SolicitudAyudaSocialController::class, 'rechazar_ayuda_social'])->name('solicitud.rechazar_ayuda_social');
 
+    Route::get('/datos-actualizacion', [SolicitudActualizacionDatosController::class, 'index'])->name('actu_datos.index');
+    Route::get('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'show'])->name('actu_datos.show');
+    Route::post('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'store'])->name('actu_datos.store');
 
 });

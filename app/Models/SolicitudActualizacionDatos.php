@@ -26,4 +26,9 @@ class SolicitudActualizacionDatos extends Model
         return $this->belongsTo(Institucion::class,'institucion_municipal_id_nueva');
     }
 
+    public function persona()
+    {
+        return $this->belongsTo(Persona::class);
+    }
+
 }

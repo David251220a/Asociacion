@@ -796,6 +796,7 @@ class HomeController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
+
                 return SolicitudActualizacionDatos::create([
                     'anio'              => $anio,
                     'numero'            => $numero,
@@ -805,7 +806,8 @@ class HomeController extends Controller
                     * Documento
                     */
                     'documento_actual'  => $persona->documento,
-                    'documento_nuevo'   =>$request->boolean('cambiar_documento') ? strtoupper(trim($datosValidados['documento_nuevo'])) : null,
+                    // 'documento_nuevo'   =>$request->boolean('cambiar_documento') ? strtoupper(trim($datosValidados['documento_nuevo'])) : null,
+                    'documento_nuevo'   => null,
                     /*
                     * Nombre
                     */
@@ -852,9 +854,11 @@ class HomeController extends Controller
                     'motivo'                => trim($datosValidados['motivo']),
                     'estado_solicitud_id'   => 1,
                     'fecha_resolucion'      => null,
-                    'usuario_resolucion'    => '',
+                    'usuario_resolucion'    => auth()->user()->id,
                     'motivo_rechazo'        => '',
                     'observacion'           => '',
+                    'campos_aprobados' => null,
+                    'campos_no_aprobados' => null,
                     /*
                     * Auditoría
                     */
@@ -897,7 +901,7 @@ class HomeController extends Controller
             ->route('actualizar_datos')
             ->withInput()
             ->withErrors([
-                'actualizacion' => 'Ocurrió un inconveniente al registrar la solicitud. Por favor, intente nuevamente.',
+                'actualizacion' => $e->getMessage(),
             ]);
         }
     }

@@ -1,5 +1,5 @@
 @php
-    $asociacionActivo = request()->routeIs('solicitud.*');
+    $asociacionActivo = request()->routeIs('solicitud.*', 'actu_datos.*');
     $ayudaSocialActiva = request()->routeIs(['solicitud.index_ayuda_social','solicitud.show_ayuda_social',]);
     $solicitud_aprobacionActiva = request()->routeIs(['solicitud.index','solicitud.show',]);
     $personaActiva = request()->routeIs(['persona.*']);
@@ -22,6 +22,7 @@
     $cobros = request()->routeIs(['recibo.aporte', 'recibo.varios']);
     $parametro_general = request()->routeIs(['entidad.*', 'miembros.*', 'role.*', 'user.*', 'establecimiento.*', 'entidad_soli.*']) && !request()->routeIs('user.cambiar_contrase');
     $soliActivarActivar = request()->routeIs(['entidad_soli.*']);
+    $datosActivar = request()->routeIs(['actu_datos.*']);
 @endphp
 
 <nav id="sidebar">
@@ -159,6 +160,13 @@
                         <li class="{{ $ayudaSocialActiva ? 'active' : '' }}">
                             <a href="{{route('solicitud.index_ayuda_social')}}" >
                                 <span>Ayuda Social</span>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('actu_datos.index')
+                        <li class="{{ $datosActivar ? 'active' : '' }}">
+                            <a href="{{route('actu_datos.index')}}" >
+                                <span>Datos Actualizar</span>
                             </a>
                         </li>
                     @endcan
