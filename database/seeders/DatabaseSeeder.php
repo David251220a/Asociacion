@@ -9,6 +9,8 @@ use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Estado;
 use App\Models\Secuencia;
+use App\Models\SolicitudConfig;
+use App\Models\TipoPrestamo;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -86,6 +88,40 @@ class DatabaseSeeder extends Seeder
         //     TipoReciboSeeder::class,
         //     TipoEgresoSeeder::class,
         //     TipoIngresoSeeder::class,
-        // ]);
+        // ])
+
+        SolicitudConfig::create([
+            'descripcion' => 'Ayuda Social',
+            'activo' => 1,
+            'tasa_cuota_unica' => 0,
+            'tasa_cuota_mensual' => 0,
+            'tasa_mora' => 0,
+            'monto_minimo' => 0,
+            'monto_maximo' => 0,
+            'plazo_minimo' => 0,
+            'plazo_maximo' => 0,
+            'limite_solicitud' => 0,
+            'limite_solicitud_anual' => 2,
+        ]);
+
+        SolicitudConfig::create([
+            'descripcion' => 'PRESTAMO EMERGENCIA',
+            'activo' => 1,
+            'tasa_cuota_unica' => 10,
+            'tasa_cuota_mensual' => 14,
+            'tasa_mora' => 1,
+            'monto_minimo' => 100000,
+            'monto_maximo' => 500000,
+            'plazo_minimo' => 1,
+            'plazo_maximo' => 2,
+            'limite_solicitud' => 0,
+            'limite_solicitud_anual' => 5,
+        ]);
+
+        TipoPrestamo::create([
+            'descripcion' => 'PRESTAMO EMERGENCIA',
+            'tipo_egreso_id' => 2,
+            'solicitud_config_id' => 2,
+        ]);
     }
 }

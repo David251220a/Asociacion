@@ -138,12 +138,12 @@
                     </div>
 
                     <div class="col-lg-4 col-md-6 mb-4">
-                        <a href="#" class="solicitud-opcion">
+                        <a href="{{ route('prestamos_emergencia') }}" class="solicitud-opcion">
                             <div class="solicitud-icono prestamo">
                                 <i class="fas fa-hand-holding-usd"></i>
                             </div>
 
-                            <h4>Préstamo</h4>
+                            <h4>Préstamo Emergencia</h4>
 
                             <p>
                                 Iniciar una nueva solicitud de préstamo.

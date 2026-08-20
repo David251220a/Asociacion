@@ -9,6 +9,8 @@ use App\Models\Numeraciones;
 use App\Models\Persona;
 use App\Models\SolicitudActualizacionDatos;
 use App\Models\SolicitudAyudaSocial;
+use App\Models\SolicitudConfig;
+use App\Models\SolicitudPrestamo;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -138,22 +140,15 @@ class HomeController extends Controller
         }
         $tablaAyuda = (new SolicitudAyudaSocial())->getTable();
         $tablaActualizacion =(new SolicitudActualizacionDatos())->getTable();
+        $tablaPrestamo = (new SolicitudPrestamo())->getTable();
         /*
         |--------------------------------------------------------------------------
         | Solicitudes de ayuda social
         |--------------------------------------------------------------------------
         */
         $ayudaSocial = SolicitudAyudaSocial::query()
-        ->join(
-            'estado_solicituds as estado_ayuda',
-            'estado_ayuda.id',
-            '=',
-            $tablaAyuda . '.estado_solicitud_id'
-        )
-        ->where(
-            $tablaAyuda . '.persona_id',
-            $persona->id
-        )
+        ->join('estado_solicituds as estado_ayuda','estado_ayuda.id','=', $tablaAyuda . '.estado_solicitud_id')
+        ->where($tablaAyuda . '.persona_id', $persona->id)
         ->where($tablaAyuda . '.anio', $anio)
         ->where($tablaAyuda . '.estado_id', 1)
         ->select([
@@ -161,17 +156,9 @@ class HomeController extends Controller
             $tablaAyuda . '.anio',
             $tablaAyuda . '.numero',
             $tablaAyuda . '.fecha_solicitud',
-
-            DB::raw(
-                "'AYUDA_SOCIAL' AS tipo_codigo"
-            ),
-
-            DB::raw(
-                "'AYUDA SOCIAL' AS tipo_solicitud"
-            ),
-
+            DB::raw("'AYUDA_SOCIAL' AS tipo_codigo"),
+            DB::raw("'AYUDA SOCIAL' AS tipo_solicitud"),
             $tablaAyuda . '.monto_aprobado as monto',
-
             'estado_ayuda.descripcion as estado_descripcion',
             'estado_ayuda.color as estado_color',
         ]);
@@ -184,16 +171,8 @@ class HomeController extends Controller
 
         $actualizacionDatos =
         SolicitudActualizacionDatos::query()
-        ->join(
-            'estado_solicituds as estado_actualizacion',
-            'estado_actualizacion.id',
-            '=',
-            $tablaActualizacion . '.estado_solicitud_id'
-        )
-        ->where(
-            $tablaActualizacion . '.persona_id',
-            $persona->id
-        )
+        ->join('estado_solicituds as estado_actualizacion','estado_actualizacion.id','=', $tablaActualizacion . '.estado_solicitud_id')
+        ->where($tablaActualizacion . '.persona_id',$persona->id)
         ->where($tablaActualizacion . '.anio', $anio)
         ->where($tablaActualizacion . '.estado_id', 1)
         ->select([
@@ -201,19 +180,33 @@ class HomeController extends Controller
             $tablaActualizacion . '.anio',
             $tablaActualizacion . '.numero',
             $tablaActualizacion . '.fecha_solicitud',
-
-            DB::raw(
-                "'ACTUALIZACION_DATOS' AS tipo_codigo"
-            ),
-
-            DB::raw(
-                "'ACTUALIZACIÓN DE DATOS' AS tipo_solicitud"
-            ),
-
+            DB::raw("'ACTUALIZACION_DATOS' AS tipo_codigo"),
+            DB::raw("'ACTUALIZACIÓN DE DATOS' AS tipo_solicitud"),
             DB::raw('0 AS monto'),
-
             'estado_actualizacion.descripcion as estado_descripcion',
             'estado_actualizacion.color as estado_color',
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Solicitudes de préstamo de emergencia
+        |--------------------------------------------------------------------------
+        */
+        $prestamos = SolicitudPrestamo::query()
+        ->join('estado_solicituds as estado_prestamo','estado_prestamo.id','=',$tablaPrestamo . '.estado_solicitud_id')
+        ->where($tablaPrestamo . '.persona_id',$persona->id)
+        ->where($tablaPrestamo . '.anio',$anio)
+        ->where($tablaPrestamo . '.estado_id',1)
+        ->select([
+            $tablaPrestamo . '.id',
+            $tablaPrestamo . '.anio',
+            $tablaPrestamo . '.numero_solicitud as numero',
+            $tablaPrestamo . '.fecha_solicitud',
+            DB::raw( "'PRESTAMO_EMERGENCIA' AS tipo_codigo"),
+            DB::raw("'PRÉSTAMO DE EMERGENCIA' AS tipo_solicitud"),
+            DB::raw("COALESCE({$tablaPrestamo}.monto_aprobado,{$tablaPrestamo}.monto_solicitado,0) AS monto"),
+            'estado_prestamo.descripcion as estado_descripcion',
+            'estado_prestamo.color as estado_color',
         ]);
 
         /*
@@ -222,7 +215,9 @@ class HomeController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $consulta = $ayudaSocial->unionAll($actualizacionDatos);
+        $consulta = $ayudaSocial
+        ->unionAll($actualizacionDatos)
+        ->unionAll($prestamos);;
 
         $data = DB::query()
         ->fromSub($consulta, 'solicitudes')
@@ -233,6 +228,7 @@ class HomeController extends Controller
 
         return view('portal.solicitud_index',compact('data'));
     }
+
     public function nueva_solicitud()
     {
         return view('portal.seleccionar_solicitud');
@@ -240,8 +236,8 @@ class HomeController extends Controller
 
     public function ayuda_social()
     {
-        $entidad = Entidad::find(1);
-        if($entidad->activo_ayuda_social == 0) {
+        $config = SolicitudConfig::find(1)->first();
+        if($config->activo == 0) {
             return redirect()->route('nueva_solicitud')->withErrors('La recepción de solicitudes de ayuda social se encuentra temporalmente inhabilitada. Por favor, intente nuevamente más adelante.');
         }
 
@@ -267,7 +263,7 @@ class HomeController extends Controller
         }
 
         $anioActual = now()->year;
-        $limiteAnual = (int) $entidad->limite_ayuda_social;
+        $limiteAnual = $config->limite_solicitud == 0 ? 999 : (int) $config->limite_solicitud_anual;
         $solicitudes_anio = SolicitudAyudaSocial::where('persona_id', $persona->id)
         ->whereIn('estado_solicitud_id', [1,2,3])
         ->where('anio', $anioActual)
@@ -926,5 +922,74 @@ class HomeController extends Controller
 
         return view('portal.actualizacion_datos_show',compact('data'));
     }
+
+    public function prestamos_emergencia()
+    {
+        $persona = auth()->user()->persona;
+
+        if (!$persona) {
+            return redirect()->route('home')->withErrors(['persona' => 'No se encontró una persona vinculada a su usuario.',]);
+        }
+
+        $asociado = $persona->asociado;
+
+        if (!$asociado) {
+            return redirect()->route('home')->withErrors(['asociado' => 'No se encontró un asociado vinculado a su persona.',]);
+        }
+
+        $config = SolicitudConfig::find(2)->first();
+        if($config->activo == 0) {
+            return redirect()->route('nueva_solicitud')->withErrors('La recepción de solicitudes de préstamo emergencia se encuentra temporalmente inhabilitada. Por favor, intente nuevamente más adelante.');
+        }
+
+        $anioActual = now()->year;
+        $limiteAnual = $config->limite_solicitud == 0 ? 999 : (int) $config->limite_solicitud_anual;
+        $solicitudes_anio = SolicitudPrestamo::where('persona_id', $persona->id)
+        ->whereIn('estado_solicitud_id', [1,2,3])
+        ->where('anio', $anioActual)
+        ->count();
+
+        if ($solicitudes_anio >= $limiteAnual){
+            $textoSolicitud = $limiteAnual === 1 ? 'solicitud' : 'solicitudes';
+            return redirect()
+            ->route('nueva_solicitud')
+            ->withErrors([
+                'prestamo_emergencia' => 'Ha alcanzado el límite anual de '
+                . $limiteAnual . ' '
+                . $textoSolicitud
+                . ' de préstamo emergencia establecido por AJUPEM para el año '
+                . $anioActual
+                . '.',
+            ]);
+        }
+
+        return view('portal.prestamos', compact('asociado','persona'));
+    }
+
+    public function prestamos_emergencia_show(int $id)
+    {
+        $persona = auth()->user()->persona;
+        if (!$persona) {
+            return redirect()->route('home')->withErrors(['persona' => 'No se encontró una persona vinculada a su usuario.',]);
+        }
+
+        $data = SolicitudPrestamo::with(['estadoSolicitud',
+            'detalles' => function ($query) {
+                $query->orderBy('numero_cuota');
+            },
+            'ordenPago',
+        ])
+        ->where('id', $id)
+        ->where('persona_id', $persona->id)
+        ->where('estado_id', 1)
+        ->first();
+
+        if (!$data) {
+            return redirect()->route('solicitudes')->withErrors(['solicitud' => 'La solicitud seleccionada no existe o no tiene autorización para consultarla.',]);
+        }
+        return view('portal.prestamos_show',compact('data'));
+    }
+
+
 
 }

@@ -123,6 +123,10 @@
                                             <span class="badge badge-primary">
                                                 {{ $item->tipo_solicitud }}
                                             </span>
+                                        @elseif ($item->tipo_codigo === 'PRESTAMO_EMERGENCIA')
+                                            <span class="badge badge-info">
+                                                {{ $item->tipo_solicitud }}
+                                            </span>
                                         @endif
                                     </td>
 
@@ -156,6 +160,10 @@
                                             </a>
                                         @elseif ($item->tipo_codigo === 'ACTUALIZACION_DATOS')
                                             <a href="{{ route('actualizacion_datos_show', $item->id) }}" class="btn btn-sm btn-outline-primary" title="Ver solicitud de actualización de datos">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                        @elseif ($item->tipo_codigo === 'PRESTAMO_EMERGENCIA')
+                                            <a href="{{ route('prestamos_emergencia_show', $item->id) }}" class="btn btn-sm btn-outline-primary" title="Ver solicitud de préstamo de emergencia">
                                                 <i class="fa fa-eye"></i>
                                             </a>
                                         @endif

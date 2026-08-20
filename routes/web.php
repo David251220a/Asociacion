@@ -157,6 +157,8 @@ Route::group([
     Route::get('/solicitudes/actualizar-datos', [HomeController::class, 'actualizar_datos'])->name('actualizar_datos');
     Route::post('/solicitudes/actualizar-datos', [HomeController::class, 'actualizar_datos_post'])->name('actualizar_datos_post');
     Route::get('/solicitudes/actualizar-datos/{id}/ver', [HomeController::class, 'actualizacion_datos_show'])->name('actualizacion_datos_show');
+    Route::get('/solicitudes/prestamo-emergencia', [HomeController::class, 'prestamos_emergencia'])->name('prestamos_emergencia');
+    Route::get('/solicitudes/prestamo-emergencia/{id}/ver', [HomeController::class, 'prestamos_emergencia_show'])->name('prestamos_emergencia_show');
 
     Route::get('/cambiar-password', [UsuarioController::class, 'cambiar_contrase'])->name('user.cambiar_contrase');
     Route::post('/cambiar-password', [UsuarioController::class, 'cambiar_contrase_post'])->name('user.cambiar_contrase_post');
@@ -170,5 +172,6 @@ Route::group([
     Route::get('/datos-actualizacion', [SolicitudActualizacionDatosController::class, 'index'])->name('actu_datos.index');
     Route::get('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'show'])->name('actu_datos.show');
     Route::post('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'store'])->name('actu_datos.store');
+
 
 });
