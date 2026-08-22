@@ -139,6 +139,14 @@
                                                     Pendiente
                                                 </span>
                                             @endif
+                                        @elseif ($item->tipo_codigo === 'PRESTAMO_EMERGENCIA')
+                                            @if ($item->monto > 0)
+                                                G. {{ number_format($item->monto,0,',','.') }}
+                                            @else
+                                                <span class="text-muted">
+                                                    Pendiente
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="text-muted">
                                                 No aplica

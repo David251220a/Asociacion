@@ -135,7 +135,7 @@ class SolicitudPrestamo extends Component
             $totalCuota = $capital + $interes;
             $this->detalleCuotas[] = [
                 'numero_cuota' => $numeroCuota,
-                'fecha_vencimiento' => now()->addMonthsNoOverflow($numeroCuota)->format('d/m/Y'),
+                'fecha_vencimiento' => now()->addMonthsNoOverflow($numeroCuota)->endOfMonth()->format('d/m/Y'),
                 'monto_capital' => $capital,
                 'monto_interes' => $interes,
                 'iva' => 0,

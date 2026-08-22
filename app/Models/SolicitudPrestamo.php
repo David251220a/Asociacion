@@ -26,4 +26,11 @@ class SolicitudPrestamo extends Model
         return $this->belongsTo(OrdenPago::class,'orden_pago_id');
     }
 
+    public function persona()
+    {
+        return $this->belongsTo(Persona::class,'persona_id');
+    }
+
+
+
 }

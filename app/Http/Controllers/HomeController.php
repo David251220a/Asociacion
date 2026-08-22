@@ -204,7 +204,7 @@ class HomeController extends Controller
             $tablaPrestamo . '.fecha_solicitud',
             DB::raw( "'PRESTAMO_EMERGENCIA' AS tipo_codigo"),
             DB::raw("'PRÉSTAMO DE EMERGENCIA' AS tipo_solicitud"),
-            DB::raw("COALESCE({$tablaPrestamo}.monto_aprobado,{$tablaPrestamo}.monto_solicitado,0) AS monto"),
+            DB::raw("COALESCE({$tablaPrestamo}.monto_aprobado,0) AS monto"),
             'estado_prestamo.descripcion as estado_descripcion',
             'estado_prestamo.color as estado_color',
         ]);

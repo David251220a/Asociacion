@@ -106,7 +106,10 @@ class RoleSeeder extends Seeder
         $permission = Permission::create(['name' => 'entidad_soli.solicitud_ayuda_social', 'descripcion' => 'Entidad: Activar Ayuda Social'])->syncRoles($admin);
         $permission = Permission::create(['name' => 'actu_datos.index', 'descripcion' => 'Solicitud: Datos Actualizacion'])->syncRoles($admin);
         $permission = Permission::create(['name' => 'actu_datos.show', 'descripcion' => 'Solicitud: Datos Aprobacion o Rechazo'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia', 'descripcion' => 'Solicitud: Prestamo Emergencia'])->syncRoles($admin);
+        $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia_show', 'descripcion' => 'Solicitud: Prestamo Emergencia Aprobacion\Rechazo'])->syncRoles($admin);
 
+        // solicitud.prestamo_emergencia
         // $permission = Permission::create(['name' => '', 'descripcion' => ''])->syncRoles($admin);
         // $permission = Permission::create(['name' => 'habilitacion.estado_alumno', 'descripcion' => 'Habilitacion de Curso: Estado Alumno']);
 

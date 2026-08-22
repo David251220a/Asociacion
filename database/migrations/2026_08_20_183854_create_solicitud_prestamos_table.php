@@ -27,7 +27,7 @@ return new class extends Migration
             $table->integer('cantidad_cuotas')->default(1);
             $table->foreignId('orden_pago_id')->nullable()->constrained();
             $table->unsignedBigInteger('prestamo_id')->nullable();
-            $table->string('observaciones')->nullable();
+            $table->string('observaciones', 500)->nullable();
             $table->date('fecha_aprobacion_rechazo')->nullable();
             $table->foreignId('usuario_aprobacion_rechazo_id')->nullable()->constrained('users');
             $table->text('motivo_rechazo')->nullable();
@@ -35,16 +35,8 @@ return new class extends Migration
             $table->foreignId('usuario_id')->constrained('users');
             $table->timestamps();
 
-
-            $table->unique([
-                'anio',
-                'numero_solicitud',
-            ]);
-
-            $table->index([
-                'persona_id',
-                'estado_solicitud_id',
-            ]);
+            $table->unique(['anio','numero_solicitud',]);
+            $table->index(['persona_id','estado_solicitud_id',]);
         });
 
     }

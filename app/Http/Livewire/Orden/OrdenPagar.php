@@ -6,6 +6,7 @@ use App\Models\Banco;
 use App\Models\FormaCobro;
 use App\Models\OrdenPago;
 use App\Models\OrdenPagoPago;
+use App\Models\Prestamo;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use Carbon\Carbon;
@@ -185,6 +186,18 @@ class OrdenPagar extends Component
             ]);
 
             /*
+            |--------------------------------------------------------------------------
+            | ACTUALIZAR PRÉSTAMO VINCULADO
+            |--------------------------------------------------------------------------
+            */
+            $this->actualizarPrestamoPagado($orden,$ahora->toDateString());
+            /*
+            |--------------------------------------------------------------------------
+            | Aquí continúa la actualización de los resúmenes
+            |--------------------------------------------------------------------------
+            */
+
+            /*
             /*
             |--------------------------------------------------------------------------
             | RESUMEN MENSUAL - INGRESO POR APORTE PLANILLA
@@ -262,4 +275,47 @@ class OrdenPagar extends Component
 
         return redirect()->route('orden.show', $orden)->with('message','Orden de pago pagado correctamente.');
     }
+
+    private function actualizarPrestamoPagado(OrdenPago $orden,string $fechaPago): void {
+        /*
+        |--------------------------------------------------------------------------
+        | BUSCAR POR orden_pago_id
+        |--------------------------------------------------------------------------
+        |
+        | No usamos solamente origen_id porque ese ID podría pertenecer a una
+        | solicitud de ayuda social, mercadería u otro proceso.
+        |
+        */
+        $prestamo = Prestamo::query()
+        ->where('orden_pago_id', $orden->id)
+        ->lockForUpdate()
+        ->first();
+        /*
+        |--------------------------------------------------------------------------
+        | LA ORDEN NO CORRESPONDE A UN PRÉSTAMO
+        |--------------------------------------------------------------------------
+        */
+        if (!$prestamo) {
+            return;
+        }
+        if ((int) $prestamo->estado_id !== 1) {
+            throw new \Exception('El préstamo vinculado no se encuentra activo.');
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | Estado 1: pendiente de desembolso
+        | Estado 2: activo o desembolsado
+        |--------------------------------------------------------------------------
+        */
+        if ((int) $prestamo->estado_prestamo_id !== 1) {
+            throw new \Exception('El préstamo vinculado ya fue desembolsado anteriormente.');
+        }
+
+        $prestamo->update([
+            'fecha_desembolso' => $fechaPago,
+            'estado_prestamo_id' => 2,
+            'usuario_modificacion' => auth()->id(),
+        ]);
+    }
+
 }

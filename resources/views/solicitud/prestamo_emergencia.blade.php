@@ -57,14 +57,14 @@
             <div class="widget-content widget-content-area">
                 <div class="row align-items-center mb-3">
                     <div class="col-md-6">
-                        <h3 class="mb-1">Solicitudes de Ayuda Social</h3>
+                        <h3 class="mb-1">Solicitudes de Prestamo Emergencia</h3>
                     </div>
 
                 </div>
 
                 @include('varios.mensaje')
 
-                <form action="{{ route('solicitud.index_ayuda_social') }}" method="GET">
+                <form action="{{ route('solicitud.prestamo_emergencia') }}" method="GET">
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <div class="form-row mb-2">
                             <div class="form-group col-md-3">
@@ -106,8 +106,8 @@
                                         <th class="">Documento</th>
                                         <th class="">Nombre y Apellido</th>
                                         <th>Tipo Asociado</th>
-                                        <th class="">Motivo</th>
                                         <th class="">Estado</th>
+                                        <th class="">Monto Solicitado</th>
                                         <th class="">Monto Aprobado</th>
                                         <th class="">Orden de Pago</th>
                                         <th class="">Estado Orden</th>
@@ -127,12 +127,12 @@
                                                 {{$item->persona->nombre}} {{$item->persona->apellido}}
                                             </td>
                                             <td>{{$item->persona->asociado->tipo_asociado->descripcion}}</td>
-                                            <td>{{$item->motivo}}</td>
                                             <td>
                                                 <span class="badge badge-{{ $item->estadoSolicitud->color ?? 'secondary' }}">
                                                     {{ $item->estadoSolicitud->descripcion ?? 'SIN ESTADO' }}
                                                 </span>
                                             </td>
+                                            <td>G. {{ number_format($item->monto_solicitado,0,',','.') }}</td>
                                             <td class="monto-solicitud">
                                                 @if ($item->monto_aprobado > 0)
                                                     G. {{ number_format($item->monto_aprobado,0,',','.') }}
@@ -143,29 +143,29 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if (!$item->orden_pago)
+                                                @if (!$item->ordenPago)
                                                     <span class="badge badge-secondary">
                                                         Sin orden de pago
                                                     </span>
                                                 @else
-                                                    {{ str_pad($item->orden_pago->numero, 7, '0', STR_PAD_LEFT) }}/{{ $item->orden_pago->anio }}
+                                                    {{ str_pad($item->ordenPago->numero, 7, '0', STR_PAD_LEFT) }}/{{ $item->ordenPago->anio }}
                                                 @endif
                                             </td>
                                             <td>
                                                 <span>
-                                                    @if (!$item->orden_pago)
+                                                    @if (!$item->ordenPago)
                                                         <span class="badge badge-secondary">
                                                             Sin orden de pago
                                                         </span>
-                                                    @elseif ((int) $item->orden_pago->estado_pago === 0)
+                                                    @elseif ((int) $item->ordenPago->estado_pago === 0)
                                                         <span class="badge badge-warning">
                                                             Pendiente de pago
                                                         </span>
-                                                    @elseif ((int) $item->orden_pago->estado_pago === 1)
+                                                    @elseif ((int) $item->ordenPago->estado_pago === 1)
                                                         <span class="badge badge-success">
                                                             Pagada
                                                         </span>
-                                                    @elseif ((int) $item->orden_pago->estado_pago === 2)
+                                                    @elseif ((int) $item->ordenPago->estado_pago === 2)
                                                         <span class="badge badge-danger">
                                                             Anulado
                                                         </span>
@@ -173,13 +173,13 @@
                                                 </span>
                                             </td>
                                             <td class="">
-                                                @can('solicitud.show_ayuda_social')
-                                                   <a href="{{route('solicitud.show_ayuda_social', $item)}}" class="mr-3" style="font-size: 15px" title="Aprobacion de Solicitud">
+                                                @can('solicitud.prestamo_emergencia_show')
+                                                   <a href="{{route('solicitud.prestamo_emergencia_show', $item)}}" class="mr-3" style="font-size: 15px" title="Aprobacion de Solicitud">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                 @endcan
 
-                                                @can('orden.pago')
+                                                {{-- @can('orden.pago')
                                                     @if ($item->orden_pago)
                                                         @if ($item->orden_pago->pagos->sum('monto') <> $item->orden_pago->total)
                                                             <a href="{{route('orden.pago', $item->orden_pago)}}" class="mr-3" title="Registrar pago">
@@ -187,11 +187,11 @@
                                                             </a>
                                                         @endif
                                                     @endif
-                                                @endcan
+                                                @endcan --}}
 
-                                                <a href="#" class="mr-3" style="font-size: 15px" title="Imprimir Solicitud">
+                                                {{-- <a href="#" target="__blank" class="mr-3" style="font-size: 15px" title="Imprimir Solicitud">
                                                     <i class="fas fa-file-pdf"></i>
-                                                </a>
+                                                </a> --}}
 
                                             </td>
                                         </tr>

@@ -23,6 +23,7 @@
     $parametro_general = request()->routeIs(['entidad.*', 'miembros.*', 'role.*', 'user.*', 'establecimiento.*', 'entidad_soli.*']) && !request()->routeIs('user.cambiar_contrase');
     $soliActivarActivar = request()->routeIs(['entidad_soli.*']);
     $datosActivar = request()->routeIs(['actu_datos.*']);
+    $prestamoEmergenciaActiva = request()->routeIs(['solicitud.prestamo_emergencia','solicitud.prestamo_emergencia_show']);
 @endphp
 
 <nav id="sidebar">
@@ -167,6 +168,13 @@
                         <li class="{{ $datosActivar ? 'active' : '' }}">
                             <a href="{{route('actu_datos.index')}}" >
                                 <span>Datos Actualizar</span>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('solicitud.prestamo_emergencia')
+                        <li class="{{ $prestamoEmergenciaActiva ? 'active' : '' }}">
+                            <a href="{{route('solicitud.prestamo_emergencia')}}" >
+                                <span>Prestamo Emergencia</span>
                             </a>
                         </li>
                     @endcan

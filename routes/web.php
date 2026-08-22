@@ -20,6 +20,7 @@ use App\Http\Controllers\ResumenMensualController;
 use App\Http\Controllers\SifenController;
 use App\Http\Controllers\SolicitudActualizacionDatosController;
 use App\Http\Controllers\SolicitudAyudaSocialController;
+use App\Http\Controllers\SolicitudPrestamoController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\WebController;
@@ -173,5 +174,9 @@ Route::group([
     Route::get('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'show'])->name('actu_datos.show');
     Route::post('/datos-actualizacion/{solicitudActualizacion}/aprobar-rechazo', [SolicitudActualizacionDatosController::class, 'store'])->name('actu_datos.store');
 
+    Route::get('/prestamo-emergencia/solicitud', [SolicitudPrestamoController::class, 'prestamo_emergencia'])->name('solicitud.prestamo_emergencia');
+    Route::get('/prestamo-emergencia/solicitud/{solicitudPrestamo}', [SolicitudPrestamoController::class, 'prestamo_emergencia_show'])->name('solicitud.prestamo_emergencia_show');
+    Route::post('/prestamo-emergencia/solicitud/{solicitudPrestamo}/aprobar',[SolicitudPrestamoController::class, 'prestamo_emergencia_aprobar'])->name('solicitud.prestamo_emergencia_aprobar');
+    Route::post('/prestamo-emergencia/solicitud/{solicitudPrestamo}/rechazar',[SolicitudPrestamoController::class, 'prestamo_emergencia_rechazar'])->name('solicitud.prestamo_emergencia_rechazar');
 
 });
