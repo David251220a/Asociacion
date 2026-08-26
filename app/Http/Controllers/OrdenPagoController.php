@@ -112,6 +112,16 @@ class OrdenPagoController extends Controller
                 return redirect()->route('orden.index')->with('message','La orden de pago y la solicitud de ayuda social fueron anuladas correctamente.');
             }
 
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 2 && $datos['tipo_anulacion'] === 'reemitir') {
+                $nuevaOrden = $servicio->reemitirPrestamoEmergencia($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
+                return redirect()->route('orden.pago', $nuevaOrden->id)->with('message','La orden anterior fue anulada y se generó correctamente una nueva orden de pago.');
+            }
+
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 2 && $datos['tipo_anulacion'] === 'completa') {
+                $servicio->anularPrestamoEmergenciaCompleto($ordenPago, $datos['motivo_anulacion'],$request->user()->id);
+                return redirect()->route('orden.index')->with('message','La orden de pago, la solicitud y el préstamo de emergencia fueron anulados correctamente.');
+            }
+
             $servicio->anularSinOrigen($ordenPago, $datos['motivo_anulacion'], auth()->user()->id);
             return redirect()->route('orden.index')->with('message','La orden de pago fue anulada correctamente.');
 

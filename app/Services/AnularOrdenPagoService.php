@@ -5,9 +5,13 @@ namespace App\Services;
 use App\Models\Numeraciones;
 use App\Models\OrdenPago;
 use App\Models\OrdenPagoDetalle;
+use App\Models\Prestamo;
+use App\Models\PrestamoDetalle;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use App\Models\SolicitudAyudaSocial;
+use App\Models\SolicitudPrestamo;
+use App\Models\TipoEgreso;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -346,5 +350,425 @@ class AnularOrdenPagoService
         });
     }
 
+    public function reemitirPrestamoEmergencia(OrdenPago $ordenPago, string $motivo, int $usuarioId): OrdenPago
+    {
+        return DB::transaction(function () use ($ordenPago, $motivo, $usuarioId) {
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR ORDEN
+            |--------------------------------------------------------------------------
+            */
+            $orden = OrdenPago::query()
+            ->whereKey($ordenPago->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+            if ((int) $orden->estado_id === 2) {
+                throw new \Exception('La orden de pago ya se encuentra anulada.');
+            }
+
+            if ((int) $orden->origen_id <= 0 || (int) $orden->tipo_egreso_id !== 2) {
+                throw new \Exception('La orden no corresponde a un préstamo de emergencia.');
+            }
+            /*
+            |--------------------------------------------------------------------------
+            | LOCALIZAR SOLICITUD
+            |--------------------------------------------------------------------------
+            |
+            | Se verifica por ID de origen y también por orden_pago_id.
+            | Así no se confunde con ayuda social u otro origen que tenga
+            | casualmente el mismo número de ID.
+            |
+            */
+            $solicitud = SolicitudPrestamo::query()
+            ->whereKey($orden->origen_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$solicitud) {
+                throw new \Exception('No se encontró la solicitud de préstamo vinculada a la orden.');
+            }
+
+            if (!$solicitud->prestamo_id) {
+                throw new \Exception('La solicitud no tiene un préstamo generado.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCALIZAR PRÉSTAMO
+            |--------------------------------------------------------------------------
+            */
+
+            $prestamo = Prestamo::query()
+            ->whereKey($solicitud->prestamo_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$prestamo) {
+                throw new \Exception('No se encontró el préstamo vinculado a la orden de pago.');
+            }
+
+            if ((int) $prestamo->estado_id !== 1) {
+                throw new \Exception('El préstamo vinculado no se encuentra activo.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | NO REEMITIR SI YA EXISTEN COBROS DEL PRÉSTAMO
+            |--------------------------------------------------------------------------
+            */
+
+            if ((int) $prestamo->monto_pagado > 0) {
+                throw new \Exception(
+                    'No se puede reemitir la orden porque el préstamo ya tiene pagos registrados.'
+                );
+            }
+
+            $tieneCuotasPagadas = PrestamoDetalle::query()
+            ->where('prestamo_id', $prestamo->id)
+            ->where(function ($query) {
+                $query
+                    ->where('monto_pagado', '>', 0)
+                    ->orWhere('monto_capital_pagado', '>', 0)
+                    ->orWhere('monto_interes_pagado', '>', 0)
+                    ->orWhere('monto_iva_pagado', '>', 0);
+            })
+            ->exists();
+
+            if ($tieneCuotasPagadas) {
+                throw new \Exception('No se puede reemitir la orden porque existen cuotas con pagos registrados.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR ORDEN ANTERIOR
+            |--------------------------------------------------------------------------
+            |
+            | Este método existente debe:
+            |
+            | - Anular la orden.
+            | - Anular sus detalles.
+            | - Anular sus pagos.
+            | - Revertir resumen mensual y anual si estaba pagada.
+            |
+            | No debe abrir otra transacción.
+            |
+            */
+
+            $estabaPagada = (int) $orden->estado_pago === 1;
+            $this->anularOrdenBase($orden,$motivo,$usuarioId);
+            if ($estabaPagada) {
+                $this->revertirTesoreria($orden);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | NUEVA NUMERACIÓN
+            |--------------------------------------------------------------------------
+            */
+
+            $fechaNuevaOrden = now();
+            $anio = (int) $fechaNuevaOrden->year;
+            $numero = $this->obtenerNumeroOrdenPago($anio);
+            $montoCapital = (int) $prestamo->monto_capital;
+
+            if ($montoCapital <= 0) {
+                throw new \Exception('El capital del préstamo no es válido.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREAR NUEVA ORDEN
+            |--------------------------------------------------------------------------
+            */
+
+            $nuevaOrden = OrdenPago::create([
+                'anio' => $anio,
+                'numero' => $numero,
+                'fecha' => $fechaNuevaOrden->toDateString(),
+                'tipo_egreso_id' => $orden->tipo_egreso_id,
+                'origen_id' => $solicitud->id,
+                'persona_id' => $solicitud->persona_id,
+                'beneficiario' => $orden->beneficiario,
+                'concepto' => $orden->concepto,
+                'observacion' => mb_substr(
+                    'ORDEN REEMITIDA POR ANULACIÓN DE LA ORDEN N.º '
+                    . str_pad(
+                        $orden->numero,
+                        7,
+                        '0',
+                        STR_PAD_LEFT
+                    )
+                    . '/'
+                    . $orden->anio
+                    . '. MOTIVO: '
+                    . mb_strtoupper($motivo, 'UTF-8'),
+                    0,
+                    500
+                ),
+                /*
+                | La orden desembolsa solamente el capital.
+                */
+                'total' => $montoCapital,
+                'estado_id' => 1,
+                'estado_pago' => 0,
+                'motivo_anulado' => null,
+                'fecha_anulado' => null,
+                'fecha_pago' => null,
+                'user_id' => $usuarioId,
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | DETALLE DE LA NUEVA ORDEN
+            |--------------------------------------------------------------------------
+            */
+
+            $tipoEgreso = TipoEgreso::query()
+            ->findOrFail($orden->tipo_egreso_id);
+
+            OrdenPagoDetalle::create([
+                'orden_pago_id' => $nuevaOrden->id,
+                'descripcion' => $tipoEgreso->descripcion,
+                'cantidad' => 1,
+                'precio' => $montoCapital,
+                'subtotal' => $montoCapital,
+                'estado_id' => 1,
+                'user_id' => $usuarioId,
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | VOLVER PRÉSTAMO A PENDIENTE DE DESEMBOLSO
+            |--------------------------------------------------------------------------
+            */
+
+            $prestamo->update([
+                'orden_pago_id' => $nuevaOrden->id,
+                'estado_prestamo_id' => 1,
+                'fecha_desembolso' => null,
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ACTUALIZAR SOLICITUD
+            |--------------------------------------------------------------------------
+            |
+            | La solicitud continúa aprobada; solamente cambia la orden.
+            |
+            */
+
+            $solicitud->update([
+                'orden_pago_id' => $nuevaOrden->id,
+                'estado_solicitud_id' => 3,
+                'motivo_rechazo' => null,
+            ]);
+
+            return $nuevaOrden;
+        });
+    }
+
+    public function anularPrestamoEmergenciaCompleto(OrdenPago $ordenPago,string $motivo,int $usuarioId): void
+    {
+        DB::transaction(function () use ($ordenPago,$motivo,$usuarioId) {
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR ORDEN
+            |--------------------------------------------------------------------------
+            */
+
+            $orden = OrdenPago::query()
+            ->whereKey($ordenPago->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+            if ((int) $orden->estado_id === 2) {
+                throw new \Exception('La orden de pago ya se encuentra anulada.');
+            }
+
+            if ((int) $orden->origen_id <= 0 || (int) $orden->tipo_egreso_id !== 2) {
+                throw new \Exception('La orden no corresponde a un préstamo de emergencia.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCALIZAR SOLICITUD
+            |--------------------------------------------------------------------------
+            */
+
+            $solicitud = SolicitudPrestamo::query()
+            ->whereKey($orden->origen_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$solicitud) {
+                throw new \Exception('No se encontró la solicitud de préstamo vinculada a la orden.');
+            }
+
+            if ((int) $solicitud->estado_solicitud_id !== 3) {
+                throw new \Exception('La solicitud de préstamo no se encuentra aprobada.');
+            }
+
+            if (!$solicitud->prestamo_id) {
+                throw new \Exception('La solicitud no tiene un préstamo generado.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOCALIZAR PRÉSTAMO
+            |--------------------------------------------------------------------------
+            */
+
+            $prestamo = Prestamo::query()
+            ->whereKey($solicitud->prestamo_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$prestamo) {
+                throw new \Exception('No se encontró el préstamo vinculado a la orden de pago.');
+            }
+
+            if ((int) $prestamo->estado_id !== 1) {
+                throw new \Exception('El préstamo ya se encuentra anulado o inactivo.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR CUOTAS
+            |--------------------------------------------------------------------------
+            */
+
+            $detallesPrestamo = PrestamoDetalle::query()
+            ->where('prestamo_id', $prestamo->id)
+            ->lockForUpdate()
+            ->get();
+
+            if ($detallesPrestamo->isEmpty()) {
+                throw new \Exception('El préstamo no tiene cuotas registradas.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | VERIFICAR QUE NO TENGA COBROS
+            |--------------------------------------------------------------------------
+            */
+
+            if ((int) $prestamo->monto_pagado > 0) {
+                throw new \Exception('No se puede anular completamente el préstamo porque ya tiene pagos registrados.');
+            }
+
+            $tieneCuotasPagadas = $detallesPrestamo->contains(
+                function ($detalle) {
+                    return (int) $detalle->monto_pagado > 0
+                        || (int) $detalle->monto_capital_pagado > 0
+                        || (int) $detalle->monto_interes_pagado > 0
+                        || (int) $detalle->monto_iva_pagado > 0;
+                }
+            );
+
+            if ($tieneCuotasPagadas) {
+                throw new \Exception('No se puede anular completamente el préstamo porque existen cuotas con pagos registrados.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECORDAR SI LA ORDEN ESTABA PAGADA
+            |--------------------------------------------------------------------------
+            */
+
+            $estabaPagada = (int) $orden->estado_pago === 1;
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR ORDEN
+            |--------------------------------------------------------------------------
+            */
+
+            $this->anularOrdenBase($orden,$motivo,$usuarioId);
+
+            /*
+            |--------------------------------------------------------------------------
+            | REVERTIR TESORERÍA
+            |--------------------------------------------------------------------------
+            */
+
+            if ($estabaPagada) {
+                $this->revertirTesoreria($orden);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR CUOTAS DEL PRÉSTAMO
+            |--------------------------------------------------------------------------
+            */
+
+            PrestamoDetalle::query()
+            ->where('prestamo_id', $prestamo->id)
+            ->update([
+                'estado_id' => 2,
+                'usuario_modificacion' => $usuarioId,
+                'updated_at' => now(),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR PRÉSTAMO
+            |--------------------------------------------------------------------------
+            |
+            | Cambiá el 5 por el ID real de ANULADO en estado_prestamos.
+            |
+            */
+
+            $observacionPrestamo = trim(
+                ($prestamo->observaciones
+                    ? $prestamo->observaciones . ' | '
+                    : '')
+                . 'ANULADO COMPLETAMENTE. MOTIVO: '
+                . mb_strtoupper($motivo, 'UTF-8')
+            );
+
+            $prestamo->update([
+                'estado_prestamo_id' => 4, // ANULADO
+                'estado_id' => 1,
+                'observaciones' => mb_substr(
+                    $observacionPrestamo,
+                    0,
+                    500
+                ),
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR SOLICITUD
+            |--------------------------------------------------------------------------
+            */
+
+            $observacionSolicitud = trim(
+                ($solicitud->observaciones
+                    ? $solicitud->observaciones . ' | '
+                    : '')
+                . 'SOLICITUD ANULADA. MOTIVO: '
+                . mb_strtoupper($motivo, 'UTF-8')
+            );
+
+            $solicitud->update([
+                'estado_solicitud_id' => 5, // ANULADA
+                'estado_id' => 2,
+                'observaciones' => mb_substr(
+                    $observacionSolicitud,
+                    0,
+                    255
+                ),
+            ]);
+        });
+    }
 
 }
