@@ -51,8 +51,8 @@
                 <div class="form-row">
                     <div class="form-group col-md-12">
                         <div class="alert alert-info">
-                            Cantidad: {{ count($data) }} |
-                            Total: {{ number_format(collect($data)->sum('saldo'), 0, ',', '.') }}
+                            Cantidad: {{ $cantidad }} |
+                            Total: G. {{ number_format($total, 0, ',', '.') }}
                         </div>
                     </div>
                 </div>
@@ -63,7 +63,8 @@
                     <button
                         type="button"
                         wire:click="save"
-                        :disabled="$wire.procesando"
+                        wire:loading.attr="disabled"
+                        wire:target="save"
                         class="btn btn-success"
                         style="display: {{ $ver_boton }}"
                     >

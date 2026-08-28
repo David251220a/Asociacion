@@ -64,51 +64,136 @@ class PlanillaCreate extends Component
         return view('livewire.planilla.planilla-create');
     }
 
+    // public function generar(PlanillaAporteService $service)
+    // {
+
+    //     try {
+    //         $this->ver_boton = 'none';
+    //         $this->data = $service->generarDetalle(
+    //             (int) $this->mes,
+    //             (int) $this->anio,
+    //             (int) $this->tipo_asociado_id
+    //         );
+
+    //         $this->cantidad = count($this->data);
+    //         $this->total = collect($this->data)->sum('saldo'); // o 'monto_esperado'
+    //         if ($this->total == 0) {
+    //             $this->ver_boton = 'none';
+    //         }else {
+    //             $this->ver_boton = 'block';
+    //         }
+
+    //         $this->emit('mensaje_exitoso', 'Planilla generada correctamente.');
+
+
+    //     } catch (\Throwable $th) {
+    //         $this->ver_boton = 'none';
+    //         $this->emit('mensaje_error', $th->getMessage());
+    //     }
+    // }
+
     public function generar(PlanillaAporteService $service)
     {
-
         try {
             $this->ver_boton = 'none';
-            $this->data = $service->generarDetalle(
+
+            $detalles = $service->generarDetalle(
                 (int) $this->mes,
                 (int) $this->anio,
                 (int) $this->tipo_asociado_id
             );
 
+            $this->data = $detalles->values()->toArray();
             $this->cantidad = count($this->data);
-            $this->total = collect($this->data)->sum('saldo'); // o 'monto_esperado'
-            if ($this->total == 0) {
-                $this->ver_boton = 'none';
-            }else {
-                $this->ver_boton = 'block';
+            $this->total = (int) collect($this->data)->sum('saldo');
+
+            if ($this->cantidad === 0) {
+                $this->emit(
+                    'mensaje_error',
+                    'No existen aportes ni préstamos pendientes.'
+                );
+
+                return;
             }
 
-            $this->emit('mensaje_exitoso', 'Planilla generada correctamente.');
+            $this->ver_boton = 'block';
 
+            $this->emit(
+                'mensaje_exitoso',
+                'Vista previa generada correctamente.'
+            );
 
         } catch (\Throwable $th) {
+            report($th);
+
+            $this->data = [];
+            $this->cantidad = 0;
+            $this->total = 0;
             $this->ver_boton = 'none';
-            $this->emit('mensaje_error', $th->getMessage());
+
+            $this->emit(
+                'mensaje_error',
+                $th->getMessage()
+            );
         }
     }
 
     public function save(PlanillaAporteService $service)
     {
+        if ($this->procesando) {
+            return;
+        }
+
         try {
             $this->procesando = true;
-
             $this->ver_boton = 'none';
-            $this->data = $service->guardarPlanilla(
+
+            // Vuelve a calcular y graba todo.
+            $service->guardarPlanilla(
                 (int) $this->mes,
                 (int) $this->anio,
                 (int) $this->tipo_asociado_id
             );
 
-            return redirect()->route('planilla.index')->with('message', 'Planilla generado con exito');
+            return redirect()
+                ->route('planilla.index')
+                ->with(
+                    'message',
+                    'La planilla fue generada correctamente.'
+                );
 
         } catch (\Throwable $th) {
-            $this->ver_boton = 'none';
-            $this->emit('mensaje_error', $th->getMessage());
+            report($th);
+
+            $this->procesando = false;
+
+            $this->ver_boton = !empty($this->data)
+                ? 'block'
+                : 'none';
+
+            $this->emit(
+                'mensaje_error',
+                $th->getMessage()
+            );
         }
     }
+    // public function save(PlanillaAporteService $service)
+    // {
+    //     try {
+    //         $this->procesando = true;
+
+    //         $this->ver_boton = 'none';
+    //         $this->data = $service->guardarPlanilla(
+    //             (int) $this->mes,
+    //             (int) $this->anio,
+    //             (int) $this->tipo_asociado_id
+    //         );
+
+    //         return redirect()->route('planilla.index')->with('message', 'Planilla generado con exito');
+
+    //     } catch (\Throwable $th) {
+    //         $this->ver_boton = 'none';
+    //         $this->emit('mensaje_error', $th->getMessage());
+    //     }
+    // }
 }

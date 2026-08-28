@@ -15,6 +15,7 @@ use App\Models\SolicitudConfig;
 use App\Models\TipoPrestamo;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -126,14 +127,32 @@ class DatabaseSeeder extends Seeder
         //     'solicitud_config_id' => 2,
         // ]);
 
-        EstadoPrestamo::create(['descripcion' => 'PENDIENTE DESEMBOLSO']);
-        EstadoPrestamo::create(['descripcion' => 'VIGENTE']);
-        EstadoPrestamo::create(['descripcion' => 'CANCELADO / PAGADO']);
-        EstadoPrestamo::create(['descripcion' => 'ANULADO']);
+        // EstadoPrestamo::create(['descripcion' => 'PENDIENTE DESEMBOLSO']);
+        // EstadoPrestamo::create(['descripcion' => 'VIGENTE']);
+        // EstadoPrestamo::create(['descripcion' => 'CANCELADO / PAGADO']);
+        // EstadoPrestamo::create(['descripcion' => 'ANULADO']);
 
-        EstadoPago::create(['descripcion' => 'PENDIENTE']);
-        EstadoPago::create(['descripcion' => 'PAGADO']);
-        EstadoPago::create(['descripcion' => 'PAGADO PARCIAL']);
-        EstadoPago::create(['descripcion' => 'ANULADO']);
+        // EstadoPago::create(['descripcion' => 'PENDIENTE']);
+        // EstadoPago::create(['descripcion' => 'PAGADO']);
+        // EstadoPago::create(['descripcion' => 'PAGADO PARCIAL']);
+        // EstadoPago::create(['descripcion' => 'ANULADO']);
+
+        DB::table('estado_pagos')->updateOrInsert(
+            ['id' => 5],
+            [
+                'descripcion' => 'ENVIADO A PLANILLA',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        DB::table('estado_pagos')->updateOrInsert(
+            ['id' => 6],
+            [
+                'descripcion' => 'NO PAGADO',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
     }
 }
