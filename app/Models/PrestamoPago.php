@@ -10,4 +10,13 @@ class PrestamoPago extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function recibo()
+    {
+        return $this->belongsTo(
+            Recibo::class,
+            'recibo_id'
+        );
+    }
+
 }

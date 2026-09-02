@@ -1069,7 +1069,6 @@ class PlanillaCobro extends Component
                 'prestamo_id' => $planillaPrestamo->prestamo_id,
                 'prestamo_detalle_id' => $planillaPrestamo->prestamo_detalle_id,
                 'planilla_prestamo_id' => $planillaPrestamo->id,
-                'recibo_id' => $recibo->id,
                 'canal_cobro' => 1,
                 'fecha_generacion' => now()->toDateString(),
                 'fecha_pago' => $fechaPago->toDateString(),
@@ -1160,7 +1159,6 @@ class PlanillaCobro extends Component
         );
 
         $historico->fecha_pago = $fechaPago->toDateString();
-        $historico->recibo_id = $recibo->id;
         $historico->estado_pago_id = $estadoPago;
         $historico->observaciones = mb_substr(
             $observacion,
@@ -1227,7 +1225,6 @@ class PlanillaCobro extends Component
                     self::ESTADO_PAGO_ENVIADO_PLANILLA
                 )
                 ->update([
-                    'recibo_id' => $recibo->id,
                     'estado_pago_id' => self::ESTADO_PAGO_NO_PAGADO,
                     'fecha_pago' => null,
                     'observaciones' => mb_substr(

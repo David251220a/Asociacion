@@ -11,6 +11,7 @@ use App\Models\ReciboDonacion;
 use App\Models\ResumenAnual;
 use App\Models\ResumenMensual;
 use App\Models\TipoRecibo;
+use App\Services\AnularReciboPlanillaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -118,107 +119,129 @@ class ReciboController extends Controller
         return view('recibo.show', compact('recibo', 'entidad', 'data'));
     }
 
-    public function anular(Recibo $recibo)
-    {
+    // public function anular(Recibo $recibo)
+    // {
 
-        if ($recibo->estado_id == 2) {
-            return redirect()->route('recibo.index')->with('message', 'El recibo ya está anulado.');
-        }
+    //     if ($recibo->estado_id == 2) {
+    //         return redirect()->route('recibo.index')->with('message', 'El recibo ya está anulado.');
+    //     }
+
+    //     try {
+    //         DB::transaction(function () use ($recibo) {
+    //             $detalle = ReciboAporte::where('recibo_id', $recibo->id)->first();
+    //             if ($detalle && $detalle->planilla_id) {
+    //                 $planilla = Planilla::find($detalle->planilla_id);
+
+    //                 if ($planilla) {
+    //                     $planilla->update([
+    //                         'pagado' => 0,
+    //                         'monto_pagado' => 0,
+    //                         'fecha_pagado' => null,
+    //                         'usuario_modificacion' => auth()->id(),
+    //                     ]);
+
+    //                     $planilla->planillaDetalle()->update([
+    //                         'pagado' => 0,
+    //                         'saldo' => DB::raw('monto_esperado'),
+    //                         'usuario_modificacion' => auth()->id(),
+    //                         'updated_at' => now(),
+    //                     ]);
+    //                 }
+    //             }
+    //             $fecha_anulado = now()->toDateString();
+    //             $recibo->update([
+    //                 'estado_id' => 2,
+    //                 'usuario_anulacion' => auth()->id(),
+    //                 'fecha_anulado' => $fecha_anulado,
+    //                 'motivo_anulacion' => 'Recibo incorrecto',
+    //             ]);
+
+    //             ReciboAporte::where('recibo_id', $recibo->id)->update([
+    //                 'estado_id' => 2,
+    //                 'usuario_modificacion' => auth()->id(),
+    //                 'updated_at' => now(),
+    //             ]);
+
+    //             $recibo->forma_pagos()->update([
+    //                 'estado_id' => 2,
+    //                 'updated_at' => now(),
+    //             ]);
+
+    //             $afectadosAporte = Aporte::where('recibo_id', $recibo->id)->update([
+    //                 'estado_id' => 2,
+    //                 'usuario_modificacion' => auth()->id(),
+    //                 'updated_at' => now(),
+    //             ]);
+
+    //             // Si querés detectar si no encontró nada:
+    //             if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)){
+    //                 if ($afectadosAporte == 0) {
+    //                     throw new \Exception('No se encontraron aportes relacionados al recibo para anular.');
+    //                 }
+    //             }
+
+
+    //             /*
+    //             |--------------------------------------------------------------------------
+    //             | ACTUALIZAR RESUMENES
+    //             |--------------------------------------------------------------------------
+    //             */
+    //             $fechaResumen = Carbon::parse($recibo->fecha);
+    //             $anioResumen = (int) $fechaResumen->year;
+    //             $mesResumen  = (int) $fechaResumen->month;
+    //             $montoIngreso = (float) $recibo->monto_total;
+
+    //             $resumenMensual = ResumenMensual::where('anio', $anioResumen)
+    //             ->where('mes', $mesResumen)
+    //             ->where('tipo_ingreso_id', $recibo->tipo_recibo_id)
+    //             ->whereNull('tipo_egreso_id')
+    //             ->lockForUpdate()
+    //             ->first();
+
+    //             $resumenMensual->total_ingreso -= $montoIngreso;
+    //             $resumenMensual->save();
+
+    //             $resumenAnual = ResumenAnual::where('anio', $anioResumen)
+    //             ->lockForUpdate()
+    //             ->first();
+
+    //             if ($resumenAnual) {
+    //                 $resumenAnual->total_ingreso = (float) $resumenAnual->total_ingreso - $montoIngreso;
+    //                 $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial
+    //                     + (float) $resumenAnual->total_ingreso
+    //                     - (float) $resumenAnual->total_egreso;
+    //                 $resumenAnual->save();
+    //             }
+    //         });
+
+
+    //     } catch (\Throwable $e) {
+    //         return redirect()->route('recibo.index')->with('message',  $e->getMessage());
+    //     }
+
+    //     return redirect()->route('recibo.index')->with('message', 'Recibo anulado.');
+    // }
+
+    public function anular(Recibo $recibo, Request $request, AnularReciboPlanillaService $servicio) {
+        $datos = $request->validate([
+            'motivo_anulacion' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ], [
+            'motivo_anulacion.required' => 'Debe ingresar el motivo de la anulación.',
+        ]);
+
+        $motivo = $datos['motivo_anulacion'] ?? 'ANULACIÓN POR REGISTRO INCORRECTO.';
 
         try {
-            DB::transaction(function () use ($recibo) {
-                $detalle = ReciboAporte::where('recibo_id', $recibo->id)->first();
-                if ($detalle && $detalle->planilla_id) {
-                    $planilla = Planilla::find($detalle->planilla_id);
-
-                    if ($planilla) {
-                        $planilla->update([
-                            'pagado' => 0,
-                            'monto_pagado' => 0,
-                            'fecha_pagado' => null,
-                            'usuario_modificacion' => auth()->id(),
-                        ]);
-
-                        $planilla->planillaDetalle()->update([
-                            'pagado' => 0,
-                            'saldo' => DB::raw('monto_esperado'),
-                            'usuario_modificacion' => auth()->id(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-                $fecha_anulado = now()->toDateString();
-                $recibo->update([
-                    'estado_id' => 2,
-                    'usuario_anulacion' => auth()->id(),
-                    'fecha_anulado' => $fecha_anulado,
-                    'motivo_anulacion' => 'Recibo incorrecto',
-                ]);
-
-                ReciboAporte::where('recibo_id', $recibo->id)->update([
-                    'estado_id' => 2,
-                    'usuario_modificacion' => auth()->id(),
-                    'updated_at' => now(),
-                ]);
-
-                $recibo->forma_pagos()->update([
-                    'estado_id' => 2,
-                    'updated_at' => now(),
-                ]);
-
-                $afectadosAporte = Aporte::where('recibo_id', $recibo->id)->update([
-                    'estado_id' => 2,
-                    'usuario_modificacion' => auth()->id(),
-                    'updated_at' => now(),
-                ]);
-
-                // Si querés detectar si no encontró nada:
-                if (($recibo->tipo_recibo_id == 4) || ($recibo->tipo_recibo_id == 5)){
-                    if ($afectadosAporte == 0) {
-                        throw new \Exception('No se encontraron aportes relacionados al recibo para anular.');
-                    }
-                }
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | ACTUALIZAR RESUMENES
-                |--------------------------------------------------------------------------
-                */
-                $fechaResumen = Carbon::parse($recibo->fecha);
-                $anioResumen = (int) $fechaResumen->year;
-                $mesResumen  = (int) $fechaResumen->month;
-                $montoIngreso = (float) $recibo->monto_total;
-
-                $resumenMensual = ResumenMensual::where('anio', $anioResumen)
-                ->where('mes', $mesResumen)
-                ->where('tipo_ingreso_id', $recibo->tipo_recibo_id)
-                ->whereNull('tipo_egreso_id')
-                ->lockForUpdate()
-                ->first();
-
-                $resumenMensual->total_ingreso -= $montoIngreso;
-                $resumenMensual->save();
-
-                $resumenAnual = ResumenAnual::where('anio', $anioResumen)
-                ->lockForUpdate()
-                ->first();
-
-                if ($resumenAnual) {
-                    $resumenAnual->total_ingreso = (float) $resumenAnual->total_ingreso - $montoIngreso;
-                    $resumenAnual->saldo_final   = (float) $resumenAnual->saldo_inicial
-                        + (float) $resumenAnual->total_ingreso
-                        - (float) $resumenAnual->total_egreso;
-                    $resumenAnual->save();
-                }
-            });
-
-
+            $servicio->anular($recibo, $motivo, $request->user()->id);
+            return redirect()->route('recibo.index')->with('message', 'El recibo fue anulado correctamente y la planilla volvió a quedar pendiente.');
         } catch (\Throwable $e) {
-            return redirect()->route('recibo.index')->with('message',  $e->getMessage());
+            report($e);
+            return redirect()->back()->withErrors(['recibo' => $e->getMessage()]);
         }
-
-        return redirect()->route('recibo.index')->with('message', 'Recibo anulado.');
     }
 
     public function aporte()

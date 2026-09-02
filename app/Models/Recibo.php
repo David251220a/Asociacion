@@ -26,4 +26,9 @@ class Recibo extends Model
         return $this->belongsTo(TipoRecibo::class);
     }
 
+    public function prestamoPagos()
+    {
+        return $this->hasMany(PrestamoPago::class,'recibo_id');
+    }
+
 }

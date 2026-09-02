@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\PlanillaDetalleExport;
 use App\Models\Planilla;
+use App\Models\PlanillaAporte;
 use App\Models\PlanillaDetalle;
+use App\Models\PlanillaPrestamo;
+use App\Models\PrestamoDetalle;
+use App\Models\PrestamoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -73,50 +77,256 @@ class PlanillaController extends Controller
 
     public function anular(Planilla $planilla)
     {
-        DB::transaction(function () use ($planilla) {
+        try {
+            DB::transaction(function () use ($planilla) {
 
-            if ($planilla->pagado == 1) {
-                throw new \Exception('No se puede anular una planilla pagada.');
-            }
+                /*
+                |--------------------------------------------------------------------------
+                | OBTENER PLANILLAS A ANULAR
+                |--------------------------------------------------------------------------
+                */
 
-            // si tiene lote, anula todo el lote
-            if ($planilla->lote_generacion) {
+                if ($planilla->lote_generacion) {
+                    $planillas = Planilla::query()
+                    ->where('lote_generacion', $planilla->lote_generacion)
+                    ->where('estado_id', 1)
+                    ->lockForUpdate()
+                    ->get();
+                } else {
+                    $planillas = Planilla::query()
+                    ->whereKey($planilla->id)
+                    ->where('estado_id', 1)
+                    ->lockForUpdate()
+                    ->get();
+                }
 
-                $planillas = Planilla::where('lote_generacion', $planilla->lote_generacion)
+                if ($planillas->isEmpty()) {
+                    throw new \Exception('La planilla ya fue anulada o no se encuentra activa.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | VERIFICAR QUE NINGUNA PLANILLA TENGA COBROS
+                |--------------------------------------------------------------------------
+                */
+
+                $planillaPagada = $planillas->contains(function ($item) {
+                    return (int) $item->pagado === 1 || (int) $item->monto_pagado > 0;
+                });
+
+                if ($planillaPagada) {
+                    throw new \Exception('No se puede anular el lote porque contiene una planilla con pagos registrados.');
+                }
+
+                $planillaIds = $planillas->pluck('id');
+                /*
+                |--------------------------------------------------------------------------
+                | OBTENER DETALLES
+                |--------------------------------------------------------------------------
+                */
+
+                $detalles = PlanillaDetalle::query()
+                ->whereIn('planilla_id', $planillaIds)
                 ->where('estado_id', 1)
+                ->lockForUpdate()
                 ->get();
 
-                foreach ($planillas as $item) {
-                    if ($item->pagado == 1) {
-                        throw new \Exception('Existe una planilla pagada en el lote.');
+                $detalleIds = $detalles->pluck('id');
+
+                /*
+                |--------------------------------------------------------------------------
+                | COMPROBAR PAGOS EN LOS CONCEPTOS
+                |--------------------------------------------------------------------------
+                |
+                | Estado 2: pagado.
+                | Estado 3: pagado parcialmente.
+                |
+                */
+
+                $aporteCobrado = PlanillaAporte::query()
+                ->whereIn('planilla_detalle_id', $detalleIds)
+                ->where('estado_id', 1)
+                ->whereIn('estado_pago_id', [2, 3])
+                ->exists();
+
+                $prestamoCobrado = PlanillaPrestamo::query()
+                ->whereIn('planilla_detalle_id', $detalleIds)
+                ->where('estado_id', 1)
+                ->whereIn('estado_pago_id', [2, 3])
+                ->exists();
+
+                if ($aporteCobrado || $prestamoCobrado) {
+                    throw new \Exception('No se puede anular la planilla porque contiene aportes o préstamos cobrados.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | OBTENER PRÉSTAMOS ENVIADOS A PLANILLA
+                |--------------------------------------------------------------------------
+                */
+
+                $planillaPrestamos = PlanillaPrestamo::query()
+                ->whereIn('planilla_detalle_id', $detalleIds)
+                ->where('estado_id', 1)
+                ->lockForUpdate()
+                ->get();
+
+                foreach ($planillaPrestamos as $planillaPrestamo) {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | LIBERAR LA CUOTA ORIGINAL
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $cuota = PrestamoDetalle::query()
+                    ->whereKey($planillaPrestamo->prestamo_detalle_id)
+                    ->where('estado_id', 1)
+                    ->lockForUpdate()
+                    ->first();
+
+                    if ($cuota && (int) $cuota->estado_pago_id === 5) {
+                        /*
+                        * Si anteriormente tuvo algún pago, queda parcial.
+                        * En caso contrario, vuelve a pendiente.
+                        */
+                        $nuevoEstadoPago = (int) $cuota->monto_pagado > 0&& (int) $cuota->saldo_total > 0 ? 3 : 1;
+
+                        $cuota->update([
+                            'estado_pago_id' => $nuevoEstadoPago,
+                            'usuario_modificacion' => auth()->id(),
+                        ]);
                     }
-                }
 
-                foreach ($planillas as $item) {
-                    $item->update([
-                        'estado_id' => 2,
-                        'usuario_modificacion' => auth()->id(),
-                    ]);
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ANULAR ANTECEDENTE EN PRESTAMO_PAGOS
+                    |--------------------------------------------------------------------------
+                    */
 
-                    PlanillaDetalle::where('planilla_id', $item->id)
+                    PrestamoPago::query()
+                    ->where('planilla_prestamo_id',  $planillaPrestamo->id)
+                    ->where('estado_id', 1)
                     ->update([
+                        'estado_pago_id' => 4,
+                        'estado_id' => 2,
+                        'usuario_modificacion' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ANULAR PLANILLA PRÉSTAMO
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $planillaPrestamo->update([
+                        'estado_pago_id' => 4,
                         'estado_id' => 2,
                         'usuario_modificacion' => auth()->id(),
                     ]);
                 }
 
-                return;
-            }
+                /*
+                |--------------------------------------------------------------------------
+                | ANULAR PLANILLA APORTES
+                |--------------------------------------------------------------------------
+                */
 
-            // fallback (planillas viejas sin lote)
-            $planilla->update([
-                'estado_id' => 2,
-                'usuario_modificacion' => auth()->id(),
-            ]);
-        });
+                PlanillaAporte::query()
+                ->whereIn('planilla_detalle_id', $detalleIds)
+                ->where('estado_id', 1)
+                ->update([
+                    'estado_pago_id' => 4,
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
 
-        return redirect()->route('planilla.index')->with('message', 'Planilla anulada con exito.');
+                /*
+                |--------------------------------------------------------------------------
+                | ANULAR DETALLES PRINCIPALES
+                |--------------------------------------------------------------------------
+                */
+
+                PlanillaDetalle::query()
+                ->whereIn('id', $detalleIds)
+                ->update([
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | ANULAR CABECERAS
+                |--------------------------------------------------------------------------
+                */
+
+                Planilla::query()
+                ->whereIn('id', $planillaIds)
+                ->update([
+                    'estado_id' => 2,
+                    'usuario_modificacion' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+            });
+
+            return redirect()->route('planilla.index')->with('message','La planilla fue anulada correctamente.');
+
+        } catch (\Throwable $th) {
+            report($th);
+
+            return redirect()->back()->withErrors(['planilla' => $th->getMessage(),]);
+        }
     }
+
+    // public function anular(Planilla $planilla)
+    // {
+    //     DB::transaction(function () use ($planilla) {
+
+    //         if ($planilla->pagado == 1) {
+    //             throw new \Exception('No se puede anular una planilla pagada.');
+    //         }
+
+    //         // si tiene lote, anula todo el lote
+    //         if ($planilla->lote_generacion) {
+
+    //             $planillas = Planilla::where('lote_generacion', $planilla->lote_generacion)
+    //             ->where('estado_id', 1)
+    //             ->get();
+
+    //             foreach ($planillas as $item) {
+    //                 if ($item->pagado == 1) {
+    //                     throw new \Exception('Existe una planilla pagada en el lote.');
+    //                 }
+    //             }
+
+    //             foreach ($planillas as $item) {
+    //                 $item->update([
+    //                     'estado_id' => 2,
+    //                     'usuario_modificacion' => auth()->id(),
+    //                 ]);
+
+    //                 PlanillaDetalle::where('planilla_id', $item->id)
+    //                 ->update([
+    //                     'estado_id' => 2,
+    //                     'usuario_modificacion' => auth()->id(),
+    //                 ]);
+    //             }
+
+    //             return;
+    //         }
+
+    //         // fallback (planillas viejas sin lote)
+    //         $planilla->update([
+    //             'estado_id' => 2,
+    //             'usuario_modificacion' => auth()->id(),
+    //         ]);
+    //     });
+
+    //     return redirect()->route('planilla.index')->with('message', 'Planilla anulada con exito.');
+    // }
 
     public function cobrar(Planilla $planilla)
     {
