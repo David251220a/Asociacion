@@ -25,40 +25,53 @@
                                     <tr>
                                         <th class="">Tipo Solicitud</th>
                                         <th class="">Limite</th>
+                                        <th class="">Monto Maximo</th>
                                         <th class="">Activo</th>
                                         <th class="text-center">Accion</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="">
-                                            Ayuda Social
-                                        </td>
-                                        <td>
-                                            {{$data->limite_ayuda_social}}
-                                        </td>
-                                        <td>
-                                            @if ($data->activo_ayuda_social == 1)
-                                                <span class="badge badge-success">
-                                                    SI
-                                                </span>
-                                            @else
-                                                <span class="badge badge-warning">
-                                                    NO
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            @can('entidad_soli.solicitud_ayuda_social')
-                                                <a href="{{route('entidad_soli.solicitud_ayuda_social', $data)}}" class="ml-3">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                        class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                    </svg>
-                                                </a>
-                                            @endcan
-                                        </td>
-                                    </tr>
+
+                                    @foreach ($data as $item)
+                                        <tr>
+                                            <td class="">
+                                                {{ $item->descripcion }}
+                                            </td>
+                                            <td>
+                                                @if ($item->limite_solicitud == 1)
+                                                    <span class="badge badge-success">
+                                                        SI
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-warning">
+                                                        NO
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="text-right">{{ number_format($item->monto_maximo, 0, ',', '.') }}</td>
+                                            <td>
+                                                @if ($item->activo == 1)
+                                                    <span class="badge badge-success">
+                                                        SI
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-warning">
+                                                        NO
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                @can('entidad_soli.solicitud_ayuda_social')
+                                                    <a href="{{route('entidad_soli.solicitud_ayuda_social', $item)}}" class="ml-3">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                            class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </a>
+                                                @endcan
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                                 <tfoot>
                                     <th>

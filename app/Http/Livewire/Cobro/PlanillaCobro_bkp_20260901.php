@@ -23,7 +23,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Facades\Excel;
 
-class PlanillaCobro extends Component
+class PlanillaCobro_bkp_20260901 extends Component
 {
 
     use WithFileUploads;

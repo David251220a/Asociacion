@@ -92,22 +92,22 @@ class RoleSeeder extends Seeder
         // $permission = Permission::create(['name' => 'persona.edit', 'descripcion' => 'Persona: Editar'])->syncRoles($admin);
 
         // $permission = Permission::create(['name' => 'resumen.index', 'descripcion' => 'Resumen'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'resumen.recalcular', 'descripcion' => 'Recalcular Saldos'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'resumen.recalcular', 'descripcion' => 'Recalcular Saldos'])->syncRoles($admin);
 
-        $permission = Permission::create(['name' => 'solicitudes', 'descripcion' => 'Solicitudes Todos'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'solicitud.index_ayuda_social', 'descripcion' => 'Solicitud: Ayuda Social'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'solicitud.show_ayuda_social', 'descripcion' => 'Solicitud: Ayuda Social Aprobacion\Rechazo'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'solicitudes', 'descripcion' => 'Solicitudes Todos'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'solicitud.index_ayuda_social', 'descripcion' => 'Solicitud: Ayuda Social'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'solicitud.show_ayuda_social', 'descripcion' => 'Solicitud: Ayuda Social Aprobacion\Rechazo'])->syncRoles($admin);
 
-        $permission = Permission::create(['name' => 'consultas', 'descripcion' => 'Consultas: Todos'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'cobros', 'descripcion' => 'Cobros: Todos'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'parametro_general', 'descripcion' => 'Paramentros Generales'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'consultas', 'descripcion' => 'Consultas: Todos'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'cobros', 'descripcion' => 'Cobros: Todos'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'parametro_general', 'descripcion' => 'Paramentros Generales'])->syncRoles($admin);
 
-        $permission = Permission::create(['name' => 'entidad_soli.solicitud', 'descripcion' => 'Entidad: Activar Solicitudes'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'entidad_soli.solicitud_ayuda_social', 'descripcion' => 'Entidad: Activar Ayuda Social'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'actu_datos.index', 'descripcion' => 'Solicitud: Datos Actualizacion'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'actu_datos.show', 'descripcion' => 'Solicitud: Datos Aprobacion o Rechazo'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia', 'descripcion' => 'Solicitud: Prestamo Emergencia'])->syncRoles($admin);
-        $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia_show', 'descripcion' => 'Solicitud: Prestamo Emergencia Aprobacion\Rechazo'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'entidad_soli.solicitud', 'descripcion' => 'Entidad: Activar Solicitudes'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'entidad_soli.solicitud_ayuda_social', 'descripcion' => 'Entidad: Activar Ayuda Social'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'actu_datos.index', 'descripcion' => 'Solicitud: Datos Actualizacion'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'actu_datos.show', 'descripcion' => 'Solicitud: Datos Aprobacion o Rechazo'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia', 'descripcion' => 'Solicitud: Prestamo Emergencia'])->syncRoles($admin);
+        // $permission = Permission::create(['name' => 'solicitud.prestamo_emergencia_show', 'descripcion' => 'Solicitud: Prestamo Emergencia Aprobacion\Rechazo'])->syncRoles($admin);
 
         // solicitud.prestamo_emergencia
         // $permission = Permission::create(['name' => '', 'descripcion' => ''])->syncRoles($admin);

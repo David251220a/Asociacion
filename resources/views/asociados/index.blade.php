@@ -23,9 +23,9 @@
                             </a>
                         </div>
                     @endcan
-                    
+
                 </div>
-                
+
                 @include('varios.mensaje')
 
                 <form action="{{ route('asociado.index') }}" method="GET">
@@ -86,23 +86,45 @@
                                             <td class="text-center">
                                                 @can('asociado.edit')
                                                    <a href="{{route('asociado.edit', $item)}}" class="ml-3">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                                             class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                                         </svg>
-                                                    </a> 
+                                                    </a>
                                                 @endcan
-                                                
+
                                                @can('ficha_medica.create')
                                                    <a href="{{route('ficha_medica.create', $item)}}" class="ml-3">
-                                                        <svg 
-                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                                             class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                                                             <line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
                                                         </svg>
                                                     </a>
                                                @endcan
-                                                
+
+                                                <a href="{{ route('asociado.solicitud_prestamos', $item) }}" class="ml-3" title="Crear solicitud de préstamo">
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="24"
+                                                        height="24"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                    >
+                                                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.5.6L3 16"></path>
+                                                        <path d="m7 20 1.6-1.4c.4-.4 1-.6 1.6-.6H15c1.1 0 2.1-.4 2.8-1.2L22 13"></path>
+                                                        <path d="M2 15l6 6"></path>
+                                                        <circle cx="16" cy="7" r="4"></circle>
+                                                        <path d="M16 5v4"></path>
+                                                        <path d="M14.8 6h2.1"></path>
+                                                        <path d="M15.1 8h2.1"></path>
+                                                    </svg>
+                                                </a>
+
                                             </td>
                                         </tr>
                                     @endforeach

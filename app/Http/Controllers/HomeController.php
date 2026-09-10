@@ -932,9 +932,12 @@ class HomeController extends Controller
         }
 
         $asociado = $persona->asociado;
-
         if (!$asociado) {
             return redirect()->route('home')->withErrors(['asociado' => 'No se encontró un asociado vinculado a su persona.',]);
+        }
+
+        if ($asociado->estado_id == 2) {
+            return redirect()->route('home')->withErrors(['asociado' => 'El asociado no se encuentra activo.',]);
         }
 
         $config = SolicitudConfig::find(2)->first();
@@ -948,6 +951,19 @@ class HomeController extends Controller
         ->whereIn('estado_solicitud_id', [1,2,3])
         ->where('anio', $anioActual)
         ->count();
+
+        $solicitudes_pendiente = SolicitudPrestamo::where('persona_id', $persona->id)
+        ->whereIn('estado_solicitud_id', [1,2])
+        ->where('anio', $anioActual)
+        ->count();
+
+        if ($solicitudes_pendiente > 0) {
+            return redirect()
+            ->route('nueva_solicitud')
+            ->withErrors([
+                'prestamo_emergencia' => 'Actualmente tiene una solicitud de préstamo emergencia pendiente de aprobación. No puede realizar otra solicitud hasta que se resuelva la actual.',
+            ]);
+        }
 
         if ($solicitudes_anio >= $limiteAnual){
             $textoSolicitud = $limiteAnual === 1 ? 'solicitud' : 'solicitudes';

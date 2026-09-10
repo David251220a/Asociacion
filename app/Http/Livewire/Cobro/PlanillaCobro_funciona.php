@@ -29,7 +29,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Facades\Excel;
 
-class PlanillaCobro extends Component
+class PlanillaCobro_funciona extends Component
 {
     use WithFileUploads;
 

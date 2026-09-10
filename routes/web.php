@@ -59,6 +59,8 @@ Route::group([
     Route::get('/aporte', [HomeController::class, 'aporte'])->name('aporte');
 
     Route::resource('/asociados', AsociadoController::class)->names('asociado');
+    Route::get('/asociados/{asociado}/solicitud-prestamos', [AsociadoController::class, 'solicitud_prestamos'])->name('asociado.solicitud_prestamos');
+    Route::get('/asociados/{asociado}/solicitud-crear/{tipoPrestamo}', [AsociadoController::class, 'crear_solicitud'])->name('asociado.crear_solicitud');
     Route::resource('/users', UsuarioController::class)->names('user');
     Route::resource('/roles', GrupoUsuarioController::class)->names('role');
     Route::get('/permiso-crear', [GrupoUsuarioController::class, 'permiso_crear'])->name('role.permiso_crear');
@@ -105,8 +107,8 @@ Route::group([
     Route::get('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar'])->name('entidad.actividades_editar');
     Route::post('/entidad/{actividadEconomica}/actividades/agregar', [EntidadController::class, 'actividades_editar_post'])->name('entidad.actividades_editar_post');
     Route::get('/entidad/solicitudes', [EntidadController::class, 'solicitud'])->name('entidad_soli.solicitud');
-    Route::get('/entidad/solicitudes/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social'])->name('entidad_soli.solicitud_ayuda_social');
-    Route::post('/entidad/solicitudes/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social_post'])->name('entidad_soli.solicitud_ayuda_social_post');
+    Route::get('/entidad/solicitudes/{solicitudConfig}/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social'])->name('entidad_soli.solicitud_ayuda_social');
+    Route::post('/entidad/solicitudes/{solicitudConfig}/activar-ayuda-social', [EntidadController::class, 'solicitud_ayuda_social_post'])->name('entidad_soli.solicitud_ayuda_social_post');
 
 
     Route::get('/establecimiento', [EstablecimientoController::class, 'index'])->name('establecimiento.index');

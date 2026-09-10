@@ -12,8 +12,11 @@ use App\Models\Familiar;
 use App\Models\Institucion;
 use App\Models\Persona;
 use App\Models\Sexo;
+use App\Models\SolicitudConfig;
+use App\Models\SolicitudPrestamo;
 use App\Models\TipoAsociado;
 use App\Models\TipoFamiliar;
+use App\Models\TipoPrestamo;
 use App\Models\TipoVivienda;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -421,4 +424,60 @@ class AsociadoController extends Controller
 
         return response()->json($ciudad);
     }
+
+    public function solicitud_prestamos(Asociado $asociado)
+    {
+        $tipoPrestamo = TipoPrestamo::all();
+        return view('asociados.solicitud', compact('asociado', 'tipoPrestamo'));
+    }
+
+    public function crear_solicitud(Asociado $asociado, TipoPrestamo $tipoPrestamo)
+    {
+        if($tipoPrestamo->id == 1){
+            $config = SolicitudConfig::find(2);
+            $persona = $asociado->persona;
+            $anioActual = now()->year;
+            $limiteAnual = $config->limite_solicitud == 0 ? 999 : (int) $config->limite_solicitud_anual;
+            $solicitudes_anio = SolicitudPrestamo::where('persona_id', $asociado->persona_id)
+            ->whereIn('estado_solicitud_id', [1,2,3])
+            ->where('anio', $anioActual)
+            ->count();
+
+            $solicitudes_pendiente = SolicitudPrestamo::where('persona_id', $asociado->persona_id)
+            ->whereIn('estado_solicitud_id', [1,2])
+            ->where('anio', $anioActual)
+            ->count();
+
+            if ($asociado->estado_id == 2) {
+                return redirect()->route('home')->withErrors(['asociado' => 'El asociado no se encuentra activo.',]);
+            }
+
+            if ($solicitudes_pendiente > 0) {
+                return redirect()
+                ->back()
+                ->withErrors([
+                    'prestamo_emergencia' => 'Actualmente tiene una solicitud de préstamo emergencia pendiente de aprobación. No puede realizar otra solicitud hasta que se resuelva la actual.',
+                ]);
+            }
+
+            if ($solicitudes_anio >= $limiteAnual){
+                $textoSolicitud = $limiteAnual === 1 ? 'solicitud' : 'solicitudes';
+                return redirect()
+                ->back()
+                ->withErrors([
+                    'prestamo_emergencia' => 'Ha alcanzado el límite anual de '
+                    . $limiteAnual . ' '
+                    . $textoSolicitud
+                    . ' de préstamo emergencia establecido por AJUPEM para el año '
+                    . $anioActual
+                    . '.',
+                ]);
+            }
+
+            return view('asociados.solicitud_emergencia', compact('asociado', 'tipoPrestamo','persona','config'));
+        }
+
+        return redirect()->route('asociado.index')->withErrors(['prestamo_emergencia' => 'El tipo de préstamo seleccionado no es válido para este proceso.',]);
+    }
+
 }
