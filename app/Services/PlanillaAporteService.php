@@ -26,7 +26,7 @@ class PlanillaAporteService
     |   1 = calcular IVA sobre la mora.
     |
     */
-    private int $calcular_iva = 0;
+    private int $calcular_iva = 1;
     private int $porcentaje_iva = 10;
     private int $dias_gracia = 20;
 

@@ -15,26 +15,17 @@ use Livewire\Component;
 class SolicitudPrestamo extends Component
 {
     public $persona;
-
     public $config;
-
     public array $montosDisponibles = [];
-
     public array $plazosDisponibles = [];
-
     public int $montoSeleccionado = 0;
-
     public int $cantidadCuotas = 0;
-
     public int $montoInteres = 0;
-
     public int $montoTotal = 0;
-
     public int $montoCuota = 0;
-
     public string $tasaAplicada = '0';
-
     public array $detalleCuotas = [];
+    public int $montoIva = 0;
 
     public function mount(): void
     {
@@ -114,7 +105,13 @@ class SolicitudPrestamo extends Component
         $tasaEnCentesimas = (int) round((float) $tasa * 100);
         $interesPorPeriodo = intdiv(($this->montoSeleccionado * $tasaEnCentesimas) + 5000,10000);
         $this->montoInteres = $this->cantidadCuotas === 1 ? $interesPorPeriodo : $interesPorPeriodo * $this->cantidadCuotas;
-        $this->montoTotal = $this->montoSeleccionado + $this->montoInteres;
+        /*
+        |--------------------------------------------------------------------------
+        | IVA DEL 10% SOBRE EL INTERÉS
+        |--------------------------------------------------------------------------
+        */
+        $this->montoIva = (int) round($this->montoInteres * 10 / 100);
+        $this->montoTotal = $this->montoSeleccionado + $this->montoInteres + $this->montoIva;
         $this->montoCuota = intdiv($this->montoTotal, $this->cantidadCuotas);
 
         $this->generarDetalleCuotas();
@@ -124,26 +121,31 @@ class SolicitudPrestamo extends Component
     {
         $capitalBase = intdiv($this->montoSeleccionado,$this->cantidadCuotas);
         $interesBase = intdiv($this->montoInteres,$this->cantidadCuotas);
-        $capitalAcumulado = 0;
+        $ivaBase = intdiv($this->montoIva,$this->cantidadCuotas);
 
+        $capitalAcumulado = 0;
         $interesAcumulado = 0;
+        $ivaAcumulado = 0;
 
         for ($numeroCuota = 1; $numeroCuota <= $this->cantidadCuotas; $numeroCuota++) {
             $ultimaCuota = $numeroCuota === $this->cantidadCuotas;
             $capital = $ultimaCuota ? $this->montoSeleccionado - $capitalAcumulado : $capitalBase;
             $interes = $ultimaCuota ? $this->montoInteres - $interesAcumulado : $interesBase;
-            $totalCuota = $capital + $interes;
+            $iva = $ultimaCuota ? $this->montoIva  - $ivaAcumulado : $ivaBase;
+            $montoCuota = $capital + $interes;
+            $totalCuota = $montoCuota + $iva;
             $this->detalleCuotas[] = [
                 'numero_cuota' => $numeroCuota,
                 'fecha_vencimiento' => now()->addMonthsNoOverflow($numeroCuota)->endOfMonth()->format('d/m/Y'),
                 'monto_capital' => $capital,
                 'monto_interes' => $interes,
-                'iva' => 0,
-                'monto_cuota' => $totalCuota,
+                'iva' => $iva,
+                'monto_cuota' => $montoCuota,
                 'monto_total' => $totalCuota,
             ];
             $capitalAcumulado += $capital;
             $interesAcumulado += $interes;
+            $ivaAcumulado += $iva;
         }
     }
 

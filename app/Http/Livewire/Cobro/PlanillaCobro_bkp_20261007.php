@@ -29,7 +29,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Facades\Excel;
 
-class PlanillaCobro extends Component
+class PlanillaCobro_bkp_20261007 extends Component
 {
     use WithFileUploads;
 
@@ -723,6 +723,34 @@ class PlanillaCobro extends Component
             ->lockForUpdate()
             ->get();
 
+        $componentes = [
+            [
+                'monto_mora',
+                'monto_mora_pagado',
+                'mora',
+            ],
+            [
+                'monto_mora_iva',
+                'monto_mora_iva_pagado',
+                'mora_iva',
+            ],
+            [
+                'monto_interes',
+                'monto_interes_pagado',
+                'interes',
+            ],
+            [
+                'monto_iva',
+                'monto_iva_pagado',
+                'iva',
+            ],
+            [
+                'monto_capital',
+                'monto_capital_pagado',
+                'capital',
+            ],
+        ];
+
         $aplicaciones = [];
 
         foreach ($cuotas as $cuota) {
@@ -737,204 +765,73 @@ class PlanillaCobro extends Component
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | 2. INTERÉS PUNITORIO E IVA INCLUIDO
-        |--------------------------------------------------------------------------
-        |
-        | El importe aplicado al interés punitorio ya contiene el IVA del 10%.
-        | En un pago parcial se separan ambos importes sin aumentar lo abonado.
-        |
+        | Se recorre primero el componente y después todas las cuotas.
+        | Así no se paga capital mientras exista mora o interés pendiente
+        | en cualquiera de los préstamos del asociado.
         */
-        foreach ($cuotas as $cuota) {
-            if ($disponible <= 0) {
-                break;
-            }
+        foreach ($componentes as [
+            $campoMonto,
+            $campoPagado,
+            $campoResultado,
+        ]) {
+            foreach ($cuotas as $cuota) {
+                if ($disponible <= 0) {
+                    break 2;
+                }
 
-            $moraPendiente = max(
-                0,
-                (int) $cuota->monto_mora
-                - (int) $cuota->monto_mora_pagado
-            );
-
-            $moraIvaPendiente = max(
-                0,
-                (int) $cuota->monto_mora_iva
-                - (int) $cuota->monto_mora_iva_pagado
-            );
-
-            $pago = $this->aplicarMontoConIvaIncluido(
-                $disponible,
-                $moraPendiente,
-                $moraIvaPendiente
-            );
-
-            if ((int) $pago['total'] <= 0) {
-                continue;
-            }
-
-            $cuota->monto_mora_pagado =
-                (int) $cuota->monto_mora_pagado
-                + (int) $pago['base'];
-
-            $cuota->monto_mora_iva_pagado =
-                (int) $cuota->monto_mora_iva_pagado
-                + (int) $pago['iva'];
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + (int) $pago['total'];
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - (int) $pago['total']
-            );
-
-            $aplicaciones[$cuota->id]['mora'] +=
-                (int) $pago['base'];
-
-            $aplicaciones[$cuota->id]['mora_iva'] +=
-                (int) $pago['iva'];
-
-            $aplicaciones[$cuota->id]['total'] +=
-                (int) $pago['total'];
-
-            $resultado['mora'] += (int) $pago['base'];
-            $resultado['mora_iva'] += (int) $pago['iva'];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3. INTERÉS NORMAL E IVA INCLUIDO
-        |--------------------------------------------------------------------------
-        |
-        | El importe aplicado al interés normal ya contiene el IVA del 10%.
-        | En un pago parcial se separan ambos importes sin aumentar lo abonado.
-        |
-        */
-        foreach ($cuotas as $cuota) {
-            if ($disponible <= 0) {
-                break;
-            }
-
-            $interesPendiente = max(
-                0,
-                (int) $cuota->monto_interes
-                - (int) $cuota->monto_interes_pagado
-            );
-
-            $ivaPendiente = max(
-                0,
-                (int) $cuota->monto_iva
-                - (int) $cuota->monto_iva_pagado
-            );
-
-            $pago = $this->aplicarMontoConIvaIncluido(
-                $disponible,
-                $interesPendiente,
-                $ivaPendiente
-            );
-
-            if ((int) $pago['total'] <= 0) {
-                continue;
-            }
-
-            $cuota->monto_interes_pagado =
-                (int) $cuota->monto_interes_pagado
-                + (int) $pago['base'];
-
-            $cuota->monto_iva_pagado =
-                (int) $cuota->monto_iva_pagado
-                + (int) $pago['iva'];
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + (int) $pago['total'];
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - (int) $pago['total']
-            );
-
-            $aplicaciones[$cuota->id]['interes'] +=
-                (int) $pago['base'];
-
-            $aplicaciones[$cuota->id]['iva'] +=
-                (int) $pago['iva'];
-
-            $aplicaciones[$cuota->id]['total'] +=
-                (int) $pago['total'];
-
-            $resultado['interes'] += (int) $pago['base'];
-            $resultado['iva'] += (int) $pago['iva'];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4. CAPITAL
-        |--------------------------------------------------------------------------
-        */
-        foreach ($cuotas as $cuota) {
-            if ($disponible <= 0) {
-                break;
-            }
-
-            $capitalPendiente = max(
-                0,
-                (int) $cuota->monto_capital
-                - (int) $cuota->monto_capital_pagado
-            );
-
-            $capitalAplicado = $this->aplicarMonto(
-                $disponible,
-                $capitalPendiente
-            );
-
-            if ($capitalAplicado <= 0) {
-                continue;
-            }
-
-            $cuota->monto_capital_pagado =
-                (int) $cuota->monto_capital_pagado
-                + $capitalAplicado;
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + $capitalAplicado;
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - $capitalAplicado
-            );
-
-            $aplicaciones[$cuota->id]['capital'] +=
-                $capitalAplicado;
-
-            $aplicaciones[$cuota->id]['total'] +=
-                $capitalAplicado;
-
-            $resultado['capital'] += $capitalAplicado;
-
-            $tipoIngresoCapital =
-                $this->obtenerTipoIngresoCapital(
-                    (int) $cuota->prestamo_id
+                $pendiente = max(
+                    0,
+                    (int) $cuota->{$campoMonto}
+                    - (int) $cuota->{$campoPagado}
                 );
 
-            if (!isset(
-                $resultado['capital_por_tipo'][
-                    $tipoIngresoCapital
-                ]
-            )) {
-                $resultado['capital_por_tipo'][
-                    $tipoIngresoCapital
-                ] = 0;
-            }
+                $aplicado = $this->aplicarMonto(
+                    $disponible,
+                    $pendiente
+                );
 
-            $resultado['capital_por_tipo'][
-                $tipoIngresoCapital
-            ] += $capitalAplicado;
+                if ($aplicado <= 0) {
+                    continue;
+                }
+
+                $cuota->{$campoPagado} =
+                    (int) $cuota->{$campoPagado}
+                    + $aplicado;
+
+                $cuota->monto_pagado =
+                    (int) $cuota->monto_pagado
+                    + $aplicado;
+
+                $cuota->saldo = max(
+                    0,
+                    (int) $cuota->saldo - $aplicado
+                );
+
+                $aplicaciones[$cuota->id][$campoResultado] += $aplicado;
+                $aplicaciones[$cuota->id]['total'] += $aplicado;
+                $resultado[$campoResultado] += $aplicado;
+
+                if ($campoResultado === 'capital') {
+                    $tipoIngresoCapital =
+                        $this->obtenerTipoIngresoCapital(
+                            (int) $cuota->prestamo_id
+                        );
+
+                    if (!isset(
+                        $resultado['capital_por_tipo'][
+                            $tipoIngresoCapital
+                        ]
+                    )) {
+                        $resultado['capital_por_tipo'][
+                            $tipoIngresoCapital
+                        ] = 0;
+                    }
+
+                    $resultado['capital_por_tipo'][
+                        $tipoIngresoCapital
+                    ] += $aplicado;
+                }
+            }
         }
 
         foreach ($cuotas as $cuota) {
@@ -1831,110 +1728,6 @@ class PlanillaCobro extends Component
         $disponible -= $aplicado;
 
         return $aplicado;
-    }
-
-    /**
-     * Aplica un pago cuyo importe ya incluye el IVA del 10%.
-     *
-     * Si el pago cancela completamente el concepto, toma exactamente los
-     * saldos pendientes. Si es parcial, separa la base y el IVA sin aumentar
-     * el importe realmente abonado.
-     */
-    private function aplicarMontoConIvaIncluido(
-        int &$disponible,
-        int $basePendiente,
-        int $ivaPendiente
-    ): array {
-        $basePendiente = max(0, $basePendiente);
-        $ivaPendiente = max(0, $ivaPendiente);
-
-        $totalPendiente =
-            $basePendiente + $ivaPendiente;
-
-        if ($disponible <= 0 || $totalPendiente <= 0) {
-            return [
-                'base' => 0,
-                'iva' => 0,
-                'total' => 0,
-            ];
-        }
-
-        $totalAplicar = min(
-            $disponible,
-            $totalPendiente
-        );
-
-        if ($totalAplicar === $totalPendiente) {
-            $baseAplicada = $basePendiente;
-            $ivaAplicado = $ivaPendiente;
-        } elseif ($basePendiente <= 0) {
-            $baseAplicada = 0;
-            $ivaAplicado = min(
-                $totalAplicar,
-                $ivaPendiente
-            );
-        } elseif ($ivaPendiente <= 0) {
-            $baseAplicada = min(
-                $totalAplicar,
-                $basePendiente
-            );
-            $ivaAplicado = 0;
-        } else {
-            /*
-             * Para un importe con IVA del 10% incluido:
-             * IVA = total / 11.
-             */
-            $ivaAplicado = (int) round(
-                $totalAplicar / 11
-            );
-
-            $baseAplicada =
-                $totalAplicar - $ivaAplicado;
-
-            $baseAplicada = min(
-                $baseAplicada,
-                $basePendiente
-            );
-
-            $ivaAplicado = min(
-                $ivaAplicado,
-                $ivaPendiente
-            );
-
-            $restante = $totalAplicar
-                - $baseAplicada
-                - $ivaAplicado;
-
-            if ($restante > 0) {
-                $adicionalBase = min(
-                    $restante,
-                    $basePendiente - $baseAplicada
-                );
-
-                $baseAplicada += $adicionalBase;
-                $restante -= $adicionalBase;
-            }
-
-            if ($restante > 0) {
-                $adicionalIva = min(
-                    $restante,
-                    $ivaPendiente - $ivaAplicado
-                );
-
-                $ivaAplicado += $adicionalIva;
-            }
-        }
-
-        $totalAplicado =
-            $baseAplicada + $ivaAplicado;
-
-        $disponible -= $totalAplicado;
-
-        return [
-            'base' => $baseAplicada,
-            'iva' => $ivaAplicado,
-            'total' => $totalAplicado,
-        ];
     }
 
     /**

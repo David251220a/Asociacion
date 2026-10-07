@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class PlanillaAporteService
+class PlanillaAporteService_bkp_20260827
 {
     public function generarDetalle(int $mes, int $anio, int $tipoAsociadoId)
     {

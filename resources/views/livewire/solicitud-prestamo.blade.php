@@ -373,6 +373,10 @@
                                                 </th>
 
                                                 <th class="text-right">
+                                                    IVA (10%)
+                                                </th>
+
+                                                <th class="text-right">
                                                     Total
                                                 </th>
                                             </tr>
@@ -397,6 +401,11 @@
                                                     <td class="text-right">
                                                         G.
                                                         {{ number_format($cuota['monto_interes'], 0, ',', '.') }}
+                                                    </td>
+
+                                                    <td class="text-right">
+                                                        G.
+                                                        {{ number_format($cuota['iva'], 0, ',', '.') }}
                                                     </td>
 
                                                     <td class="text-right">
@@ -455,6 +464,15 @@
 
                                     <strong>
                                         G.{{ number_format( $montoInteres, 0, ',', '.') }}
+                                    </strong>
+                                </div>
+
+                                <div class="prestamo-resumen-fila">
+                                    <span>IVA sobre interés (10%)</span>
+
+                                    <strong>
+                                        G.
+                                        {{ number_format($montoIva, 0, ',', '.') }}
                                     </strong>
                                 </div>
 
