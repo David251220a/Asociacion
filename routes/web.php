@@ -132,6 +132,14 @@ Route::group([
     Route::post('/miembros/crear', [MiembroController::class, 'store'])->name('miembros.store');
     Route::post('/miembros/update', [MiembroController::class, 'update'])->name('miembros.update');
     Route::get('/miembros/{id}/presente', [MiembroController::class, 'cambiarPresente'])->name('miembros.cambiarPresente');
+    Route::get('/miembros/planillas',[MiembroController::class, 'planilla_index'])->name('miembros.planillas.index');
+    Route::get('/miembros/planillas/generar',[MiembroController::class, 'crear_planilla'])->name('miembros.planillas.create');
+    Route::post('/miembros/planillas/generar',[MiembroController::class, 'guardar_planilla'])->name('miembros.planillas.store');
+    Route::get('/miembros/planillas/{planilla}/imprimir',[MiembroController::class, 'imprimir_planilla'])->name('miembros.planillas.imprimir');
+    Route::post('/miembros/planillas/{planilla}/orden-pago',[MiembroController::class, 'generar_orden_pago'])->name('miembros.planillas.pagar');
+    Route::post('/miembros/planillas/{planilla}/anular',[MiembroController::class, 'anular_planilla'])->name('miembros.planillas.anular');
+    Route::get('/miembros/planillas/{planilla}/regenerar',[MiembroController::class, 'regenerar_planilla'])->name('miembros.planillas.regenerar');
+    Route::post('/miembros/planillas/{planilla}/regenerar',[MiembroController::class, 'guardar_regeneracion'])->name('miembros.planillas.regenerar.store');
 
     Route::get('/orden-pago', [OrdenPagoController::class, 'index'])->name('orden.index');
     Route::get('/orden-pago/crear', [OrdenPagoController::class, 'create'])->name('orden.create');

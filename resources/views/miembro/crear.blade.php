@@ -20,6 +20,10 @@
                         <div class="col-lg-12 col-md-12 col-sm-12">
                             <div class="form-row mb-2">
                                 <div class="form-group col-md-12">
+                                    <label for="crear_documento">Documento</label>
+                                    <input type="text" name="crear_documento" class="form-control" required>
+                                </div>
+                                <div class="form-group col-md-12">
                                     <label for="crear_nombre">Nombre</label>
                                     <input type="text" name="crear_nombre" class="form-control" required>
                                 </div>
@@ -34,6 +38,17 @@
                                             <option value="{{ $key }}">{{ $item }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="crear_percibe_dieta">Percibe Dieta</label>
+                                    <select name="crear_percibe_dieta" id="crear_percibe_dieta" class="form-control">
+                                        <option value="1">SI</option>
+                                        <option value="2">NO</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="crear_dieta">Dieta</label>
+                                    <input type="text" name="crear_dieta" class="form-control" value="0" onkeyup="punto_decimal(this)" required>
                                 </div>
                             </div>
                         </div>

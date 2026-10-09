@@ -14,6 +14,10 @@
                         <div class="col-lg-12 col-md-12 col-sm-12">
                             <div class="form-row mb-2">
                                 <div class="form-group col-md-12">
+                                    <label for="editar_documento">Documento</label>
+                                    <input type="text" name="editar_documento" class="form-control" value="{{$item->documento}}" required>
+                                </div>
+                                <div class="form-group col-md-12">
                                     <label for="editar_nombre">Nombre</label>
                                     <input type="text" name="editar_nombre" class="form-control" value="{{$item->nombre}}" required>
                                 </div>
@@ -27,6 +31,24 @@
                                         @foreach ($tipos as $key => $des)
                                             <option {{ $item->tipo == $key ? 'selected' : '' }} value="{{ $key }}">{{ $des }}</option>
                                         @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="editar_percibe_dieta">Percibe Dieta</label>
+                                    <select name="editar_percibe_dieta" id="editar_percibe_dieta" class="form-control">
+                                        <option value="1" {{ $item->pago == 1 ? 'selected' : '' }}>SI</option>
+                                        <option value="2" {{ $item->pago == 2 ? 'selected' : '' }}>NO</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="editar_dieta">Dieta</label>
+                                    <input type="text" name="editar_dieta" class="form-control" value="{{$item->neto}}" onkeyup="punto_decimal(this)" required>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="editar_estado_id">Estado</label>
+                                    <select name="editar_estado_id" id="editar_estado_id" class="form-control">
+                                        <option {{ $item->estado_id == 1 ? 'selected' : '' }} value="1">Activo</option>
+                                        <option {{ $item->estado_id == 2 ? 'selected' : '' }} value="2">Inactivo</option>
                                     </select>
                                 </div>
                                 <input type="hidden" value="{{$item->id}}" name="miembro_id">

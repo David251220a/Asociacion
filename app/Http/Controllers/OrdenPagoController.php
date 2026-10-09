@@ -79,6 +79,9 @@ class OrdenPagoController extends Controller
 
     public function pago(OrdenPago $ordenPago)
     {
+        if ($ordenPago->estado_pago == 1){
+            return redirect()->route('orden.index')->withErrors(['orden' => 'La orden de pago ya se encuentra pagada.']);
+        }
         return view('orden.pago', compact('ordenPago'));
     }
 
@@ -102,24 +105,47 @@ class OrdenPagoController extends Controller
 
         try {
 
+            // AYUDA SOCIAL
             if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 7 && $datos['tipo_anulacion'] === 'reemitir') {
                 $nuevaOrden = $servicio->anularAyudaSocialYReemitir($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
                 return redirect()->route('orden.pago', $nuevaOrden->id)->with('message','La orden anterior fue anulada y se generó correctamente una nueva orden de pago.');
             }
-
+            // AYUDA SOCIAL
             if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 7 && $datos['tipo_anulacion'] === 'completa') {
                 $servicio->anularAyudaSocialCompleta($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
                 return redirect()->route('orden.index')->with('message','La orden de pago y la solicitud de ayuda social fueron anuladas correctamente.');
             }
 
+            // PRESTAMO DE EMERGENCIA
             if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 2 && $datos['tipo_anulacion'] === 'reemitir') {
                 $nuevaOrden = $servicio->reemitirPrestamoEmergencia($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
                 return redirect()->route('orden.pago', $nuevaOrden->id)->with('message','La orden anterior fue anulada y se generó correctamente una nueva orden de pago.');
             }
 
+            // PRESTAMO DE EMERGENCIA
             if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 2 && $datos['tipo_anulacion'] === 'completa') {
                 $servicio->anularPrestamoEmergenciaCompleto($ordenPago, $datos['motivo_anulacion'],$request->user()->id);
                 return redirect()->route('orden.index')->with('message','La orden de pago, la solicitud y el préstamo de emergencia fueron anulados correctamente.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | PLANILLA DE MIEMBROS - REEMITIR ORDEN
+            |--------------------------------------------------------------------------
+            */
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 5 && $datos['tipo_anulacion'] === 'reemitir') {
+                $nuevaOrden = $servicio->reemitirPlanillaMiembros($ordenPago, $datos['motivo_anulacion'], $request->user()->id);
+                return redirect()->route('orden.pago', $nuevaOrden->id)->with('message','La orden anterior fue anulada y se generó correctamente una nueva orden de pago para la planilla de miembros.' );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | PLANILLA DE MIEMBROS - ANULACIÓN COMPLETA
+            |--------------------------------------------------------------------------
+            */
+            if ((int) $ordenPago->origen_id > 0 && (int) $ordenPago->tipo_egreso_id === 5 && $datos['tipo_anulacion'] === 'completa') {
+                $servicio->anularPlanillaMiembrosCompleto($ordenPago,$datos['motivo_anulacion'],$request->user()->id);
+                return redirect()->route('orden.index')->with('message','La orden de pago y la planilla de miembros fueron anuladas correctamente.');
             }
 
             $servicio->anularSinOrigen($ordenPago, $datos['motivo_anulacion'], auth()->user()->id);

@@ -57,8 +57,8 @@ class PlanillaCobro extends Component
     private const TIPO_INGRESO_APORTE_PLANILLA = 4;
     private const TIPO_INGRESO_CAPITAL_PRESTAMO_DEFAULT = 9;
     private const TIPO_INGRESO_INTERES_PRESTAMO = 10;
-    private const TIPO_INGRESO_IVA_PRESTAMO = 11;
-    private const TIPO_INGRESO_PUNITORIO_PRESTAMO = 12;
+    private const TIPO_INGRESO_IVA_PRESTAMO = 12;
+    private const TIPO_INGRESO_PUNITORIO_PRESTAMO = 11;
 
     private array $tipoIngresoCapitalPorPrestamo = [];
 

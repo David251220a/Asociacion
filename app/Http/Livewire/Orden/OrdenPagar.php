@@ -4,6 +4,8 @@ namespace App\Http\Livewire\Orden;
 
 use App\Models\Banco;
 use App\Models\FormaCobro;
+use App\Models\MiembroPlanilla;
+use App\Models\MiembroPlanillaDetalle;
 use App\Models\OrdenPago;
 use App\Models\OrdenPagoPago;
 use App\Models\Prestamo;
@@ -191,6 +193,7 @@ class OrdenPagar extends Component
             |--------------------------------------------------------------------------
             */
             $this->actualizarPrestamoPagado($orden,$ahora->toDateString());
+            $this->actualizarPlanillaMiembrosPagada($orden,$ahora->toDateString());
             /*
             |--------------------------------------------------------------------------
             | Aquí continúa la actualización de los resúmenes
@@ -314,6 +317,71 @@ class OrdenPagar extends Component
         $prestamo->update([
             'fecha_desembolso' => $fechaPago,
             'estado_prestamo_id' => 2,
+            'usuario_modificacion' => auth()->id(),
+        ]);
+    }
+
+    private function actualizarPlanillaMiembrosPagada(OrdenPago $orden,string $fechaPago): void
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | BUSCAR PLANILLA POR orden_pago_id
+        |--------------------------------------------------------------------------
+        */
+        $planilla = MiembroPlanilla::query()
+        ->where('orden_pago_id', $orden->id)
+        ->lockForUpdate()
+        ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | LA ORDEN NO CORRESPONDE A UNA PLANILLA DE MIEMBROS
+        |--------------------------------------------------------------------------
+        */
+        if (!$planilla) {
+            return;
+        }
+
+        if ((int) $planilla->estado_id !== 1) {
+            throw new \Exception('La planilla de miembros vinculada no se encuentra activa.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Estado planilla
+        |--------------------------------------------------------------------------
+        | 1: Generada
+        | 2: Pagada
+        | 3: Anulada
+        |--------------------------------------------------------------------------
+        */
+        if ((int) $planilla->estado_planilla !== 1) {
+            throw new \Exception('La planilla de miembros ya fue pagada o se encuentra anulada.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTUALIZAR DETALLES
+        |--------------------------------------------------------------------------
+        */
+        MiembroPlanillaDetalle::query()
+        ->where('miembro_planilla_id', $planilla->id)
+        ->where('estado_id', 1)
+        ->update([
+            'estado_pago' => 2,
+            'fecha_pago' => $fechaPago,
+            'usuario_modificacion' => auth()->id(),
+            'updated_at' => now(),
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTUALIZAR CABECERA
+        |--------------------------------------------------------------------------
+        */
+        $planilla->update([
+            'estado_planilla' => 2,
+            'fecha_pago' => $fechaPago,
             'usuario_modificacion' => auth()->id(),
         ]);
     }

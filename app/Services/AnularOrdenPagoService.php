@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\MiembroPlanilla;
+use App\Models\MiembroPlanillaDetalle;
 use App\Models\Numeraciones;
 use App\Models\OrdenPago;
 use App\Models\OrdenPagoDetalle;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class AnularOrdenPagoService
 {
+    private const TIPO_EGRESO_PLANILLA_MIEMBROS = 5;
     /**
      * Anular una orden de pago creada manualmente.
      */
@@ -770,5 +773,315 @@ class AnularOrdenPagoService
             ]);
         });
     }
+
+    public function reemitirPlanillaMiembros(OrdenPago $ordenPago,string $motivo, int $usuarioId): OrdenPago
+    {
+        return DB::transaction(function () use ($ordenPago, $motivo,$usuarioId ) {
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR ORDEN
+            |--------------------------------------------------------------------------
+            */
+            $orden = OrdenPago::query()
+            ->whereKey($ordenPago->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+            if ((int) $orden->estado_id === 2) {
+                throw new \Exception('La orden de pago ya se encuentra anulada.');
+            }
+
+            if ((int) $orden->origen_id <= 0 || (int) $orden->tipo_egreso_id !== self::TIPO_EGRESO_PLANILLA_MIEMBROS) {
+                throw new \Exception('La orden no corresponde a una planilla de miembros.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUSCAR PLANILLA
+            |--------------------------------------------------------------------------
+            |
+            | origen_id corresponde al ID de miembro_planillas.
+            |
+            */
+            $planilla = MiembroPlanilla::query()
+            ->whereKey($orden->origen_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$planilla) {
+                throw new \Exception('No se encontró la planilla vinculada a la orden.');
+            }
+
+            if ((int) $planilla->estado_id !== 1) {
+                throw new \Exception('La planilla vinculada no se encuentra activa.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | COPIAR DETALLES DE LA ORDEN ANTES DE ANULAR
+            |--------------------------------------------------------------------------
+            */
+            $detallesOrden = OrdenPagoDetalle::query()
+            ->where('orden_pago_id', $orden->id)
+            ->where('estado_id', 1)
+            ->lockForUpdate()
+            ->get();
+
+            if ($detallesOrden->isEmpty()) {
+                throw new \Exception('La orden de pago no posee detalles activos.');
+            }
+
+            $totalDetalles = (int) $detallesOrden->sum('subtotal');
+
+            if ($totalDetalles !== (int) $orden->total) {
+                throw new \Exception('El total de los detalles no coincide con el total de la orden de pago.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECORDAR SI ESTABA PAGADA
+            |--------------------------------------------------------------------------
+            */
+            $estabaPagada = (int) $orden->estado_pago === 1;
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR ORDEN ANTERIOR
+            |--------------------------------------------------------------------------
+            */
+            $this->anularOrdenBase($orden,$motivo,$usuarioId);
+            /*
+            |--------------------------------------------------------------------------
+            | REVERTIR TESORERÍA
+            |--------------------------------------------------------------------------
+            */
+            if ($estabaPagada) {
+                $this->revertirTesoreria($orden);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | NUEVA NUMERACIÓN
+            |--------------------------------------------------------------------------
+            */
+            $fechaNuevaOrden = now();
+            $anio = (int) $fechaNuevaOrden->year;
+            $numero = $this->obtenerNumeroOrdenPago($anio);
+            /*
+            |--------------------------------------------------------------------------
+            | OBSERVACIÓN
+            |--------------------------------------------------------------------------
+            */
+            $observacion = trim(($orden->observacion ? $orden->observacion . ' | ': '')
+                . 'ORDEN REEMITIDA POR ANULACIÓN DE LA ORDEN N.º '
+                . str_pad($orden->numero, 7,'0',STR_PAD_LEFT)
+                . '/' . $orden->anio . '. MOTIVO: '. mb_strtoupper($motivo, 'UTF-8')
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREAR NUEVA ORDEN
+            |--------------------------------------------------------------------------
+            */
+            $nuevaOrden = OrdenPago::create([
+                'anio' => $anio,
+                'numero' => $numero,
+                'fecha' => $fechaNuevaOrden->toDateString(),
+                'tipo_egreso_id' => self::TIPO_EGRESO_PLANILLA_MIEMBROS,
+                'origen_id' => $planilla->id,
+                'persona_id' => $orden->persona_id,
+                'beneficiario' => $orden->beneficiario,
+                'concepto' => $orden->concepto,
+                'observacion' => mb_substr($observacion,0,500),
+                'total' => (int) $orden->total,
+                'estado_id' => 1,
+                'estado_pago' => 0,
+                'motivo_anulado' => null,
+                'fecha_anulado' => null,
+                'fecha_pago' => null,
+                'user_id' => $usuarioId,
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | COPIAR DETALLES DE LA ORDEN
+            |--------------------------------------------------------------------------
+            |
+            | La reemisión no vuelve a leer los miembros actuales.
+            | Debe conservar exactamente los importes de la misma planilla.
+            |
+            */
+            foreach ($detallesOrden as $detalle) {
+                OrdenPagoDetalle::create([
+                    'orden_pago_id' => $nuevaOrden->id,
+                    'descripcion' => $detalle->descripcion,
+                    'cantidad' => $detalle->cantidad,
+                    'precio' => $detalle->precio,
+                    'subtotal' => $detalle->subtotal,
+                    'estado_id' => 1,
+                    'user_id' => $usuarioId,
+                    'usuario_modificacion' => $usuarioId,
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | VOLVER DETALLES DE PLANILLA A PENDIENTE
+            |--------------------------------------------------------------------------
+            |
+            | Si la orden anterior estaba pagada, el pago fue revertido.
+            | La nueva orden todavía no está pagada.
+            |
+            */
+            MiembroPlanillaDetalle::query()
+            ->where('miembro_planilla_id', $planilla->id)
+            ->where('estado_id', 1)
+            ->update([
+                'estado_pago' => 1,
+                'fecha_pago' => null,
+                'usuario_modificacion' => $usuarioId,
+                'updated_at' => now(),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | VINCULAR NUEVA ORDEN A LA PLANILLA
+            |--------------------------------------------------------------------------
+            */
+            $planilla->update([
+                'orden_pago_id' => $nuevaOrden->id,
+                'estado_planilla' => 1,
+                'fecha_pago' => null,
+                'fecha_anulacion' => null,
+                'motivo_anulacion' => null,
+                'usuario_modificacion' => $usuarioId,
+            ]);
+
+            return $nuevaOrden;
+        });
+    }
+
+    public function anularPlanillaMiembrosCompleto(OrdenPago $ordenPago,string $motivo,int $usuarioId): void
+    {
+        DB::transaction(function () use ($ordenPago,$motivo,$usuarioId) {
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR ORDEN
+            |--------------------------------------------------------------------------
+            */
+            $orden = OrdenPago::query()
+            ->whereKey($ordenPago->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+            if ((int) $orden->estado_id === 2) {
+                throw new \Exception('La orden de pago ya se encuentra anulada.');
+            }
+
+            if ((int) $orden->origen_id <= 0 || (int) $orden->tipo_egreso_id !== self::TIPO_EGRESO_PLANILLA_MIEMBROS) {
+                throw new \Exception('La orden no corresponde a una planilla de miembros.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUSCAR PLANILLA
+            |--------------------------------------------------------------------------
+            */
+            $planilla = MiembroPlanilla::query()
+            ->whereKey($orden->origen_id)
+            ->where('orden_pago_id', $orden->id)
+            ->lockForUpdate()
+            ->first();
+
+            if (!$planilla) {
+                throw new \Exception('No se encontró la planilla vinculada a la orden.');
+            }
+
+            if ((int) $planilla->estado_id !== 1) {
+                throw new \Exception('La planilla vinculada no se encuentra activa.');
+            }
+
+            if ((int) $planilla->estado_planilla === 3) {
+                throw new \Exception('La planilla ya se encuentra anulada.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | BLOQUEAR DETALLES DE LA PLANILLA
+            |--------------------------------------------------------------------------
+            */
+            $detallesPlanilla = MiembroPlanillaDetalle::query()
+            ->where('miembro_planilla_id', $planilla->id)
+            ->where('estado_id', 1)
+            ->lockForUpdate()
+            ->get();
+
+            if ($detallesPlanilla->isEmpty()) {
+                throw new \Exception('La planilla no posee detalles activos.');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECORDAR SI LA ORDEN ESTABA PAGADA
+            |--------------------------------------------------------------------------
+            */
+            $estabaPagada = (int) $orden->estado_pago === 1;
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR ORDEN, DETALLES Y PAGOS
+            |--------------------------------------------------------------------------
+            */
+            $this->anularOrdenBase($orden,$motivo,$usuarioId);
+
+            /*
+            |--------------------------------------------------------------------------
+            | REVERTIR TESORERÍA
+            |--------------------------------------------------------------------------
+            */
+            if ($estabaPagada) {
+                $this->revertirTesoreria($orden);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | REVERTIR ESTADO DE PAGO DE LOS DETALLES
+            |--------------------------------------------------------------------------
+            |
+            | La orden y su pago fueron anulados, por lo tanto los detalles
+            | ya no deben permanecer como pagados.
+            |
+            */
+            MiembroPlanillaDetalle::query()
+            ->where('miembro_planilla_id', $planilla->id)
+            ->where('estado_id', 1)
+            ->update([
+                'estado_pago' => 3,
+                'fecha_pago' => null,
+                'usuario_modificacion' => $usuarioId,
+                'updated_at' => now(),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ANULAR PLANILLA
+            |--------------------------------------------------------------------------
+            |
+            | Se mantiene orden_pago_id para conservar la trazabilidad con la
+            | orden anulada. La regeneración creará una nueva planilla y una
+            | nueva cabecera, sin copiar estos detalles.
+            |
+            */
+            $planilla->update([
+                'estado_planilla' => 3,
+                'fecha_pago' => null,
+                'fecha_anulacion' => now()->toDateString(),
+                'motivo_anulacion' => mb_substr(trim($motivo),0,500),
+                'usuario_modificacion' => $usuarioId,
+            ]);
+        });
+    }
+
 
 }
