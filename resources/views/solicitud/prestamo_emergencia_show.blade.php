@@ -537,6 +537,29 @@
                                         </div>
 
                                         <div class="form-group">
+                                            <label for="resolucion_aprobacion">
+                                                Resolución de aprobación <span class="text-danger">*</span>
+                                            </label>
+
+                                            <input type="text" id="resolucion_aprobacion" name="resolucion_aprobacion" class="form-control @error('resolucion_aprobacion') is-invalid @enderror"
+                                                value="{{old('resolucion_aprobacion', $data->resolucion ?? '')}}"
+                                                inputmode="numeric"
+                                                autocomplete="off"
+                                                required
+                                            >
+
+                                            @error('resolucion_aprobacion')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+
+                                            <small class="text-muted">
+                                                Si el monto cambia, las cuotas deberán recalcularse.
+                                            </small>
+                                        </div>
+
+                                        <div class="form-group">
                                             <label for="observacion_aprobacion">
                                                 Observación
                                             </label>

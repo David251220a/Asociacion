@@ -15,6 +15,7 @@ use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PersonaController;
 use App\Http\Controllers\PlanillaController;
+use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\ResumenMensualController;
 use App\Http\Controllers\SifenController;
@@ -188,5 +189,10 @@ Route::group([
     Route::get('/prestamo-emergencia/solicitud/{solicitudPrestamo}', [SolicitudPrestamoController::class, 'prestamo_emergencia_show'])->name('solicitud.prestamo_emergencia_show');
     Route::post('/prestamo-emergencia/solicitud/{solicitudPrestamo}/aprobar',[SolicitudPrestamoController::class, 'prestamo_emergencia_aprobar'])->name('solicitud.prestamo_emergencia_aprobar');
     Route::post('/prestamo-emergencia/solicitud/{solicitudPrestamo}/rechazar',[SolicitudPrestamoController::class, 'prestamo_emergencia_rechazar'])->name('solicitud.prestamo_emergencia_rechazar');
+
+    Route::get('/prestamos',[PrestamoController::class, 'index'])->name('prestamos.index');
+    Route::get('/prestamos/{prestamo}',[PrestamoController::class, 'show'])->name('prestamos.show');
+    Route::get('/prestamos/{prestamo}/imprimir',[PrestamoController::class, 'imprimir'])->name('prestamos.imprimir');
+    Route::get('/prestamos/{prestamo}/contrato',[PrestamoController::class, 'contrato'])->name('prestamos.contrato');
 
 });

@@ -54,11 +54,15 @@ class SolicitudPrestamoController extends Controller
 
         $datos = $request->validate([
             'monto_aprobado' => ['required','integer','min:1',],
+            'resolucion_aprobacion' => ['required','string','max:50',],
             'observaciones' => ['nullable','string','max:500',],
         ], [
             'monto_aprobado.required' => 'Debe ingresar el monto aprobado.',
             'monto_aprobado.integer' => 'El monto aprobado debe ser un número válido.',
             'monto_aprobado.min' => 'El monto aprobado debe ser mayor a cero.',
+            'resolucion_aprobacion.required' => 'Debe ingresar la resolución de aprobación.',
+            'resolucion_aprobacion.string' => 'La resolución de aprobación debe ser una cadena de texto.',
+            'resolucion_aprobacion.max' => 'La resolución de aprobación no puede superar los 50 caracteres.',
             'observaciones.max' => 'La observación no puede superar los 500 caracteres.',
         ]);
 
@@ -165,6 +169,7 @@ class SolicitudPrestamoController extends Controller
                     'fecha_prestamo' => $fechaAprobacion->toDateString(),
                     'persona_id' => $solicitud->persona_id,
                     'tipo_prestamo_id' => $solicitud->tipo_prestamo_id,
+                    'resolucion' => $datos['resolucion_aprobacion'],
                     'monto_capital' => $montoAprobado,
                     'monto_interes' => $montoInteres,
                     'monto_iva' => $montoIva,
@@ -321,6 +326,7 @@ class SolicitudPrestamoController extends Controller
                 */
                 $solicitud->update([
                     'estado_solicitud_id' => 3,
+                    'resolucion' => $datos['resolucion_aprobacion'],
                     'monto_aprobado' => $montoAprobado,
                     'orden_pago_id' => $orden->id,
                     'prestamo_id' => $prestamo->id,

@@ -35,4 +35,9 @@ class Prestamo extends Model
     {
         return $this->hasOne(SolicitudPrestamo::class,'prestamo_id');
     }
+
+    public function estadoPrestamo()
+    {
+        return $this->belongsTo(EstadoPrestamo::class,'estado_prestamo_id');
+    }
 }
