@@ -102,7 +102,7 @@ class OrdenPagar extends Component
         $this->validate([
             'cobros' => 'required|array|min:1',
             'cobros.*.forma_cobro_id' => 'required|exists:forma_cobros,id',
-            'cobros.*.monto' => 'required|numeric|min:1',
+            'cobros.*.monto' => 'required',
         ], [
             'cobros.required' => 'Debe ingresar al menos una forma de cobro.',
             'cobros.*.forma_cobro_id.required' => 'Debe seleccionar una forma de cobro.',
