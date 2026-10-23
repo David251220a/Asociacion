@@ -1,0 +1,199 @@
+<?php
+
+namespace App\Http\Livewire\Planilla;
+
+use App\Services\PlanillaAporteService;
+use Livewire\Component;
+
+class PlanillaCreate_bkp_20261023_1015 extends Component
+{
+    public $tipo_asociado_id, $meses, $mes, $anio, $ver_boton, $procesando;
+    public $data = [];
+    public $cantidad = 0;
+    public $total = 0;
+
+    public function mount()
+    {
+        $this->tipo_asociado_id = 1;
+        $this->meses = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
+
+        $this->mes = now()->month;
+        $this->anio = now()->year;
+        $this->ver_boton = 'none';
+        $this->procesando = false;
+    }
+
+    public function updatedTipoAsociadoId()
+    {
+        $this->resetBusqueda();
+    }
+
+    public function updatedMes()
+    {
+        $this->resetBusqueda();
+    }
+
+    public function updatedAnio()
+    {
+        $this->resetBusqueda();
+    }
+
+    private function resetBusqueda()
+    {
+        $this->ver_boton = 'none';
+        $this->data = [];
+        $this->cantidad = 0;
+        $this->total = 0;
+    }
+
+    public function render()
+    {
+        return view('livewire.planilla.planilla-create');
+    }
+
+    // public function generar(PlanillaAporteService $service)
+    // {
+
+    //     try {
+    //         $this->ver_boton = 'none';
+    //         $this->data = $service->generarDetalle(
+    //             (int) $this->mes,
+    //             (int) $this->anio,
+    //             (int) $this->tipo_asociado_id
+    //         );
+
+    //         $this->cantidad = count($this->data);
+    //         $this->total = collect($this->data)->sum('saldo'); // o 'monto_esperado'
+    //         if ($this->total == 0) {
+    //             $this->ver_boton = 'none';
+    //         }else {
+    //             $this->ver_boton = 'block';
+    //         }
+
+    //         $this->emit('mensaje_exitoso', 'Planilla generada correctamente.');
+
+
+    //     } catch (\Throwable $th) {
+    //         $this->ver_boton = 'none';
+    //         $this->emit('mensaje_error', $th->getMessage());
+    //     }
+    // }
+
+    public function generar(PlanillaAporteService $service)
+    {
+        try {
+            $this->ver_boton = 'none';
+
+            $detalles = $service->generarDetalle(
+                (int) $this->mes,
+                (int) $this->anio,
+                (int) $this->tipo_asociado_id
+            );
+
+            $this->data = $detalles->values()->toArray();
+            $this->cantidad = count($this->data);
+            $this->total = (int) collect($this->data)->sum('saldo');
+
+            if ($this->cantidad === 0) {
+                $this->emit(
+                    'mensaje_error',
+                    'No existen aportes ni préstamos pendientes.'
+                );
+
+                return;
+            }
+
+            $this->ver_boton = 'block';
+
+            $this->emit(
+                'mensaje_exitoso',
+                'Vista previa generada correctamente.'
+            );
+
+        } catch (\Throwable $th) {
+            report($th);
+
+            $this->data = [];
+            $this->cantidad = 0;
+            $this->total = 0;
+            $this->ver_boton = 'none';
+
+            $this->emit(
+                'mensaje_error',
+                $th->getMessage()
+            );
+        }
+    }
+
+    public function save(PlanillaAporteService $service)
+    {
+        if ($this->procesando) {
+            return;
+        }
+
+        try {
+            $this->procesando = true;
+            $this->ver_boton = 'none';
+
+            // Vuelve a calcular y graba todo.
+            $service->guardarPlanilla(
+                (int) $this->mes,
+                (int) $this->anio,
+                (int) $this->tipo_asociado_id
+            );
+
+            return redirect()
+                ->route('planilla.index')
+                ->with(
+                    'message',
+                    'La planilla fue generada correctamente.'
+                );
+
+        } catch (\Throwable $th) {
+            report($th);
+
+            $this->procesando = false;
+
+            $this->ver_boton = !empty($this->data)
+                ? 'block'
+                : 'none';
+
+            $this->emit(
+                'mensaje_error',
+                $th->getMessage()
+            );
+        }
+    }
+    // public function save(PlanillaAporteService $service)
+    // {
+    //     try {
+    //         $this->procesando = true;
+
+    //         $this->ver_boton = 'none';
+    //         $this->data = $service->guardarPlanilla(
+    //             (int) $this->mes,
+    //             (int) $this->anio,
+    //             (int) $this->tipo_asociado_id
+    //         );
+
+    //         return redirect()->route('planilla.index')->with('message', 'Planilla generado con exito');
+
+    //     } catch (\Throwable $th) {
+    //         $this->ver_boton = 'none';
+    //         $this->emit('mensaje_error', $th->getMessage());
+    //     }
+    // }
+}

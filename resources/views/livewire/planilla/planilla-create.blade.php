@@ -71,6 +71,18 @@
                         <span wire:loading.remove wire:target="save">Grabar</span>
                         <span wire:loading wire:target="save">Procesando...</span>
                     </button>
+                    @if (!empty($data))
+                        <button type="button" class="btn btn-success" wire:click="exportar" wire:loading.attr="disabled" wire:target="exportar">
+                            <span wire:loading.remove wire:target="exportar">
+                                <i class="fa fa-file-excel-o"></i>
+                                Exportar vista previa
+                            </span>
+
+                            <span wire:loading wire:target="exportar">
+                                Preparando Excel...
+                            </span>
+                        </button>
+                    @endif
                 </div>
             </div>
 

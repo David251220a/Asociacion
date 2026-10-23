@@ -7,6 +7,8 @@ use App\Models\Factura;
 use App\Models\FacturaAporte;
 use App\Models\OrdenPago;
 use App\Models\Planilla;
+use App\Models\PlanillaAporte;
+use App\Models\PlanillaPrestamo;
 use App\Models\Recibo;
 use App\Models\ReciboAporte;
 use App\Models\ReciboDonacion;
@@ -142,14 +144,97 @@ class PdfController extends Controller
 
     public function planilla(Planilla $planilla)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | CARGAR RELACIONES
+        |--------------------------------------------------------------------------
+        */
+        $planilla->load(['institucion','tipoAsociado',
+            'planillaDetalle' => function ($query) {
+                $query->where('estado_id', 1)
+                ->with('asociado.persona')
+                ->orderBy('id');
+            },
+        ]);
+
+        $detalleIds = $planilla->planillaDetalle->pluck('id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | APORTES AGRUPADOS POR DETALLE
+        |--------------------------------------------------------------------------
+        */
+        $aportesPorDetalle = PlanillaAporte::query()
+        ->whereIn('planilla_detalle_id', $detalleIds)
+        ->where('estado_id', 1)
+        ->get()
+        ->groupBy('planilla_detalle_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | PRÉSTAMOS AGRUPADOS POR DETALLE
+        |--------------------------------------------------------------------------
+        */
+        $prestamosPorDetalle = PlanillaPrestamo::query()
+        ->whereIn('planilla_detalle_id', $detalleIds)
+        ->where('estado_id', 1)
+        ->get()
+        ->groupBy('planilla_detalle_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | DISCRIMINAR CADA FILA
+        |--------------------------------------------------------------------------
+        */
+        foreach ($planilla->planillaDetalle as $detalle) {
+            $aportes = $aportesPorDetalle->get($detalle->id,collect());
+            $prestamos = $prestamosPorDetalle->get($detalle->id,collect());
+            $aporteEsperado = (int) $aportes->sum('monto_esperado');
+            $aporteRecuperado = (int) $aportes->sum('monto_pagado');
+            $prestamoEsperado = (int) $prestamos->sum('monto_total');
+            $prestamoRecuperado = (int) $prestamos->sum('monto_pagado');
+
+            $totalEsperado = $aporteEsperado + $prestamoEsperado;
+            $totalRecuperado = $aporteRecuperado + $prestamoRecuperado;
+
+            $detalle->aporte_esperado = $aporteEsperado;
+            $detalle->prestamo_esperado = $prestamoEsperado;
+            $detalle->total_esperado = $totalEsperado;
+            $detalle->total_recuperado = $totalRecuperado;
+            $detalle->saldo_calculado = max(0,$totalEsperado - $totalRecuperado);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOTALES GENERALES
+        |--------------------------------------------------------------------------
+        */
+        $totales = [
+            'aporte' => (int) $planilla->planillaDetalle->sum('aporte_esperado'),
+            'prestamo' => (int) $planilla->planillaDetalle->sum('prestamo_esperado'),
+            'esperado' => (int) $planilla->planillaDetalle->sum('total_esperado'),
+            'recuperado' => (int) $planilla->planillaDetalle->sum('total_recuperado'),
+            'saldo' => (int) $planilla->planillaDetalle->sum('saldo_calculado'),
+        ];
+
         $entidad = Entidad::find(1);
         $data = $planilla;
-        $pdf = Pdf::loadView('pdf.planilla', [
-            'data' => $data,
-        ])->setPaper('a4', 'portrait');
+        $numeroPlanilla = str_pad($data->planilla_numero,5,'0',STR_PAD_LEFT);
 
-        return $pdf->stream('Planilla Aporte.pdf');
+        $pdf = Pdf::loadView('pdf.planilla',compact('data','entidad','totales'))->setPaper('a4', 'portrait');
+        return $pdf->stream('Planilla-'. $numeroPlanilla. '-'. $data->planilla_anio. '.pdf');
     }
+
+    // public function planilla(Planilla $planilla)
+    // {
+    //     $entidad = Entidad::find(1);
+    //     $data = $planilla;
+    //     $pdf = Pdf::loadView('pdf.planilla', [
+    //         'data' => $data,
+    //     ])->setPaper('a4', 'portrait');
+
+    //     return $pdf->stream('Planilla Aporte.pdf');
+    // }
 
     private function nombreMes($mes)
     {
