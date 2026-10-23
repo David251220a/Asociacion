@@ -381,47 +381,23 @@ class PlanillaCobro extends Component
 
                 $datosExcel = $this->leerDatosExcel();
                 $mapaPlanilla = $this->obtenerMapaPlanilla(true);
-
-                $this->validarDatosParaGrabar(
-                    $datosExcel,
-                    $mapaPlanilla
-                );
+                $this->validarDatosParaGrabar($datosExcel, $mapaPlanilla);
 
                 $numeracion = Numeracion::query()
-                    ->where('timbrado_id', $this->timbrado->id)
-                    ->where(
-                        'establecimiento_id',
-                        $this->establecimiento->id
-                    )
-                    ->where('modulo', 'RECIBO')
-                    ->lockForUpdate()
-                    ->first();
+                ->where('timbrado_id', $this->timbrado->id)
+                ->where('establecimiento_id', $this->establecimiento->id)
+                ->where('modulo', 'RECIBO')
+                ->lockForUpdate()
+                ->first();
 
                 if (!$numeracion) {
-                    throw new \Exception(
-                        'No se encontró la numeración del recibo.'
-                    );
+                    throw new \Exception('No se encontró la numeración del recibo.');
                 }
 
                 $numeroActual = (int) $numeracion->numero_siguiente;
-
-                $tipo = strtoupper(
-                    $planilla->tipoAsociado->descripcion
-                );
-
-                $descripcionTipo = (int) $planilla->tipo_asociado_id === 3
-                    ? ($planilla->institucion->descripcion
-                        ?? 'SIN INSTITUCIÓN')
-                    : 'JUBILADOS';
-
-                $concepto = 'COBRO PLANILLA '
-                    . $tipo
-                    . ' '
-                    . $descripcionTipo
-                    . ' '
-                    . $planilla->planilla_numero
-                    . '/'
-                    . $planilla->planilla_anio;
+                $tipo = strtoupper($planilla->tipoAsociado->descripcion);
+                $descripcionTipo = (int) $planilla->tipo_asociado_id === 3 ? ($planilla->institucion->descripcion ?? 'SIN INSTITUCIÓN') : 'JUBILADOS';
+                $concepto = 'COBRO PLANILLA ' . $tipo . ' ' . $descripcionTipo . ' ' . $planilla->planilla_numero . '/' . $planilla->planilla_anio;
 
                 $recibo = Recibo::create([
                     'persona_id' => $this->persona['id'],
@@ -451,20 +427,13 @@ class PlanillaCobro extends Component
 
                 $insertReciboAportes = [];
                 $insertAportes = [];
-                $totalesDistribuidos =
-                    $this->totalesDistribucionCero();
+                $totalesDistribuidos = $this->totalesDistribucionCero();
 
                 foreach ($datosExcel as $item) {
-                    $detalle = $mapaPlanilla->get(
-                        $item['documento']
-                    );
+                    $detalle = $mapaPlanilla->get($item['documento']);
 
                     if (!$detalle) {
-                        throw new \Exception(
-                            'El documento '
-                            . $item['documento']
-                            . ' no pertenece a la planilla.'
-                        );
+                        throw new \Exception('El documento ' . $item['documento'] . ' no pertenece a la planilla.');
                     }
 
                     $montoPersona = (int) $item['monto'];
@@ -483,13 +452,8 @@ class PlanillaCobro extends Component
                     | 6. Capital.
                     |
                     */
-                    $distribucion = $this->distribuirPagoAsociado(
-                        $detalle,
-                        $montoPersona,
-                        $recibo,
-                        $ahora,
-                        $usuarioId
-                    );
+
+                    $distribucion = $this->distribuirPagoAsociado($detalle, $montoPersona, $recibo, $ahora, $usuarioId);
 
                     if ((int) $distribucion['sobrante'] > 0) {
                         throw new \Exception(
@@ -647,13 +611,8 @@ class PlanillaCobro extends Component
     /**
      * Distribuye un monto entre aporte y todas las cuotas del asociado.
      */
-    private function distribuirPagoAsociado(
-        PlanillaDetalle $detalle,
-        int $monto,
-        Recibo $recibo,
-        Carbon $fechaPago,
-        int $usuarioId
-    ): array {
+    private function distribuirPagoAsociado(PlanillaDetalle $detalle, int $monto, Recibo $recibo, Carbon $fechaPago, int $usuarioId): array
+    {
         $disponible = $monto;
         $resultado = $this->totalesDistribucionCero();
 
@@ -663,39 +622,21 @@ class PlanillaCobro extends Component
         |--------------------------------------------------------------------------
         */
         $aporte = PlanillaAporte::query()
-            ->where('planilla_detalle_id', $detalle->id)
-            ->where('estado_id', self::ESTADO_ACTIVO)
-            ->where(
-                'estado_pago_id',
-                self::ESTADO_PAGO_ENVIADO_PLANILLA
-            )
-            ->lockForUpdate()
-            ->first();
+        ->where('planilla_detalle_id', $detalle->id)
+        ->where('estado_id', self::ESTADO_ACTIVO)
+        ->where('estado_pago_id', self::ESTADO_PAGO_ENVIADO_PLANILLA)
+        ->lockForUpdate()
+        ->first();
 
         if ($aporte && $disponible > 0) {
-            $pagoAporte = $this->aplicarMonto(
-                $disponible,
-                (int) $aporte->saldo
-            );
+            $pagoAporte = $this->aplicarMonto($disponible, (int) $aporte->saldo);
 
             if ($pagoAporte > 0) {
-                $aporte->monto_pagado =
-                    (int) $aporte->monto_pagado
-                    + $pagoAporte;
-
-                $aporte->saldo = max(
-                    0,
-                    (int) $aporte->saldo - $pagoAporte
-                );
-
-                $aporte->estado_pago_id =
-                    (int) $aporte->saldo === 0
-                        ? self::ESTADO_PAGO_PAGADO
-                        : self::ESTADO_PAGO_PARCIAL;
-
+                $aporte->monto_pagado = (int) $aporte->monto_pagado + $pagoAporte;
+                $aporte->saldo = max(0, (int) $aporte->saldo - $pagoAporte);
+                $aporte->estado_pago_id = (int) $aporte->saldo === 0 ? self::ESTADO_PAGO_PAGADO : self::ESTADO_PAGO_PARCIAL;
                 $aporte->usuario_modificacion = $usuarioId;
                 $aporte->save();
-
                 $resultado['aporte'] = $pagoAporte;
             }
         }
@@ -710,18 +651,15 @@ class PlanillaCobro extends Component
         |
         */
         $cuotas = PlanillaPrestamo::query()
-            ->where('planilla_detalle_id', $detalle->id)
-            ->where('estado_id', self::ESTADO_ACTIVO)
-            ->where(
-                'estado_pago_id',
-                self::ESTADO_PAGO_ENVIADO_PLANILLA
-            )
-            ->orderBy('fecha_vencimiento')
-            ->orderBy('prestamo_id')
-            ->orderBy('numero_cuota')
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->get();
+        ->where('planilla_detalle_id', $detalle->id)
+        ->where('estado_id', self::ESTADO_ACTIVO)
+        ->where('estado_pago_id',self::ESTADO_PAGO_ENVIADO_PLANILLA)
+        ->orderBy('fecha_vencimiento')
+        ->orderBy('prestamo_id')
+        ->orderBy('numero_cuota')
+        ->orderBy('id')
+        ->lockForUpdate()
+        ->get();
 
         $aplicaciones = [];
 
@@ -750,55 +688,21 @@ class PlanillaCobro extends Component
                 break;
             }
 
-            $moraPendiente = max(
-                0,
-                (int) $cuota->monto_mora
-                - (int) $cuota->monto_mora_pagado
-            );
-
-            $moraIvaPendiente = max(
-                0,
-                (int) $cuota->monto_mora_iva
-                - (int) $cuota->monto_mora_iva_pagado
-            );
-
-            $pago = $this->aplicarMontoConIvaIncluido(
-                $disponible,
-                $moraPendiente,
-                $moraIvaPendiente
-            );
+            $moraPendiente = max(0,(int) $cuota->monto_mora - (int) $cuota->monto_mora_pagado);
+            $moraIvaPendiente = max(0,(int) $cuota->monto_mora_iva - (int) $cuota->monto_mora_iva_pagado);
+            $pago = $this->aplicarMontoConIvaIncluido($disponible, $moraPendiente, $moraIvaPendiente);
 
             if ((int) $pago['total'] <= 0) {
                 continue;
             }
 
-            $cuota->monto_mora_pagado =
-                (int) $cuota->monto_mora_pagado
-                + (int) $pago['base'];
-
-            $cuota->monto_mora_iva_pagado =
-                (int) $cuota->monto_mora_iva_pagado
-                + (int) $pago['iva'];
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + (int) $pago['total'];
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - (int) $pago['total']
-            );
-
-            $aplicaciones[$cuota->id]['mora'] +=
-                (int) $pago['base'];
-
-            $aplicaciones[$cuota->id]['mora_iva'] +=
-                (int) $pago['iva'];
-
-            $aplicaciones[$cuota->id]['total'] +=
-                (int) $pago['total'];
-
+            $cuota->monto_mora_pagado = (int) $cuota->monto_mora_pagado + (int) $pago['base'];
+            $cuota->monto_mora_iva_pagado = (int) $cuota->monto_mora_iva_pagado + (int) $pago['iva'];
+            $cuota->monto_pagado = (int) $cuota->monto_pagado + (int) $pago['total'];
+            $cuota->saldo = max(0, (int) $cuota->saldo - (int) $pago['total']);
+            $aplicaciones[$cuota->id]['mora'] += (int) $pago['base'];
+            $aplicaciones[$cuota->id]['mora_iva'] += (int) $pago['iva'];
+            $aplicaciones[$cuota->id]['total'] += (int) $pago['total'];
             $resultado['mora'] += (int) $pago['base'];
             $resultado['mora_iva'] += (int) $pago['iva'];
         }
@@ -817,55 +721,21 @@ class PlanillaCobro extends Component
                 break;
             }
 
-            $interesPendiente = max(
-                0,
-                (int) $cuota->monto_interes
-                - (int) $cuota->monto_interes_pagado
-            );
-
-            $ivaPendiente = max(
-                0,
-                (int) $cuota->monto_iva
-                - (int) $cuota->monto_iva_pagado
-            );
-
-            $pago = $this->aplicarMontoConIvaIncluido(
-                $disponible,
-                $interesPendiente,
-                $ivaPendiente
-            );
+            $interesPendiente = max(0,(int) $cuota->monto_interes - (int) $cuota->monto_interes_pagado);
+            $ivaPendiente = max(0,(int) $cuota->monto_iva - (int) $cuota->monto_iva_pagado);
+            $pago = $this->aplicarMontoConIvaIncluido($disponible,$interesPendiente,$ivaPendiente);
 
             if ((int) $pago['total'] <= 0) {
                 continue;
             }
 
-            $cuota->monto_interes_pagado =
-                (int) $cuota->monto_interes_pagado
-                + (int) $pago['base'];
-
-            $cuota->monto_iva_pagado =
-                (int) $cuota->monto_iva_pagado
-                + (int) $pago['iva'];
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + (int) $pago['total'];
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - (int) $pago['total']
-            );
-
-            $aplicaciones[$cuota->id]['interes'] +=
-                (int) $pago['base'];
-
-            $aplicaciones[$cuota->id]['iva'] +=
-                (int) $pago['iva'];
-
-            $aplicaciones[$cuota->id]['total'] +=
-                (int) $pago['total'];
-
+            $cuota->monto_interes_pagado = (int) $cuota->monto_interes_pagado + (int) $pago['base'];
+            $cuota->monto_iva_pagado = (int) $cuota->monto_iva_pagado + (int) $pago['iva'];
+            $cuota->monto_pagado = (int) $cuota->monto_pagado + (int) $pago['total'];
+            $cuota->saldo = max(0,(int) $cuota->saldo - (int) $pago['total']);
+            $aplicaciones[$cuota->id]['interes'] += (int) $pago['base'];
+            $aplicaciones[$cuota->id]['iva'] += (int) $pago['iva'];
+            $aplicaciones[$cuota->id]['total'] += (int) $pago['total'];
             $resultado['interes'] += (int) $pago['base'];
             $resultado['iva'] += (int) $pago['iva'];
         }
@@ -880,61 +750,25 @@ class PlanillaCobro extends Component
                 break;
             }
 
-            $capitalPendiente = max(
-                0,
-                (int) $cuota->monto_capital
-                - (int) $cuota->monto_capital_pagado
-            );
-
-            $capitalAplicado = $this->aplicarMonto(
-                $disponible,
-                $capitalPendiente
-            );
+            $capitalPendiente = max(0,(int) $cuota->monto_capital - (int) $cuota->monto_capital_pagado);
+            $capitalAplicado = $this->aplicarMonto($disponible, $capitalPendiente);
 
             if ($capitalAplicado <= 0) {
                 continue;
             }
 
-            $cuota->monto_capital_pagado =
-                (int) $cuota->monto_capital_pagado
-                + $capitalAplicado;
-
-            $cuota->monto_pagado =
-                (int) $cuota->monto_pagado
-                + $capitalAplicado;
-
-            $cuota->saldo = max(
-                0,
-                (int) $cuota->saldo
-                - $capitalAplicado
-            );
-
-            $aplicaciones[$cuota->id]['capital'] +=
-                $capitalAplicado;
-
-            $aplicaciones[$cuota->id]['total'] +=
-                $capitalAplicado;
-
+            $cuota->monto_capital_pagado = (int) $cuota->monto_capital_pagado + $capitalAplicado;
+            $cuota->monto_pagado = (int) $cuota->monto_pagado + $capitalAplicado;
+            $cuota->saldo = max(0, (int) $cuota->saldo - $capitalAplicado);
+            $aplicaciones[$cuota->id]['capital'] += $capitalAplicado;
+            $aplicaciones[$cuota->id]['total'] += $capitalAplicado;
             $resultado['capital'] += $capitalAplicado;
+            $tipoIngresoCapital = $this->obtenerTipoIngresoCapital((int) $cuota->prestamo_id);
 
-            $tipoIngresoCapital =
-                $this->obtenerTipoIngresoCapital(
-                    (int) $cuota->prestamo_id
-                );
-
-            if (!isset(
-                $resultado['capital_por_tipo'][
-                    $tipoIngresoCapital
-                ]
-            )) {
-                $resultado['capital_por_tipo'][
-                    $tipoIngresoCapital
-                ] = 0;
+            if (!isset($resultado['capital_por_tipo'][$tipoIngresoCapital])) {
+                $resultado['capital_por_tipo'][$tipoIngresoCapital] = 0;
             }
-
-            $resultado['capital_por_tipo'][
-                $tipoIngresoCapital
-            ] += $capitalAplicado;
+            $resultado['capital_por_tipo'][$tipoIngresoCapital] += $capitalAplicado;
         }
 
         foreach ($cuotas as $cuota) {
@@ -944,36 +778,14 @@ class PlanillaCobro extends Component
                 continue;
             }
 
-            $cuota->estado_pago_id =
-                (int) $cuota->saldo === 0
-                    ? self::ESTADO_PAGO_PAGADO
-                    : self::ESTADO_PAGO_PARCIAL;
-
+            $cuota->estado_pago_id = (int) $cuota->saldo === 0 ? self::ESTADO_PAGO_PAGADO : self::ESTADO_PAGO_PARCIAL;
             $cuota->fecha_pago = $fechaPago->toDateString();
             $cuota->usuario_modificacion = $usuarioId;
             $cuota->save();
 
-            $this->actualizarCuotaOriginal(
-                $cuota,
-                $aplicacion,
-                $fechaPago,
-                $usuarioId
-            );
-
-            $this->actualizarPrestamoCabecera(
-                $cuota,
-                $aplicacion,
-                $fechaPago,
-                $usuarioId
-            );
-
-            $this->actualizarHistoricoPrestamo(
-                $cuota,
-                $aplicacion,
-                $recibo,
-                $fechaPago,
-                $usuarioId
-            );
+            $this->actualizarCuotaOriginal($cuota, $aplicacion, $fechaPago, $usuarioId);
+            $this->actualizarPrestamoCabecera($cuota, $aplicacion, $fechaPago, $usuarioId);
+            $this->actualizarHistoricoPrestamo($cuota,$aplicacion,$recibo,$fechaPago,$usuarioId);
         }
 
         $resultado['sobrante'] = $disponible;
@@ -1612,42 +1424,28 @@ class PlanillaCobro extends Component
         $resumenMensual->save();
     }
 
-    private function validarDatosParaGrabar(
-        Collection $datosExcel,
-        Collection $mapaPlanilla
-    ): void {
+    private function validarDatosParaGrabar(Collection $datosExcel, Collection $mapaPlanilla): void
+    {
         if ($datosExcel->isEmpty()) {
-            throw new \Exception(
-                'El archivo no contiene registros válidos.'
-            );
+            throw new \Exception('El archivo no contiene registros válidos.');
         }
 
         foreach ($datosExcel as $item) {
             $detalle = $mapaPlanilla->get($item['documento']);
 
             if (!$detalle) {
-                throw new \Exception(
-                    'El documento '
-                    . $item['documento']
-                    . ' no pertenece a la planilla.'
-                );
+                throw new \Exception('El documento ' . $item['documento'] . ' no pertenece a la planilla.');
             }
 
             if ((int) $item['monto'] > (int) $detalle->saldo) {
-                throw new \Exception(
-                    'El monto del documento '
-                    . $item['documento']
-                    . ' supera el saldo disponible.'
-                );
+                throw new \Exception('El monto del documento ' . $item['documento']. ' supera el saldo disponible.');
             }
         }
 
         $montoArchivo = (int) $datosExcel->sum('monto');
 
         if ($montoArchivo !== (int) $this->monto_excel) {
-            throw new \Exception(
-                'El contenido del archivo cambió después de la verificación.'
-            );
+            throw new \Exception('El contenido del archivo cambió después de la verificación.');
         }
     }
 
@@ -1773,56 +1571,34 @@ class PlanillaCobro extends Component
             ->values();
     }
 
-    private function obtenerMapaPlanilla(
-        bool $bloquear
-    ): Collection {
+    private function obtenerMapaPlanilla(bool $bloquear): Collection
+    {
         $consulta = PlanillaDetalle::query()
-            ->join(
-                'asociados',
-                'asociados.id',
-                '=',
-                'planilla_detalles.asociado_id'
-            )
-            ->join(
-                'personas',
-                'personas.id',
-                '=',
-                'asociados.persona_id'
-            )
-            ->where(
-                'planilla_detalles.planilla_id',
-                $this->planilla->id
-            )
-            ->where(
-                'planilla_detalles.estado_id',
-                self::ESTADO_ACTIVO
-            )
-            ->select([
-                'planilla_detalles.*',
-                'personas.documento',
-                'personas.nombre',
-                'personas.apellido',
-            ]);
+        ->join('asociados','asociados.id','=','planilla_detalles.asociado_id')
+        ->join('personas','personas.id','=','asociados.persona_id')
+        ->where('planilla_detalles.planilla_id',$this->planilla->id)
+        ->where('planilla_detalles.estado_id', self::ESTADO_ACTIVO)
+        ->select([
+            'planilla_detalles.*',
+            'personas.documento',
+            'personas.nombre',
+            'personas.apellido',
+        ]);
 
         if ($bloquear) {
             $consulta->lockForUpdate();
         }
 
         return $consulta
-            ->get()
-            ->mapWithKeys(function ($detalle) {
-                $documento = $this->limpiarDocumento(
-                    $detalle->documento
-                );
-
-                return [$documento => $detalle];
-            });
+        ->get()
+        ->mapWithKeys(function ($detalle) {
+            $documento = $this->limpiarDocumento($detalle->documento);
+            return [$documento => $detalle];
+        });
     }
 
-    private function aplicarMonto(
-        int &$disponible,
-        int $pendiente
-    ): int {
+    private function aplicarMonto(int &$disponible, int $pendiente): int
+    {
         if ($disponible <= 0 || $pendiente <= 0) {
             return 0;
         }
