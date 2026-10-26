@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Asociado;
 use App\Models\EstadoSolicitud;
 use App\Models\Numeraciones;
 use App\Models\OrdenPago;
 use App\Models\OrdenPagoDetalle;
+use App\Models\Planilla;
 use App\Models\Prestamo;
 use App\Models\PrestamoDetalle;
 use App\Models\SolicitudConfig;
 use App\Models\SolicitudPrestamo;
 use App\Models\SolicitudPrestamoDetalle;
 use App\Models\TipoEgreso;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -47,7 +50,7 @@ class SolicitudPrestamoController extends Controller
         return view('solicitud.prestamo_emergencia_show', compact('data', 'persona'));
     }
 
-    public function prestamo_emergencia_aprobar(Request $request, SolicitudPrestamo $solicitudPrestamo)
+    public function prestamo_emergencia_aprobar_viejo(Request $request, SolicitudPrestamo $solicitudPrestamo)
     {
         $montoLimpio = str_replace('.','',(string) $request->monto_aprobado);
         $request->merge(['monto_aprobado' => $montoLimpio !== '' ? $montoLimpio : null,]);
@@ -365,6 +368,421 @@ class SolicitudPrestamoController extends Controller
                 'solicitud' => $e->getMessage(),
             ])
             ->withInput();
+        }
+    }
+
+    public function prestamo_emergencia_aprobar(Request $request, SolicitudPrestamo $solicitudPrestamo)
+    {
+
+        $montoLimpio = str_replace('.','',(string) $request->monto_aprobado);
+        $request->merge(['monto_aprobado' => $montoLimpio !== '' ? $montoLimpio : null]);
+
+        $datos = $request->validate([
+            'monto_aprobado' => ['required','integer','min:1'],
+            'mes_inicio' => ['required','integer','between:1,12'],
+            'anio_inicio' => ['required','integer','digits:4','between:2000,2100'],
+            'cantidad_cuotas' => ['required','integer','in:1,2'],
+            'resolucion_aprobacion' => ['required','string','max:50'],
+            'observaciones' => ['nullable','string','max:500',],
+        ], [
+            'monto_aprobado.required' => 'Debe ingresar el monto aprobado.',
+            'monto_aprobado.integer' => 'El monto aprobado debe ser un número válido.',
+            'monto_aprobado.min' => 'El monto aprobado debe ser mayor a cero.',
+            'mes_inicio.required' => 'Debe seleccionar el primer mes de aplicación.',
+            'mes_inicio.integer' => 'El mes seleccionado no es válido.',
+            'mes_inicio.between' => 'El mes seleccionado no es válido.',
+            'anio_inicio.required' => 'Debe seleccionar el año de aplicación.',
+            'anio_inicio.integer' => 'El año seleccionado no es válido.',
+            'anio_inicio.digits' => 'El año seleccionado no es válido.',
+            'anio_inicio.between' => 'El año seleccionado no es válido.',
+            'cantidad_cuotas.required' => 'Debe seleccionar la cantidad de cuotas.',
+            'cantidad_cuotas.integer' => 'La cantidad de cuotas no es válida.',
+            'cantidad_cuotas.in' => 'El préstamo solamente puede aprobarse en una o dos cuotas.',
+            'resolucion_aprobacion.required' => 'Debe ingresar la resolución de aprobación.',
+            'resolucion_aprobacion.string' => 'La resolución de aprobación debe ser una cadena de texto.',
+            'resolucion_aprobacion.max' => 'La resolución de aprobación no puede superar los 50 caracteres.',
+            'observaciones.max' => 'La observación no puede superar los 500 caracteres.',
+        ]);
+
+        try {
+            /*
+            |--------------------------------------------------------------------------
+            | TRANSACCIÓN
+            |--------------------------------------------------------------------------
+            */
+
+            $orden = DB::transaction(function () use ($solicitudPrestamo,$datos) {
+                $usuarioId = auth()->id();
+                $fechaAprobacion = now();
+                $anioPrestamo = $fechaAprobacion->year;
+                $mesInicio = (int) $datos['mes_inicio'];
+                $anioInicio = (int) $datos['anio_inicio'];
+                $cantidadCuotas = (int) $datos['cantidad_cuotas'];
+                $solicitud = SolicitudPrestamo::query()->lockForUpdate()->findOrFail($solicitudPrestamo->id);
+
+                if ((int) $solicitud->estado_id !== 1) {
+                    throw new \Exception('La solicitud de préstamo no se encuentra activa.');
+                }
+
+                if (!in_array((int) $solicitud->estado_solicitud_id,[1, 2],true)) {
+                    throw new \Exception('La solicitud de préstamo ya fue resuelta anteriormente.');
+                }
+
+                if ($solicitud->orden_pago_id) {
+                    throw new \Exception('La solicitud ya tiene una orden de pago registrada.');
+                }
+
+                if ($solicitud->prestamo_id) {
+                    throw new \Exception('La solicitud ya tiene un préstamo generado.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | BUSCAR ASOCIADO
+                |--------------------------------------------------------------------------
+                */
+
+                $asociado = Asociado::query()
+                ->where('persona_id', $solicitud->persona_id)
+                ->where('estado_id', 1)
+                ->lockForUpdate()
+                ->first();
+
+                if (!$asociado) {
+                    throw new \Exception('No se encontró un asociado activo vinculado a la solicitud.');
+                }
+
+                if (!$asociado->tipo_asociado_id) {
+                    throw new \Exception('El asociado no tiene un tipo de asociado asignado.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | VALIDAR PLANILLA DEL PRIMER PERÍODO
+                |--------------------------------------------------------------------------
+                |
+                | Esta validación se realiza siempre, aunque el mes sea actual,
+                | anterior o posterior.
+                |
+                */
+
+                $planillaExistente = Planilla::query()
+                ->where('tipo_asociado_id', $asociado->tipo_asociado_id)
+                ->where('mes', $mesInicio)
+                ->where('anio', $anioInicio)
+                ->where('estado_id', 1)
+                ->lockForUpdate()
+                ->first();
+
+                if ($planillaExistente) {
+                    $periodo = str_pad((string) $mesInicio,2,'0',STR_PAD_LEFT) . '/' . $anioInicio;
+                    throw new \Exception('No se puede utilizar el período '. $periodo . ' porque su planilla ya fue generada.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | FECHA DE LA PRIMERA CUOTA
+                |--------------------------------------------------------------------------
+                */
+
+                $fechaPrimeraCuota = Carbon::create($anioInicio,$mesInicio,1)->endOfMonth();
+
+                /*
+                |--------------------------------------------------------------------------
+                | VALIDAR MONTO
+                |--------------------------------------------------------------------------
+                */
+
+                $montoSolicitado = (int) $solicitud->monto_solicitado;
+                $montoAprobado = (int) $datos['monto_aprobado'];
+
+                if ($montoSolicitado <= 0) {
+                    throw new \Exception('El monto original de la solicitud no es válido.');
+                }
+
+                if ($montoAprobado > $montoSolicitado) {
+                    throw new \Exception('El monto aprobado no puede superar el monto solicitado.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | OBTENER DETALLE ORIGINAL DE LA SOLICITUD
+                |--------------------------------------------------------------------------
+                */
+
+                $detallesSolicitud = SolicitudPrestamoDetalle::query()
+                ->where('solicitud_prestamo_id', $solicitud->id)
+                ->orderBy('numero_cuota')
+                ->lockForUpdate()
+                ->get();
+
+                if ($detallesSolicitud->isEmpty()) {
+                    throw new \Exception('La solicitud no tiene cuotas registradas.');
+                }
+
+                $cantidadCuotasSolicitada = (int) $solicitud->cantidad_cuotas;
+                if ($detallesSolicitud->count() !== $cantidadCuotasSolicitada) {
+                    throw new \Exception('La cantidad de cuotas de la solicitud no coincide con su detalle.');
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CONFIGURACIÓN
+                |--------------------------------------------------------------------------
+                */
+
+                $config = SolicitudConfig::findOrFail(2);
+
+                /*
+                |--------------------------------------------------------------------------
+                | CALCULAR INTERÉS E IVA
+                |--------------------------------------------------------------------------
+                |
+                | Si no cambia el plazo:
+                | se mantiene el cálculo proporcional que ya utilizabas.
+                |
+                | Si cambia el plazo:
+                | se calcula nuevamente la tasa correspondiente a una o dos cuotas.
+                |
+                */
+
+                if ($cantidadCuotas === $cantidadCuotasSolicitada) {
+                    $interesSolicitado = (int) $detallesSolicitud->sum('monto_interes');
+                    $ivaSolicitado = (int) $detallesSolicitud->sum('iva');
+                    $montoInteres = (int) round(($interesSolicitado * $montoAprobado) / $montoSolicitado);
+
+                    if ($ivaSolicitado > 0) {
+                        $montoIva = (int) round(($ivaSolicitado * $montoAprobado) / $montoSolicitado);
+                    } else {
+                        $montoIva = (int) round($montoInteres * 10 / 100);
+                    }
+
+                    $tasaAplicada = $solicitud->tasa_aplicada;
+                } else {
+                    /*
+                    * La tasa para dos cuotas se divide entre
+                    * la cantidad de cuotas, igual que en la solicitud.
+                    */
+                    $tasa = $cantidadCuotas === 1 ? (float) $config->tasa_cuota_unica : (float) $config->tasa_cuota_mensual / $cantidadCuotas;
+                    $tasaAplicada = number_format($tasa,2,'.','');
+                    $tasaEnCentesimas = (int) round($tasa * 100);
+                    $interesPorPeriodo = intdiv(($montoAprobado * $tasaEnCentesimas) + 5000,10000);
+                    $montoInteres = $interesPorPeriodo * $cantidadCuotas;
+                    $montoIva = (int) round($montoInteres * 10 / 100);
+                }
+
+                $montoTotal = $montoAprobado + $montoInteres + $montoIva;
+
+                /*
+                |--------------------------------------------------------------------------
+                | NÚMERO DEL PRÉSTAMO
+                |--------------------------------------------------------------------------
+                */
+                $numeroPrestamo = $this->generarNumero(7, $anioPrestamo, 'Préstamo');
+                /*
+                |--------------------------------------------------------------------------
+                | CREAR PRÉSTAMO
+                |--------------------------------------------------------------------------
+                */
+
+                $prestamo = Prestamo::create([
+                    'anio' => $anioPrestamo,
+                    'numero_prestamo' => $numeroPrestamo,
+                    'fecha_prestamo' => $fechaAprobacion->toDateString(),
+                    'persona_id' => $solicitud->persona_id,
+                    'tipo_prestamo_id' => $solicitud->tipo_prestamo_id,
+                    'resolucion' => $datos['resolucion_aprobacion'],
+                    'monto_capital' => $montoAprobado,
+                    'monto_interes' => $montoInteres,
+                    'monto_iva' => $montoIva,
+                    'monto_total' => $montoTotal,
+                    'monto_capital_pagado' => 0,
+                    'monto_interes_pagado' => 0,
+                    'monto_iva_pagado' => 0,
+                    'monto_pagado' => 0,
+                    'saldo_capital' => $montoAprobado,
+                    'saldo_interes' => $montoInteres,
+                    'saldo_iva' => $montoIva,
+                    'saldo_total' => $montoTotal,
+                    'tasa_aplicada' => $tasaAplicada,
+                    'tasa_mora' => $config->tasa_mora,
+                    'cantidad_cuotas' => $cantidadCuotas,
+                    'orden_pago_id' => null,
+                    'fecha_desembolso' => null,
+                    'fecha_cancelacion' => null,
+                    'estado_prestamo_id' => 1,
+                    'observaciones' => $datos['observaciones'] ?? null,
+                    'estado_id' => 1,
+                    'usuario_id' => $usuarioId,
+                    'usuario_modificacion' => $usuarioId,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | GENERAR CUOTAS DEFINITIVAS
+                |--------------------------------------------------------------------------
+                */
+
+                $capitalBase = intdiv($montoAprobado, $cantidadCuotas);
+                $interesBase = intdiv($montoInteres,$cantidadCuotas);
+                $ivaBase = intdiv($montoIva,$cantidadCuotas);
+
+                $capitalAcumulado = 0;
+                $interesAcumulado = 0;
+                $ivaAcumulado = 0;
+
+                for ($numeroCuota = 1; $numeroCuota <= $cantidadCuotas; $numeroCuota++) {
+                    $ultimaCuota = $numeroCuota === $cantidadCuotas;
+                    $capital = $ultimaCuota ? $montoAprobado - $capitalAcumulado : $capitalBase;
+                    $interes = $ultimaCuota ? $montoInteres - $interesAcumulado : $interesBase;
+                    $iva = $ultimaCuota ? $montoIva - $ivaAcumulado : $ivaBase;
+                    $montoCuota = $capital + $interes;
+                    $totalCuota = $montoCuota + $iva;
+                    $fechaVencimiento = $fechaPrimeraCuota->copy()->addMonthsNoOverflow($numeroCuota - 1)->endOfMonth();
+
+                    PrestamoDetalle::create([
+                        'prestamo_id' => $prestamo->id,
+                        'numero_cuota' => $numeroCuota,
+                        'fecha_vencimiento' => $fechaVencimiento->toDateString(),
+                        'monto_capital' => $capital,
+                        'monto_interes' => $interes,
+                        'monto_cuota' => $montoCuota,
+                        'monto_iva' => $iva,
+                        'monto_total' => $totalCuota,
+                        'monto_capital_pagado' => 0,
+                        'monto_interes_pagado' => 0,
+                        'monto_iva_pagado' => 0,
+                        'monto_pagado' => 0,
+                        'saldo_capital' => $capital,
+                        'saldo_interes' => $interes,
+                        'saldo_iva' => $iva,
+                        'saldo_total' => $totalCuota,
+                        'monto_mora' => 0,
+                        'monto_mora_iva' => 0,
+                        'fecha_pago' => null,
+                        'fecha_cancelacion' => null,
+                        'fecha_ultimo_calculo_mora' => null,
+                        'estado_pago_id' => 1,
+                        'estado_id' => 1,
+                        'usuario_id' => $usuarioId,
+                        'usuario_modificacion' => $usuarioId,
+                    ]);
+
+                    $capitalAcumulado += $capital;
+                    $interesAcumulado += $interes;
+                    $ivaAcumulado += $iva;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | NÚMERO DE ORDEN DE PAGO
+                |--------------------------------------------------------------------------
+                */
+
+                $numeroOrden = $this->generarNumero(3,$anioPrestamo,'Orden de Pago');
+                $tipoEgreso = TipoEgreso::findOrFail(2);
+                $persona = $solicitud->persona;
+
+                if (!$persona) {
+                    throw new \Exception('No se encontró la persona vinculada a la solicitud.');
+                }
+                $nombreCompleto = trim($persona->nombre . ' ' . $persona->apellido);
+
+                /*
+                |--------------------------------------------------------------------------
+                | CREAR ORDEN DE PAGO
+                |--------------------------------------------------------------------------
+                */
+
+                $orden = OrdenPago::create([
+                    'anio' => $anioPrestamo,
+                    'numero' => $numeroOrden,
+                    'fecha' => $fechaAprobacion->toDateString(),
+                    'tipo_egreso_id' => $tipoEgreso->id,
+                    'origen_id' => $solicitud->id,
+                    'persona_id' => $solicitud->persona_id,
+                    'beneficiario' => $nombreCompleto,
+                    'concepto' => 'DESEMBOLSO DE PRÉSTAMO DE EMERGENCIA AL ASOCIADO: '. mb_strtoupper($nombreCompleto,'UTF-8'),
+                    'observacion' => $datos['observaciones'] ?? null,
+                    'total' => $montoAprobado,
+                    'estado_id' => 1,
+                    'estado_pago' => 0,
+                    'motivo_anulado' => null,
+                    'fecha_anulado' => null,
+                    'fecha_pago' => null,
+                    'user_id' => $usuarioId,
+                    'usuario_modificacion' => $usuarioId,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | DETALLE DE LA ORDEN
+                |--------------------------------------------------------------------------
+                */
+
+                OrdenPagoDetalle::create([
+                    'orden_pago_id' => $orden->id,
+                    'descripcion' => $tipoEgreso->descripcion,
+                    'cantidad' => 1,
+                    'precio' => $montoAprobado,
+                    'subtotal' => $montoAprobado,
+                    'estado_id' => 1,
+                    'user_id' => $usuarioId,
+                    'usuario_modificacion' => $usuarioId,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | VINCULAR ORDEN AL PRÉSTAMO
+                |--------------------------------------------------------------------------
+                */
+
+                $prestamo->update([
+                    'orden_pago_id' => $orden->id,
+                    'usuario_modificacion' => $usuarioId,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | ACTUALIZAR SOLICITUD
+                |--------------------------------------------------------------------------
+                |
+                | La cantidad solicitada permanece en la solicitud.
+                | La cantidad aprobada queda registrada en el préstamo.
+                |
+                */
+
+                $solicitud->update([
+                    'estado_solicitud_id' => 3,
+                    'resolucion' => $datos['resolucion_aprobacion'],
+                    'monto_aprobado' => $montoAprobado,
+                    'orden_pago_id' => $orden->id,
+                    'prestamo_id' => $prestamo->id,
+                    'observaciones' => $datos['observaciones'] ?? null,
+                    'fecha_aprobacion_rechazo' =>  $fechaAprobacion->toDateString(),
+                    'usuario_aprobacion_rechazo_id' =>  $usuarioId,
+                    'motivo_rechazo' => null,
+                ]);
+
+                return $orden;
+            });
+
+            return redirect()
+            ->route('orden.pago', $orden->id)
+            ->with(
+                'message',
+                'El préstamo fue aprobado correctamente por G. '
+                . number_format(
+                    (int) $datos['monto_aprobado'],
+                    0,
+                    ',',
+                    '.'
+                )
+                . '. La orden de pago se encuentra pendiente.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->back()->withErrors(['solicitud' => $e->getMessage()])->withInput();
         }
     }
 

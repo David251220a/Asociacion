@@ -510,19 +510,41 @@
                                         Se aprobará el préstamo y se generarán los documentos correspondientes.
                                     </p>
 
+                                    @php
+                                        $fechaPeriodoPredeterminado = now()->addMonthNoOverflow();
+                                        $mesPredeterminado = $fechaPeriodoPredeterminado->month;
+                                        $anioPredeterminado = $fechaPeriodoPredeterminado->year;
+
+                                        $meses = [
+                                            1  => 'Enero',
+                                            2  => 'Febrero',
+                                            3  => 'Marzo',
+                                            4  => 'Abril',
+                                            5  => 'Mayo',
+                                            6  => 'Junio',
+                                            7  => 'Julio',
+                                            8  => 'Agosto',
+                                            9  => 'Septiembre',
+                                            10 => 'Octubre',
+                                            11 => 'Noviembre',
+                                            12 => 'Diciembre',
+                                        ];
+                                        $cantidadCuotasPredeterminada = in_array((int) $data->cantidad_cuotas,[1, 2],true) ? (int) $data->cantidad_cuotas : 1;
+                                    @endphp
+
                                     <form id="formAprobarPrestamo" action="{{ route('solicitud.prestamo_emergencia_aprobar', $data->id) }}" method="POST">
                                         @csrf
 
+                                        {{-- MONTO APROBADO --}}
                                         <div class="form-group">
                                             <label for="monto_aprobado">
-                                                Monto aprobado <span class="text-danger">*</span>
+                                                Monto aprobado
+                                                <span class="text-danger">*</span>
                                             </label>
 
                                             <input type="text" id="monto_aprobado" name="monto_aprobado" class="form-control @error('monto_aprobado') is-invalid @enderror"
-                                                value="{{old('monto_aprobado',number_format($data->monto_solicitado,0, ',','.' ))}}"
-                                                inputmode="numeric"
-                                                autocomplete="off"
-                                                required
+                                                value="{{ old('monto_aprobado',number_format($data->monto_solicitado, 0, ',', '.')) }}"
+                                                inputmode="numeric" autocomplete="off" required
                                             >
 
                                             @error('monto_aprobado')
@@ -532,18 +554,105 @@
                                             @enderror
 
                                             <small class="text-muted">
-                                                Si el monto cambia, las cuotas deberán recalcularse.
+                                                Si el monto cambia, las cuotas serán recalculadas.
                                             </small>
                                         </div>
 
-                                        <div class="form-group">
-                                            <label for="resolucion_aprobacion">
-                                                Resolución de aprobación <span class="text-danger">*</span>
+                                        {{-- MES DE LA PRIMERA CUOTA --}}
+                                        <div class="form-group" >
+                                            <label for="mes_inicio">
+                                                Primer mes de aplicación
+                                                <span class="text-danger">*</span>
                                             </label>
 
-                                            <input type="text" id="resolucion_aprobacion" name="resolucion_aprobacion" class="form-control @error('resolucion_aprobacion') is-invalid @enderror"
-                                                value="{{old('resolucion_aprobacion', $data->resolucion ?? '')}}"
-                                                inputmode="numeric"
+                                            <select id="mes_inicio" name="mes_inicio" class="form-control @error('mes_inicio') is-invalid @enderror" required>
+                                                <option value="">
+                                                    Seleccione un mes
+                                                </option>
+
+                                                @foreach ($meses as $numeroMes => $nombreMes)
+                                                    <option value="{{ $numeroMes }}" {{ (int) old('mes_inicio', $mesPredeterminado) === $numeroMes ? 'selected' : '' }}>
+                                                        {{ $nombreMes }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                            @error('mes_inicio')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+
+                                        {{-- AÑO DE LA PRIMERA CUOTA --}}
+                                        <div class="form-group">
+                                            <label for="anio_inicio">
+                                                Año de aplicación
+                                                <span class="text-danger">*</span>
+                                            </label>
+
+                                            <select id="anio_inicio" name="anio_inicio" class="form-control @error('anio_inicio') is-invalid @enderror" required>
+                                                <option value="">
+                                                    Seleccione un año
+                                                </option>
+
+                                                @for ($anio = now()->year - 1; $anio <= now()->year + 1; $anio++)
+                                                    <option value="{{ $anio }}" {{ (int) old('anio_inicio', $anioPredeterminado) === $anio ? 'selected' : '' }}>
+                                                        {{ $anio }}
+                                                    </option>
+                                                @endfor
+                                            </select>
+
+                                            @error('anio_inicio')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+
+                                            <small class="form-text text-muted">
+                                                Por defecto se selecciona el mes siguiente al actual.
+                                                No podrá utilizarse un período cuya planilla ya haya sido generada.
+                                            </small>
+                                        </div>
+
+                                        {{-- CANTIDAD DE CUOTAS --}}
+                                        <div class="form-group">
+                                            <label for="cantidad_cuotas">
+                                                Plazo
+                                                <span class="text-danger">*</span>
+                                            </label>
+
+                                            <select id="cantidad_cuotas" name="cantidad_cuotas" class="form-control @error('cantidad_cuotas') is-invalid @enderror" required>
+                                                <option value="1"  {{ (int) old('cantidad_cuotas', $cantidadCuotasPredeterminada) === 1 ? 'selected' : '' }}>
+                                                    1 cuota
+                                                </option>
+
+                                                <option value="2"{{ (int) old('cantidad_cuotas', $cantidadCuotasPredeterminada) === 2 ? 'selected' : '' }}>
+                                                    2 cuotas
+                                                </option>
+                                            </select>
+
+                                            @error('cantidad_cuotas')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+
+                                            <small class="text-muted">
+                                                Puede aprobar el préstamo en una o dos cuotas.
+                                            </small>
+                                        </div>
+
+                                        {{-- RESOLUCIÓN --}}
+                                        <div class="form-group">
+                                            <label for="resolucion_aprobacion">
+                                                Resolución de aprobación
+                                                <span class="text-danger">*</span>
+                                            </label>
+
+                                            <input type="text" id="resolucion_aprobacion" name="resolucion_aprobacion"
+                                                class="form-control @error('resolucion_aprobacion') is-invalid @enderror"
+                                                value="{{ old('resolucion_aprobacion', $data->resolucion ?? '') }}"
                                                 autocomplete="off"
                                                 required
                                             >
@@ -555,23 +664,25 @@
                                             @enderror
 
                                             <small class="text-muted">
-                                                Si el monto cambia, las cuotas deberán recalcularse.
+                                                Ingrese el número de resolución que autoriza el préstamo.
                                             </small>
                                         </div>
 
+                                        {{-- OBSERVACIÓN --}}
                                         <div class="form-group">
                                             <label for="observacion_aprobacion">
                                                 Observación
                                             </label>
 
-                                            <textarea
-                                                id="observacion_aprobacion"
-                                                name="observaciones"
-                                                class="form-control"
-                                                rows="3"
-                                                maxlength="255"
-                                                placeholder="Observación opcional"
-                                            >{{ old('observaciones') }}</textarea>
+                                            <textarea id="observacion_aprobacion" name="observaciones" class="form-control @error('observaciones') is-invalid @enderror"
+                                                rows="3" maxlength="255"  placeholder="Observación opcional"
+                                            >{{ old('observaciones', $data->observaciones ?? '') }}</textarea>
+
+                                            @error('observaciones')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
 
                                         <button type="submit" class="btn btn-success btn-block" id="btnAprobarPrestamo">
