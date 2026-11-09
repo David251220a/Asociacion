@@ -12,6 +12,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LimpiarController;
 use App\Http\Controllers\MiembroController;
 use App\Http\Controllers\OrdenPagoController;
+use App\Http\Controllers\OtroDescuentoController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PersonaController;
 use App\Http\Controllers\PlanillaController;
@@ -81,6 +82,16 @@ Route::group([
 
     Route::get('/planilla', [PlanillaController::class, 'index'])->name('planilla.index');
     Route::get('/planilla/create', [PlanillaController::class, 'create'])->name('planilla.create');
+    Route::get('/planilla/otros-descuentos', [OtroDescuentoController::class, 'index'])->name('planilla.descuentos.index');
+    Route::get('/planilla/otros-descuentos/crear', [OtroDescuentoController::class, 'create'])->name('planilla.otros-descuentos.create');
+    Route::post('/planilla/otros-descuentos', [OtroDescuentoController::class, 'store'])->name('planilla.otros-descuentos.store');
+    Route::get('/planilla/otros-descuentos/{otroDescuento}/editar', [OtroDescuentoController::class, 'edit'])->name('planilla.otros-descuentos.edit');
+    Route::put('/planilla/otros-descuentos/{otroDescuento}', [OtroDescuentoController::class, 'update'])->name('planilla.otros-descuentos.update');
+    Route::delete('/planilla/otros-descuentos/{otroDescuento}', [OtroDescuentoController::class, 'destroy'])->name('planilla.otros-descuentos.destroy');
+    Route::get('/planilla/otros-descuentos/{otroDescuento}/socios/agregar', [OtroDescuentoController::class, 'createAsociados'])->name('planilla.otros-descuentos.socios.create');
+    Route::post('/planilla/otros-descuentos/{otroDescuento}/socios', [OtroDescuentoController::class, 'storeAsociados'])->name('planilla.otros-descuentos.socios.store');
+    Route::delete('/planilla/otros-descuentos/{otroDescuento}/socios/{asignacion}', [OtroDescuentoController::class, 'destroyAsociado'])->name('planilla.otros-descuentos.socios.destroy');
+    Route::get('/planilla/otros-descuentos/{otroDescuento}', [OtroDescuentoController::class, 'show'])->name('planilla.otros-descuentos.show');
     Route::get('/planilla/{planilla}/exportar-detalle', [PlanillaController::class, 'exportarDetalle'])->name('planilla.exportarDetalle');
     Route::post('/planilla/{planilla}/anular', [PlanillaController::class, 'anular'])->name('planilla.anular');
     Route::get('/planilla/{planilla}/cobrar', [PlanillaController::class, 'cobrar'])->name('planilla.cobrar');

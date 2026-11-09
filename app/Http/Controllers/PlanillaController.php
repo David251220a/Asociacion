@@ -7,6 +7,7 @@ use App\Models\Planilla;
 use App\Models\PlanillaAporte;
 use App\Models\PlanillaDetalle;
 use App\Models\PlanillaPrestamo;
+use App\Models\OtroDescuentoCuota;
 use App\Models\PrestamoDetalle;
 use App\Models\PrestamoPago;
 use Illuminate\Http\Request;
@@ -155,8 +156,14 @@ class PlanillaController extends Controller
                 ->whereIn('estado_pago_id', [2, 3])
                 ->exists();
 
-                if ($aporteCobrado || $prestamoCobrado) {
-                    throw new \Exception('No se puede anular la planilla porque contiene aportes o préstamos cobrados.');
+                $otroDescuentoCobrado = OtroDescuentoCuota::query()
+                    ->whereIn('planilla_detalle_id', $detalleIds)
+                    ->where('estado_id', 1)
+                    ->whereIn('estado_pago_id', [2, 3])
+                    ->exists();
+
+                if ($aporteCobrado || $prestamoCobrado || $otroDescuentoCobrado) {
+                    throw new \Exception('No se puede anular la planilla porque contiene conceptos cobrados.');
                 }
 
                 /*
@@ -242,6 +249,18 @@ class PlanillaController extends Controller
                     'usuario_modificacion' => auth()->id(),
                     'updated_at' => now(),
                 ]);
+
+                OtroDescuentoCuota::query()
+                    ->whereIn('planilla_detalle_id', $detalleIds)
+                    ->where('estado_id', 1)
+                    ->update([
+                        'planilla_detalle_id' => null,
+                        'monto_pagado' => 0,
+                        'saldo' => DB::raw('monto_esperado'),
+                        'estado_pago_id' => 1,
+                        'usuario_modificacion' => auth()->id(),
+                        'updated_at' => now(),
+                    ]);
 
                 /*
                 |--------------------------------------------------------------------------

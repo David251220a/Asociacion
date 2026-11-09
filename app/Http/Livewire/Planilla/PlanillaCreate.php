@@ -13,6 +13,7 @@ class PlanillaCreate extends Component
     public $data = [];
     public $cantidad = 0;
     public $total = 0;
+    public $totalOtros = 0;
 
     public function mount()
     {
@@ -59,6 +60,7 @@ class PlanillaCreate extends Component
         $this->data = [];
         $this->cantidad = 0;
         $this->total = 0;
+        $this->totalOtros = 0;
     }
 
     public function render()
@@ -75,9 +77,12 @@ class PlanillaCreate extends Component
             $this->data = $detalles->values()->toArray();
             $this->cantidad = count($this->data);
             $this->total = (int) collect($this->data)->sum('saldo');
+            $this->totalOtros = (int) collect($this->data)->sum(function ($item) {
+                return (int) ($item['otros_descuento_total'] ?? collect($item['otros_descuentos'] ?? [])->sum('saldo'));
+            });
 
             if ($this->cantidad === 0) {
-                $this->emit('mensaje_error','No existen aportes ni préstamos pendientes.');
+                $this->emit('mensaje_error','No existen conceptos pendientes para generar la planilla.');
                 return;
             }
 
@@ -90,6 +95,7 @@ class PlanillaCreate extends Component
             $this->data = [];
             $this->cantidad = 0;
             $this->total = 0;
+            $this->totalOtros = 0;
             $this->ver_boton = 'none';
             $this->emit('mensaje_error', $th->getMessage());
         }

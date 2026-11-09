@@ -13,6 +13,7 @@ use App\Models\Planilla;
 use App\Models\PlanillaAporte;
 use App\Models\PlanillaDetalle;
 use App\Models\PlanillaPrestamo;
+use App\Models\OtroDescuentoCuota;
 use App\Models\Prestamo;
 use App\Models\PrestamoDetalle;
 use App\Models\PrestamoPago;
@@ -477,6 +478,7 @@ class PlanillaCobro extends Component
                         'interes',
                         'iva',
                         'capital',
+                        'otros_descuentos',
                     ] as $campo) {
                         $totalesDistribuidos[$campo] +=
                             (int) $distribucion[$campo];
@@ -786,6 +788,35 @@ class PlanillaCobro extends Component
             $this->actualizarCuotaOriginal($cuota, $aplicacion, $fechaPago, $usuarioId);
             $this->actualizarPrestamoCabecera($cuota, $aplicacion, $fechaPago, $usuarioId);
             $this->actualizarHistoricoPrestamo($cuota,$aplicacion,$recibo,$fechaPago,$usuarioId);
+        }
+
+        $otrosDescuentos = OtroDescuentoCuota::query()
+            ->where('planilla_detalle_id', $detalle->id)
+            ->where('estado_id', self::ESTADO_ACTIVO)
+            ->where('estado_pago_id', self::ESTADO_PAGO_ENVIADO_PLANILLA)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($otrosDescuentos as $otro) {
+            if ($disponible <= 0) {
+                break;
+            }
+
+            $aplicado = $this->aplicarMonto($disponible, (int) $otro->saldo);
+            if ($aplicado <= 0) {
+                continue;
+            }
+
+            $otro->monto_pagado = (int) $otro->monto_pagado + $aplicado;
+            $otro->saldo = max(0, (int) $otro->saldo - $aplicado);
+            $otro->estado_pago_id = (int) $otro->saldo === 0
+                ? self::ESTADO_PAGO_PAGADO
+                : self::ESTADO_PAGO_PARCIAL;
+            $otro->usuario_modificacion = $usuarioId;
+            $otro->save();
+            $disponible -= $aplicado;
+            $resultado['otros_descuentos'] += $aplicado;
         }
 
         $resultado['sobrante'] = $disponible;
@@ -1180,6 +1211,16 @@ class PlanillaCobro extends Component
                 ]);
             }
         }
+
+        OtroDescuentoCuota::query()
+            ->whereIn('planilla_detalle_id', $detalleIds)
+            ->where('estado_id', self::ESTADO_ACTIVO)
+            ->where('estado_pago_id', self::ESTADO_PAGO_ENVIADO_PLANILLA)
+            ->update([
+                'estado_pago_id' => self::ESTADO_PAGO_NO_PAGADO,
+                'usuario_modificacion' => $usuarioId,
+                'updated_at' => $fecha,
+            ]);
     }
 
     private function guardarFormasCobro(
@@ -1274,6 +1315,17 @@ class PlanillaCobro extends Component
             self::TIPO_INGRESO_PUNITORIO_PRESTAMO,
             (int) $totales['mora'],
             'Ingreso por interés punitorio cobrado mediante planilla'
+        );
+
+        $tipoOtros = (int) \App\Models\TipoIngreso::query()
+            ->where('descripcion', 'OTROS DESCUENTOS PLANILLA')
+            ->value('id');
+        $this->agregarMovimientoResumen(
+            $movimientos,
+            $observaciones,
+            $tipoOtros,
+            (int) $totales['otros_descuentos'],
+            'Ingreso por otros descuentos cobrados mediante planilla'
         );
 
         foreach (
@@ -1798,6 +1850,7 @@ class PlanillaCobro extends Component
             'interes' => 0,
             'iva' => 0,
             'capital' => 0,
+            'otros_descuentos' => 0,
             'capital_por_tipo' => [],
             'sobrante' => 0,
         ];

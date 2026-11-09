@@ -181,6 +181,12 @@ class PdfController extends Controller
         ->get()
         ->groupBy('planilla_detalle_id');
 
+        $otrosPorDetalle = \App\Models\OtroDescuentoCuota::query()
+            ->whereIn('planilla_detalle_id', $detalleIds)
+            ->where('estado_id', 1)
+            ->get()
+            ->groupBy('planilla_detalle_id');
+
         /*
         |--------------------------------------------------------------------------
         | DISCRIMINAR CADA FILA
@@ -189,16 +195,20 @@ class PdfController extends Controller
         foreach ($planilla->planillaDetalle as $detalle) {
             $aportes = $aportesPorDetalle->get($detalle->id,collect());
             $prestamos = $prestamosPorDetalle->get($detalle->id,collect());
+            $otros = $otrosPorDetalle->get($detalle->id, collect());
             $aporteEsperado = (int) $aportes->sum('monto_esperado');
             $aporteRecuperado = (int) $aportes->sum('monto_pagado');
             $prestamoEsperado = (int) $prestamos->sum('monto_total');
             $prestamoRecuperado = (int) $prestamos->sum('monto_pagado');
+            $otrosEsperados = (int) $otros->sum('monto_esperado');
+            $otrosRecuperados = (int) $otros->sum('monto_pagado');
 
-            $totalEsperado = $aporteEsperado + $prestamoEsperado;
-            $totalRecuperado = $aporteRecuperado + $prestamoRecuperado;
+            $totalEsperado = $aporteEsperado + $prestamoEsperado + $otrosEsperados;
+            $totalRecuperado = $aporteRecuperado + $prestamoRecuperado + $otrosRecuperados;
 
             $detalle->aporte_esperado = $aporteEsperado;
             $detalle->prestamo_esperado = $prestamoEsperado;
+            $detalle->otros_esperados = $otrosEsperados;
             $detalle->total_esperado = $totalEsperado;
             $detalle->total_recuperado = $totalRecuperado;
             $detalle->saldo_calculado = max(0,$totalEsperado - $totalRecuperado);
@@ -212,6 +222,7 @@ class PdfController extends Controller
         $totales = [
             'aporte' => (int) $planilla->planillaDetalle->sum('aporte_esperado'),
             'prestamo' => (int) $planilla->planillaDetalle->sum('prestamo_esperado'),
+            'otros' => (int) $planilla->planillaDetalle->sum('otros_esperados'),
             'esperado' => (int) $planilla->planillaDetalle->sum('total_esperado'),
             'recuperado' => (int) $planilla->planillaDetalle->sum('total_recuperado'),
             'saldo' => (int) $planilla->planillaDetalle->sum('saldo_calculado'),

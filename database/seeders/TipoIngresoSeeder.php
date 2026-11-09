@@ -26,6 +26,7 @@ class TipoIngresoSeeder extends Seeder
             'DONACIONES',
             'INTERESES',
             'MULTA',
+            'OTROS DESCUENTOS PLANILLA',
         ];
 
         foreach ($valores as $item) {

@@ -465,6 +465,10 @@
                     Préstamo
                 </th>
 
+                <th style="width: 12%;">
+                    Otros descuentos
+                </th>
+
                 <th style="width: 14%;">
                     Total esperado
                 </th>
@@ -536,6 +540,10 @@
                     </td>
 
                     <td class="right">
+                        {{ number_format($item->otros_esperados, 0, ',', '.') }}
+                    </td>
+
+                    <td class="right">
                         {{
                             number_format(
                                 $item->total_esperado,
@@ -587,6 +595,10 @@
                             '.'
                         )
                     }}
+                </td>
+
+                <td class="right">
+                    {{ number_format($totales['otros'], 0, ',', '.') }}
                 </td>
 
                 <td class="right">

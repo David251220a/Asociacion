@@ -47,11 +47,36 @@
                 </div>
             </div>
 
+            @if ($totalOtros > 0)
+                <div class="col-lg-12 col-md-12 col-sm-12 mb-3">
+                    <h5>Otros descuentos incluidos en esta vista previa</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead><tr><th>N.º socio</th><th>Nombre</th><th>Concepto</th><th>Cuota</th><th class="text-right">Monto</th></tr></thead>
+                            <tbody>
+                            @foreach ($data as $item)
+                                @foreach ($item['otros_descuentos'] ?? [] as $otro)
+                                    <tr>
+                                        <td>{{ $item['numero_socio'] }}</td>
+                                        <td>{{ $item['nombre'] }}</td>
+                                        <td>{{ $otro['concepto'] }}</td>
+                                        <td>{{ $otro['numero_cuota'] }}</td>
+                                        <td class="text-right">G. {{ number_format($otro['saldo'], 0, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
             <div class="col-lg-12 col-md-12 col-sm-12">
                 <div class="form-row">
                     <div class="form-group col-md-12">
                         <div class="alert alert-info">
                             Cantidad: {{ $cantidad }} |
+                            Otros descuentos: G. {{ number_format($totalOtros, 0, ',', '.') }} |
                             Total: G. {{ number_format($total, 0, ',', '.') }}
                         </div>
                     </div>

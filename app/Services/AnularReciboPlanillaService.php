@@ -7,6 +7,7 @@ use App\Models\Planilla;
 use App\Models\PlanillaAporte;
 use App\Models\PlanillaDetalle;
 use App\Models\PlanillaPrestamo;
+use App\Models\OtroDescuentoCuota;
 use App\Models\Prestamo;
 use App\Models\PrestamoDetalle;
 use App\Models\PrestamoPago;
@@ -139,6 +140,12 @@ class AnularReciboPlanillaService
                 ->lockForUpdate()
                 ->get();
 
+            $otrosDescuentosPlanilla = OtroDescuentoCuota::query()
+                ->whereIn('planilla_detalle_id', $detalleIds)
+                ->where('estado_id', self::ESTADO_ACTIVO)
+                ->lockForUpdate()
+                ->get();
+
             $reciboAportes = ReciboAporte::query()
                 ->where('recibo_id', $reciboActual->id)
                 ->where('estado_id', self::ESTADO_ACTIVO)
@@ -165,7 +172,8 @@ class AnularReciboPlanillaService
             $movimientos = $this->clasificarMovimientos(
                 $reciboActual,
                 $reciboAportes,
-                $pagosPrestamo
+                $pagosPrestamo,
+                $otrosDescuentosPlanilla
             );
 
             $this->restaurarDetallesPlanilla(
@@ -173,8 +181,17 @@ class AnularReciboPlanillaService
                 $reciboAportes,
                 $prestamosPlanilla,
                 $pagosPorPlanillaPrestamo,
+                $otrosDescuentosPlanilla,
                 $usuarioId
             );
+
+            foreach ($otrosDescuentosPlanilla as $otro) {
+                $otro->monto_pagado = 0;
+                $otro->saldo = (int) $otro->monto_esperado;
+                $otro->estado_pago_id = self::ESTADO_PAGO_ENVIADO_PLANILLA;
+                $otro->usuario_modificacion = $usuarioId;
+                $otro->save();
+            }
 
             $this->restaurarAportesPlanilla(
                 $aportesPlanilla,
@@ -418,6 +435,7 @@ class AnularReciboPlanillaService
         Collection $reciboAportes,
         Collection $prestamosPlanilla,
         Collection $pagosPorPlanillaPrestamo,
+        Collection $otrosDescuentosPlanilla,
         int $usuarioId
     ): void {
         $aportesPorAsociado = $reciboAportes
@@ -451,7 +469,10 @@ class AnularReciboPlanillaService
                 ] ?? 0)
                 + (int) ($prestamosPorDetalle[
                     (int) $detalle->id
-                ] ?? 0);
+                ] ?? 0)
+                + (int) $otrosDescuentosPlanilla
+                    ->where('planilla_detalle_id', $detalle->id)
+                    ->sum('monto_pagado');
 
             $detalle->pagado = max(
                 0,
@@ -868,7 +889,8 @@ class AnularReciboPlanillaService
     private function clasificarMovimientos(
         Recibo $recibo,
         Collection $reciboAportes,
-        Collection $pagosPrestamo
+        Collection $pagosPrestamo,
+        Collection $otrosDescuentosPlanilla
     ): array {
         $movimientos = [];
 
@@ -922,6 +944,15 @@ class AnularReciboPlanillaService
                 $aplicacion['mora']
             );
         }
+
+        $tipoOtros = (int) \App\Models\TipoIngreso::query()
+            ->where('descripcion', 'OTROS DESCUENTOS PLANILLA')
+            ->value('id');
+        $this->agregarMovimiento(
+            $movimientos,
+            $tipoOtros,
+            (int) $otrosDescuentosPlanilla->sum('monto_pagado')
+        );
 
         $totalClasificado = (int) array_sum($movimientos);
         $totalRecibo = (int) $recibo->monto_total;

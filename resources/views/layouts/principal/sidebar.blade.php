@@ -4,7 +4,8 @@
     $solicitud_aprobacionActiva = request()->routeIs(['solicitud.index','solicitud.show',]);
     $personaActiva = request()->routeIs(['persona.*']);
     $asociadoActiva = request()->routeIs(['asociado.*', 'ficha_medica.create', 'familiar.*']);
-    $planillaActiva = request()->routeIs(['planilla.*']);
+    $otrosDescuentosActiva = request()->routeIs(['planilla.descuentos.*', 'planilla.otros-descuentos.*']);
+    $planillaActiva = request()->routeIs(['planilla.*']) && !$otrosDescuentosActiva;
     $facturaActiva = request()->routeIs(['factura.*']);
     $reciboActiva = request()->routeIs(['recibo.index']);
     $ordenActiva = request()->routeIs(['orden.*']);
@@ -193,6 +194,21 @@
                             <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                         </svg>
                         <span>Planilla</span>
+                    </div>
+                </a>
+            </li>
+        @endcan
+
+        @can('planilla.descuentos.index')
+            <li class="menu">
+                <a href="{{ route('planilla.descuentos.index') }}" aria-expanded="false" class="dropdown-toggle" @if($otrosDescuentosActiva) data-active="true" @endif>
+                    <div class="">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-percent">
+                            <line x1="19" y1="5" x2="5" y2="19"></line>
+                            <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                            <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                        </svg>
+                        <span>Descuentos</span>
                     </div>
                 </a>
             </li>

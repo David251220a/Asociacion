@@ -53,6 +53,7 @@ class PlanillaAporteService
 
         $aportes = $this->generarDetalleAportes($mes, $anio, $tipoAsociadoId);
         $prestamos = $this->generarDetallePrestamos($mes, $anio,$tipoAsociadoId);
+        $otros = $this->generarDetalleOtros($mes, $anio, $tipoAsociadoId);
 
         /*
         |==========================================================================
@@ -63,7 +64,7 @@ class PlanillaAporteService
         | El resultado es el que se muestra y luego se guarda en la planilla.
         |
         */
-        return $this->unificarAportesPrestamos($aportes, $prestamos);
+        return $this->unificarAportesPrestamos($aportes, $prestamos, $otros);
     }
 
     /**
@@ -453,7 +454,54 @@ class PlanillaAporteService
     /**
      * Unifica aporte y préstamo en una sola fila por asociado.
     */
-    private function unificarAportesPrestamos(Collection $aportes, Collection $prestamos): Collection
+    private function generarDetalleOtros(int $mes, int $anio, int $tipoAsociadoId): Collection
+    {
+        $tipos = $tipoAsociadoId === 3 ? [3] : [1, 2];
+
+        return DB::table('otro_descuento_cuotas as odc')
+            ->join('otro_descuento_asociados as oda', 'oda.id', '=', 'odc.otro_descuento_asociado_id')
+            ->join('otro_descuentos as od', 'od.id', '=', 'oda.otro_descuento_id')
+            ->join('asociados as a', 'a.id', '=', 'oda.asociado_id')
+            ->join('personas as p', 'p.id', '=', 'a.persona_id')
+            ->where('odc.mes', $mes)
+            ->where('odc.anio', $anio)
+            ->where('odc.estado_id', self::ESTADO_ACTIVO)
+            ->where('od.estado_id', self::ESTADO_ACTIVO)
+            ->where('a.estado_id', self::ESTADO_ACTIVO)
+            ->where('odc.estado_pago_id', self::ESTADO_PAGO_PENDIENTE)
+            ->whereIn('a.tipo_asociado_id', $tipos)
+            ->orderBy('a.institucion_id')
+            ->orderBy('a.numero_socio')
+            ->get([
+                'odc.id', 'odc.otro_descuento_asociado_id', 'odc.numero_cuota',
+                'odc.monto_esperado', 'odc.saldo', 'oda.asociado_id',
+                'a.tipo_asociado_id', 'a.institucion_id', 'a.numero_socio',
+                'p.nombre', 'p.apellido', 'od.nombre as concepto',
+            ])
+            ->groupBy('asociado_id')
+            ->map(function ($cuotas) {
+                $primera = $cuotas->first();
+                $monto = (int) $cuotas->sum('saldo');
+
+                return [
+                    'asociado_id' => (int) $primera->asociado_id,
+                    'tipo_asociado_id' => (int) $primera->tipo_asociado_id,
+                    'institucion_id' => (int) $primera->institucion_id,
+                    'numero_socio' => $primera->numero_socio,
+                    'nombre' => trim(($primera->nombre ?? '') . ' ' . ($primera->apellido ?? '')),
+                    'monto_total' => $monto,
+                    'cuotas' => $cuotas->map(fn ($cuota) => [
+                        'id' => (int) $cuota->id,
+                        'concepto' => $cuota->concepto,
+                        'numero_cuota' => (int) $cuota->numero_cuota,
+                        'monto_esperado' => (int) $cuota->monto_esperado,
+                        'saldo' => (int) $cuota->saldo,
+                    ])->values()->all(),
+                ];
+            });
+    }
+
+    private function unificarAportesPrestamos(Collection $aportes, Collection $prestamos, Collection $otros): Collection
     {
         $filas = collect();
 
@@ -472,6 +520,8 @@ class PlanillaAporteService
                 'estado' => $aporte['estado'],
                 'aporte' => $aporte,
                 'prestamos' => [],
+                'otros_descuentos' => [],
+                'otros_descuento_total' => 0,
             ]);
         }
 
@@ -492,6 +542,8 @@ class PlanillaAporteService
                     'estado' => 'PENDIENTE',
                     'aporte' => null,
                     'prestamos' => [],
+                    'otros_descuentos' => [],
+                    'otros_descuento_total' => 0,
                 ];
             }
 
@@ -504,6 +556,35 @@ class PlanillaAporteService
                 $fila['estado'] = 'PARCIAL';
             }
 
+            $filas->put($asociadoId, $fila);
+        }
+
+        foreach ($otros as $otro) {
+            $asociadoId = (int) $otro['asociado_id'];
+            $fila = $filas->get($asociadoId);
+
+            if (!$fila) {
+                $fila = [
+                    'asociado_id' => $asociadoId,
+                    'tipo_asociado_id' => (int) $otro['tipo_asociado_id'],
+                    'institucion_id' => (int) $otro['institucion_id'],
+                    'numero_socio' => $otro['numero_socio'],
+                    'nombre' => $otro['nombre'],
+                    'monto_esperado' => 0,
+                    'pagado' => 0,
+                    'saldo' => 0,
+                    'estado' => 'PENDIENTE',
+                    'aporte' => null,
+                    'prestamos' => [],
+                    'otros_descuentos' => [],
+                    'otros_descuento_total' => 0,
+                ];
+            }
+
+            $fila['otros_descuentos'] = array_merge($fila['otros_descuentos'], $otro['cuotas']);
+            $fila['otros_descuento_total'] += (int) $otro['monto_total'];
+            $fila['monto_esperado'] += (int) $otro['monto_total'];
+            $fila['saldo'] += (int) $otro['monto_total'];
             $filas->put($asociadoId, $fila);
         }
 
@@ -592,6 +673,28 @@ class PlanillaAporteService
             */
             foreach ($item['prestamos'] as $prestamoItem) {
                 $this->guardarPrestamoPlanillado($planilla, $detallePlanilla, $prestamoItem, $ahora, $usuarioId);
+            }
+
+            foreach ($item['otros_descuentos'] as $otroItem) {
+                $cuota = DB::table('otro_descuento_cuotas')
+                    ->where('id', $otroItem['id'])
+                    ->whereNull('planilla_detalle_id')
+                    ->where('estado_pago_id', self::ESTADO_PAGO_PENDIENTE)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$cuota) {
+                    throw new \Exception('Una cuota de otro descuento ya fue aplicada a otra planilla. Actualice la vista previa.');
+                }
+
+                DB::table('otro_descuento_cuotas')
+                    ->where('id', $cuota->id)
+                    ->update([
+                        'planilla_detalle_id' => $detallePlanilla->id,
+                        'estado_pago_id' => self::ESTADO_PAGO_ENVIADO_PLANILLA,
+                        'usuario_modificacion' => $usuarioId,
+                        'updated_at' => $ahora,
+                    ]);
             }
         }
 

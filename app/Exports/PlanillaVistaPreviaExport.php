@@ -43,6 +43,10 @@ class PlanillaVistaPreviaExport implements
             $prestamos = (int) collect($item['prestamos'] ?? [])->sum(function ($prestamo) {
                 return (int) ($prestamo['saldo'] ?? 0);
             });
+            $otros = (int) ($item['otros_descuento_total'] ?? collect($item['otros_descuentos'] ?? [])->sum(function ($otro) {
+                return (int) ($otro['saldo'] ?? 0);
+            }));
+            $total = (int) ($item['saldo'] ?? ($aporte + $prestamos + $otros));
 
             return [
                 'item' => $indice + 1,
@@ -52,7 +56,8 @@ class PlanillaVistaPreviaExport implements
                 'nombre' =>mb_strtoupper(trim($item['nombre'] ?? ''),'UTF-8'),
                 'aporte' => $aporte,
                 'prestamos' => $prestamos,
-                'total' => $aporte + $prestamos,
+                'otros' => $otros,
+                'total' => $total,
             ];
         });
 
@@ -69,6 +74,7 @@ class PlanillaVistaPreviaExport implements
             'nombre' => 'TOTALES',
             'aporte' => (int) $filas->sum('aporte'),
             'prestamos' => (int) $filas->sum('prestamos'),
+            'otros' => (int) $filas->sum('otros'),
             'total' => (int) $filas->sum('total'),
         ]);
 
@@ -85,6 +91,7 @@ class PlanillaVistaPreviaExport implements
             'Nombre y apellido',
             'Aporte',
             'Préstamos',
+            'Otros descuentos',
             'Total',
         ];
     }
@@ -97,6 +104,7 @@ class PlanillaVistaPreviaExport implements
             'F' => '#,##0',
             'G' => '#,##0',
             'H' => '#,##0',
+            'I' => '#,##0',
         ];
     }
 
@@ -105,8 +113,8 @@ class PlanillaVistaPreviaExport implements
         $ultimaFila = count($this->data) + 2;
 
         $sheet->freezePane('A2');
-        $sheet->setAutoFilter('A1:H' . max(1, $ultimaFila - 1));
-        $sheet->getStyle('A1:H' . $ultimaFila)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->setAutoFilter('A1:I' . max(1, $ultimaFila - 1));
+        $sheet->getStyle('A1:I' . $ultimaFila)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
         return [
             1 => [

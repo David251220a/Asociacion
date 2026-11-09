@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
     {
         // \App\Models\User::factory(10)->create();
 
-        // $this->call(RoleSeeder::class);
+        $this->call(RoleSeeder::class);
 
         // User::firstOrCreate([
         //     'name' => 'Admin',
@@ -137,22 +137,22 @@ class DatabaseSeeder extends Seeder
         // EstadoPago::create(['descripcion' => 'PAGADO PARCIAL']);
         // EstadoPago::create(['descripcion' => 'ANULADO']);
 
-        DB::table('estado_pagos')->updateOrInsert(
-            ['id' => 5],
-            [
-                'descripcion' => 'ENVIADO A PLANILLA',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
+        // DB::table('estado_pagos')->updateOrInsert(
+        //     ['id' => 5],
+        //     [
+        //         'descripcion' => 'ENVIADO A PLANILLA',
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ]
+        // );
 
-        DB::table('estado_pagos')->updateOrInsert(
-            ['id' => 6],
-            [
-                'descripcion' => 'NO PAGADO',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
+        // DB::table('estado_pagos')->updateOrInsert(
+        //     ['id' => 6],
+        //     [
+        //         'descripcion' => 'NO PAGADO',
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ]
+        // );
     }
 }
