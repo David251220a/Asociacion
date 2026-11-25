@@ -19,7 +19,8 @@
     $userActiva =request()->routeIs('user.*') && !request()->routeIs('user.cambiar_contrase');
     $rolActiva = request()->routeIs(['role.*']);
     $contrasActiva = request()->routeIs(['user.cambiar_contrase']);
-    $consultas = request()->routeIs(['factura.index', 'recibo.index', 'recibo.show', 'resumen.index']);
+    $consultaPrestamosDescuentosActiva = request()->routeIs(['consulta.prestamos-descuentos.*']);
+    $consultas = request()->routeIs(['factura.index', 'recibo.index', 'recibo.show', 'resumen.index', 'consulta.prestamos-descuentos.*']);
     $cobros = request()->routeIs(['recibo.aporte', 'recibo.varios']);
     $parametro_general = request()->routeIs(['entidad.*', 'miembros.*', 'role.*', 'user.*', 'establecimiento.*', 'entidad_soli.*']) && !request()->routeIs('user.cambiar_contrase');
     $soliActivarActivar = request()->routeIs(['entidad_soli.*']);
@@ -345,6 +346,13 @@
                         <li class="{{ $resumenActiva ? 'active' : '' }}">
                             <a href="{{route('resumen.index')}}" >
                                 <span>Resumen</span>
+                            </a>
+                        </li>
+                    @endcan
+                    @can('prestamos.descuentos')
+                        <li class="{{ $consultaPrestamosDescuentosActiva ? 'active' : '' }}">
+                            <a href="{{ route('consulta.prestamos-descuentos.index') }}">
+                                <span>Descuentos de préstamos</span>
                             </a>
                         </li>
                     @endcan

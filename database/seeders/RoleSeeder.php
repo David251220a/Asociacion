@@ -96,6 +96,7 @@ class RoleSeeder extends Seeder
             'prestamos.index' => 'Prestamos: Principal',
             'prestamos.show' => 'Prestamos: Detalle',
             'prestamos.contrato' => 'Prestamos: Contrato',
+            'prestamos.descuentos' => 'Consultas: Descuentos de préstamos',
             'habilitacion.estado_alumno' => 'Habilitacion de Curso: Estado Alumno',
         ];
 

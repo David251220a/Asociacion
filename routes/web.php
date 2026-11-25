@@ -7,6 +7,7 @@ use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FichaMedicaController;
+use App\Http\Controllers\ConsultaPrestamoDescuentoController;
 use App\Http\Controllers\GrupoUsuarioController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LimpiarController;
@@ -166,6 +167,7 @@ Route::group([
     Route::post('/personas/{persona}/editar', [PersonaController::class, 'update'])->name('persona.update');
 
     Route::get('/resumen', [ResumenMensualController::class, 'index'])->name('resumen.index');
+    Route::get('/consultas/descuentos-prestamos', [ConsultaPrestamoDescuentoController::class, 'index'])->name('consulta.prestamos-descuentos.index');
     Route::get('/recalcular', [ResumenMensualController::class, 'recalcular'])->name('resumen.recalcular');
     Route::post('/recalcular', [ResumenMensualController::class, 'recalcular_post'])->name('resumen.recalcular_post');
 

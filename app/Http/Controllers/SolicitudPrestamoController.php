@@ -456,6 +456,10 @@ class SolicitudPrestamoController extends Controller
                     throw new \Exception('El asociado no tiene un tipo de asociado asignado.');
                 }
 
+                $tipoPlanillaFiltro = in_array((int) $asociado->tipo_asociado_id, [1, 2], true)
+                    ? 1
+                    : (int) $asociado->tipo_asociado_id;
+
                 /*
                 |--------------------------------------------------------------------------
                 | VALIDAR PLANILLA DEL PRIMER PERÍODO
@@ -467,7 +471,7 @@ class SolicitudPrestamoController extends Controller
                 */
 
                 $planillaExistente = Planilla::query()
-                ->where('tipo_asociado_id', $asociado->tipo_asociado_id)
+                ->where('tipo_asociado_id', $tipoPlanillaFiltro)
                 ->where('mes', $mesInicio)
                 ->where('anio', $anioInicio)
                 ->where('estado_id', 1)
