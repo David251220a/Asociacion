@@ -24,14 +24,14 @@
                 </div>
             </div>
             @include('varios.mensaje')
-            <p>Monto por socio: <strong>G. {{ number_format($otroDescuento->monto_por_socio, 0, ',', '.') }}</strong> · {{ $otroDescuento->cantidad_cuotas }} cuota(s)</p>
+            <p>Monto total por socio: <strong>G. {{ number_format($otroDescuento->monto_por_socio, 0, ',', '.') }}</strong> · Máximo {{ $otroDescuento->cantidad_cuotas }} cuota(s) por socio</p>
             <div class="table-responsive"><table class="table table-bordered table-hover">
                 <thead><tr><th>Socio</th><th>Cuota</th><th>Período</th><th>Monto</th><th>Estado</th><th>Planilla</th><th>Acción</th></tr></thead><tbody>
                 @foreach ($otroDescuento->asociados as $asignacion)
                     @foreach ($asignacion->cuotas as $cuota)
                         <tr>
                             <td>{{ $asignacion->asociado->numero_socio }} · {{ $asignacion->asociado->persona->apellido }}, {{ $asignacion->asociado->persona->nombre }}</td>
-                            <td>{{ $cuota->numero_cuota }}/{{ $otroDescuento->cantidad_cuotas }}</td>
+                            <td>{{ $cuota->numero_cuota }}/{{ $asignacion->cantidad_cuotas }}</td>
                             <td>{{ str_pad($cuota->mes, 2, '0', STR_PAD_LEFT) }}/{{ $cuota->anio }}</td>
                             <td>G. {{ number_format($cuota->monto_esperado, 0, ',', '.') }}</td>
                             <td>{{ [1=>'Pendiente',2=>'Pagado',3=>'Parcial',4=>'Anulado',5=>'En planilla',6=>'No cobrado'][$cuota->estado_pago_id] ?? '—' }}</td>

@@ -13,14 +13,13 @@
             @include('varios.mensaje')
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
-                    <thead><tr><th>Concepto</th><th>Por socio</th><th>Cuotas</th><th>Inicio</th><th>Socios</th><th>Asignado</th><th></th></tr></thead>
+                    <thead><tr><th>Concepto</th><th>Por socio</th><th>Máx. cuotas</th><th>Socios</th><th>Asignado</th><th></th></tr></thead>
                     <tbody>
                     @forelse ($descuentos as $item)
                         <tr>
                             <td>{{ $item->nombre }}</td>
                             <td>G. {{ number_format($item->monto_por_socio, 0, ',', '.') }}</td>
                             <td>{{ $item->cantidad_cuotas }}</td>
-                            <td>{{ str_pad($item->mes_inicio, 2, '0', STR_PAD_LEFT) }}/{{ $item->anio_inicio }}</td>
                             <td>{{ $item->asociados_count }}</td>
                             <td>G. {{ number_format($item->monto_asignado ?? 0, 0, ',', '.') }}</td>
                             <td>
@@ -30,7 +29,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center">Todavía no hay otros descuentos registrados.</td></tr>
+                        <tr><td colspan="6" class="text-center">Todavía no hay otros descuentos registrados.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

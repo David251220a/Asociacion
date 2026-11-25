@@ -53,8 +53,6 @@ class OtroDescuentoController extends Controller
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'monto_por_socio' => ['required', 'integer', 'min:1'],
             'cantidad_cuotas' => ['required', 'integer', 'min:1', 'max:60'],
-            'mes_inicio' => ['required', 'integer', 'between:1,12'],
-            'anio_inicio' => ['required', 'integer', 'between:2020,2100'],
         ]);
 
         $usuarioId = (int) auth()->id();
@@ -68,14 +66,21 @@ class OtroDescuentoController extends Controller
                 }
 
                 $asignaciones = $descuento->asociados()->with('cuotas')->lockForUpdate()->get();
-                $idsAsociados = $asignaciones->pluck('asociado_id');
-                if ($this->existenPlanillasParaPeriodos(
-                    $idsAsociados,
-                    (int) $datos['mes_inicio'],
-                    (int) $datos['anio_inicio'],
-                    (int) $datos['cantidad_cuotas']
-                )) {
-                    throw new \RuntimeException('El nuevo período coincide con una planilla activa de uno o más socios.');
+
+                foreach ($asignaciones as $asignacion) {
+                    if ((int) $asignacion->cantidad_cuotas > (int) $datos['cantidad_cuotas']) {
+                        throw new \RuntimeException('No se puede reducir el máximo de cuotas por debajo de las cuotas ya configuradas para un socio.');
+                    }
+
+                    $periodoOcupado = $this->periodoConPlanillaGenerada(
+                        [$asignacion->asociado_id],
+                        (int) $asignacion->mes_inicio,
+                        (int) $asignacion->anio_inicio,
+                        (int) $asignacion->cantidad_cuotas
+                    );
+                    if ($periodoOcupado) {
+                        throw new \RuntimeException('Ya está generada la planilla de un socio para ' . $this->formatearPeriodo($periodoOcupado) . '. No se puede modificar el descuento mientras esa planilla esté activa.');
+                    }
                 }
 
                 $descuento->update([
@@ -83,8 +88,6 @@ class OtroDescuentoController extends Controller
                     'descripcion' => $datos['descripcion'] ?? null,
                     'monto_por_socio' => (int) $datos['monto_por_socio'],
                     'cantidad_cuotas' => (int) $datos['cantidad_cuotas'],
-                    'mes_inicio' => (int) $datos['mes_inicio'],
-                    'anio_inicio' => (int) $datos['anio_inicio'],
                     'usuario_modificacion' => $usuarioId,
                 ]);
 
@@ -95,7 +98,7 @@ class OtroDescuentoController extends Controller
 
                     $asignacion->cuotas()->delete();
                     $asignacion->update(['monto_total' => (int) $datos['monto_por_socio']]);
-                    $this->programarCuotas($asignacion, $descuento, $usuarioId);
+                    $this->programarCuotas($asignacion, $usuarioId);
                 }
             });
         } catch (\Throwable $e) {
@@ -144,8 +147,6 @@ class OtroDescuentoController extends Controller
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'monto_por_socio' => ['required', 'integer', 'min:1'],
             'cantidad_cuotas' => ['required', 'integer', 'min:1', 'max:60'],
-            'mes_inicio' => ['required', 'integer', 'between:1,12'],
-            'anio_inicio' => ['required', 'integer', 'between:2020,2100'],
         ]);
 
         $usuarioId = (int) auth()->id();
@@ -154,8 +155,6 @@ class OtroDescuentoController extends Controller
                 'descripcion' => $datos['descripcion'] ?? null,
                 'monto_por_socio' => (int) $datos['monto_por_socio'],
                 'cantidad_cuotas' => (int) $datos['cantidad_cuotas'],
-                'mes_inicio' => (int) $datos['mes_inicio'],
-                'anio_inicio' => (int) $datos['anio_inicio'],
                 'estado_id' => 1,
                 'user_id' => $usuarioId,
                 'usuario_modificacion' => $usuarioId,
@@ -181,13 +180,27 @@ class OtroDescuentoController extends Controller
 
     public function storeAsociados(Request $request, OtroDescuento $otroDescuento)
     {
-        $datos = $request->validate([
+        $reglas = [
             'asociados' => ['required', 'array', 'min:1'],
             'asociados.*' => ['required', 'integer', 'distinct', 'exists:asociados,id'],
-        ], [
+            'configuracion' => ['required', 'array'],
+            'configuracion.*.cantidad_cuotas' => ['required', 'integer', 'min:1', 'max:' . (int) $otroDescuento->cantidad_cuotas],
+            'configuracion.*.mes_inicio' => ['required', 'integer', 'between:1,12'],
+            'configuracion.*.anio_inicio' => ['required', 'integer', 'between:2020,2100'],
+        ];
+
+        $mensajes = [
             'asociados.required' => 'Seleccione al menos un socio para este descuento.',
             'asociados.min' => 'Seleccione al menos un socio para este descuento.',
-        ]);
+            'configuracion.*.cantidad_cuotas.max' => 'La cantidad de cuotas de cada socio no puede superar el máximo del concepto.',
+        ];
+
+        $datos = $request->validate($reglas, $mensajes);
+        foreach ($datos['asociados'] as $asociadoId) {
+            if (!isset($datos['configuracion'][$asociadoId])) {
+                return back()->withErrors(['configuracion' => 'Configure el período y las cuotas de cada socio seleccionado.'])->withInput();
+            }
+        }
 
         $usuarioId = (int) auth()->id();
         $montoTotal = (int) $otroDescuento->monto_por_socio;
@@ -204,27 +217,31 @@ class OtroDescuentoController extends Controller
                     throw new \RuntimeException('Uno o más socios seleccionados ya no están activos.');
                 }
 
-                if ($this->existenPlanillasParaPeriodos(
-                    $sociosValidos->pluck('id'),
-                    (int) $otroDescuento->mes_inicio,
-                    (int) $otroDescuento->anio_inicio,
-                    (int) $otroDescuento->cantidad_cuotas
-                )) {
-                    throw new \RuntimeException('Ya existe una planilla activa para uno o más socios en el período del descuento. Anule esa planilla antes de programarlo.');
-                }
-
                 foreach ($sociosValidos as $socio) {
                     if ($otroDescuento->asociados()->where('asociado_id', $socio->id)->exists()) {
                         throw new \RuntimeException('Uno o más socios ya fueron agregados a este descuento.');
+                    }
+
+                    $configuracion = $datos['configuracion'][$socio->id];
+                    $cantidadCuotas = (int) $configuracion['cantidad_cuotas'];
+                    $mesInicio = (int) $configuracion['mes_inicio'];
+                    $anioInicio = (int) $configuracion['anio_inicio'];
+
+                    $periodoOcupado = $this->periodoConPlanillaGenerada([$socio->id], $mesInicio, $anioInicio, $cantidadCuotas);
+                    if ($periodoOcupado) {
+                        throw new \RuntimeException('Ya está generada la planilla del socio N.º ' . $socio->numero_socio . ' para ' . $this->formatearPeriodo($periodoOcupado) . '. Elija otro período o anule esa planilla antes de programar el descuento.');
                     }
 
                     $asignacion = OtroDescuentoAsociado::create([
                         'otro_descuento_id' => $otroDescuento->id,
                         'asociado_id' => $socio->id,
                         'monto_total' => $montoTotal,
+                        'cantidad_cuotas' => $cantidadCuotas,
+                        'mes_inicio' => $mesInicio,
+                        'anio_inicio' => $anioInicio,
                     ]);
 
-                    $this->programarCuotas($asignacion, $otroDescuento, $usuarioId);
+                    $this->programarCuotas($asignacion, $usuarioId);
                 }
             });
         } catch (\Throwable $e) {
@@ -233,7 +250,7 @@ class OtroDescuentoController extends Controller
         }
 
         return redirect()->route('planilla.otros-descuentos.show', $otroDescuento)
-            ->with('message', 'Los socios y sus cuotas mensuales fueron agregados correctamente.');
+            ->with('message', 'Los socios y sus calendarios de descuento fueron agregados correctamente.');
     }
 
     public function show(OtroDescuento $otroDescuento)
@@ -279,13 +296,13 @@ class OtroDescuentoController extends Controller
             ->with('message', 'El socio y las cuotas pendientes fueron quitados del descuento.');
     }
 
-    private function programarCuotas(OtroDescuentoAsociado $asignacion, OtroDescuento $descuento, int $usuarioId): void
+    private function programarCuotas(OtroDescuentoAsociado $asignacion, int $usuarioId): void
     {
-        $montoTotal = (int) $descuento->monto_por_socio;
-        $cantidadCuotas = (int) $descuento->cantidad_cuotas;
+        $montoTotal = (int) $asignacion->monto_total;
+        $cantidadCuotas = (int) $asignacion->cantidad_cuotas;
         $montoBase = intdiv($montoTotal, $cantidadCuotas);
         $resto = $montoTotal % $cantidadCuotas;
-        $periodoInicial = Carbon::create((int) $descuento->anio_inicio, (int) $descuento->mes_inicio, 1);
+        $periodoInicial = Carbon::create((int) $asignacion->anio_inicio, (int) $asignacion->mes_inicio, 1);
 
         for ($i = 1; $i <= $cantidadCuotas; $i++) {
             $montoCuota = $montoBase + ($i <= $resto ? 1 : 0);
@@ -305,23 +322,30 @@ class OtroDescuentoController extends Controller
         }
     }
 
-    private function existenPlanillasParaPeriodos($asociadoIds, int $mesInicio, int $anioInicio, int $cantidadCuotas): bool
+    private function periodoConPlanillaGenerada($asociadoIds, int $mesInicio, int $anioInicio, int $cantidadCuotas): ?array
     {
         $periodoInicial = Carbon::create($anioInicio, $mesInicio, 1);
         for ($i = 0; $i < $cantidadCuotas; $i++) {
             $fecha = $periodoInicial->copy()->addMonths($i);
-            if (DB::table('planilla_detalles as pd')
+            $planillaExiste = DB::table('planilla_detalles as pd')
                 ->join('planillas as pl', 'pl.id', '=', 'pd.planilla_id')
                 ->whereIn('pd.asociado_id', $asociadoIds)
                 ->where('pl.mes', $fecha->month)
                 ->where('pl.anio', $fecha->year)
                 ->where('pl.estado_id', 1)
-                ->exists()) {
-                return true;
+                ->exists();
+
+            if ($planillaExiste) {
+                return ['mes' => $fecha->month, 'anio' => $fecha->year];
             }
         }
 
-        return false;
+        return null;
+    }
+
+    private function formatearPeriodo(array $periodo): string
+    {
+        return str_pad((string) $periodo['mes'], 2, '0', STR_PAD_LEFT) . '/' . $periodo['anio'];
     }
 
     private function tienePlanillaActiva(int $descuentoId, ?int $asignacionId = null): bool

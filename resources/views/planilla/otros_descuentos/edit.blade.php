@@ -18,11 +18,9 @@
                     <div class="form-group col-md-6"><label>Concepto / evento</label><input name="nombre" class="form-control" value="{{ old('nombre', $otroDescuento->nombre) }}" required maxlength="150"></div>
                     <div class="form-group col-md-6"><label>Descripción</label><input name="descripcion" class="form-control" value="{{ old('descripcion', $otroDescuento->descripcion) }}" maxlength="2000"></div>
                     <div class="form-group col-md-3"><label>Monto total por socio (G.)</label><input name="monto_por_socio" type="number" min="1" step="1" class="form-control" value="{{ old('monto_por_socio', $otroDescuento->monto_por_socio) }}" required></div>
-                    <div class="form-group col-md-3"><label>Cantidad de cuotas</label><input name="cantidad_cuotas" type="number" min="1" max="60" class="form-control" value="{{ old('cantidad_cuotas', $otroDescuento->cantidad_cuotas) }}" required></div>
-                    <div class="form-group col-md-3"><label>Mes de inicio</label><select name="mes_inicio" class="form-control" required>@foreach ([1=>'Enero',2=>'Febrero',3=>'Marzo',4=>'Abril',5=>'Mayo',6=>'Junio',7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre'] as $numero => $nombre)<option value="{{ $numero }}" {{ old('mes_inicio', $otroDescuento->mes_inicio) == $numero ? 'selected' : '' }}>{{ $nombre }}</option>@endforeach</select></div>
-                    <div class="form-group col-md-3"><label>Año de inicio</label><input name="anio_inicio" type="number" min="2020" max="2100" class="form-control" value="{{ old('anio_inicio', $otroDescuento->anio_inicio) }}" required></div>
+                    <div class="form-group col-md-6"><label>Máximo de cuotas por socio</label><input name="cantidad_cuotas" type="number" min="1" max="60" class="form-control" value="{{ old('cantidad_cuotas', $otroDescuento->cantidad_cuotas) }}" required></div>
                 </div>
-                <div class="alert alert-info">Al guardar, se actualizará el calendario de cuotas de todos los socios asignados. Solo se puede editar si ninguna cuota está en una planilla activa o pagada.</div>
+                <div class="alert alert-info">Al guardar, se actualizará el monto total de las asignaciones. El máximo no puede quedar por debajo de las cuotas ya elegidas para un socio. Los períodos individuales se mantienen.</div>
                 <button class="btn btn-success" type="submit">Guardar cambios</button>
             </form>
         </div>
